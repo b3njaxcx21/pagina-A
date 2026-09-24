@@ -315,3 +315,8 @@ do $$
 begin
   begin alter publication supabase_realtime add table public.parejas; exception when duplicate_object then null; end;
 end $$;
+
+-- ---------- ENDURECER: nadie sin sesión puede llamar funciones internas ----------
+revoke execute on function public.mi_pareja() from public, anon;
+grant execute on function public.mi_pareja() to authenticated;
+revoke execute on function public.rls_auto_enable() from public, anon, authenticated;
