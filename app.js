@@ -1035,3 +1035,127 @@ mvSvg.addEventListener('pointerdown', () => {
 mvCambiarModo('camina', 6000);
 mvPonerX();
 requestAnimationFrame(mvBucle);
+
+// =============================================
+//  TEMÁTICAS: rosa (predeterminada), muñeca de botones, astronomía, auroras
+// =============================================
+const COLOR_TEMA = { rosa: '#e8537a', coraline: '#14262e', astronomia: '#070a1f', aurora: '#03131a' };
+const fondoTema = $('fondo-tema');
+let temaTimers = [];
+
+function tTimeout(fn, ms) {
+  const id = setTimeout(fn, ms);
+  temaTimers.push(id);
+  return id;
+}
+
+function azar(a, b) {
+  return a + Math.random() * (b - a);
+}
+
+function limpiarTema() {
+  temaTimers.forEach(clearTimeout);
+  temaTimers = [];
+  fondoTema.replaceChildren();
+  document.querySelectorAll('.muneca').forEach((n) => n.remove());
+}
+
+function crearEstrellas(cuantas, tenues) {
+  for (let i = 0; i < cuantas; i++) {
+    const s = el('span', 'estrella');
+    const t = azar(1, 3);
+    s.style.cssText = `left:${azar(0, 100)}%;top:${azar(0, 100)}%;width:${t}px;height:${t}px;` +
+      `animation-duration:${azar(2, 5)}s;animation-delay:${azar(0, 4)}s;` + (tenues ? 'opacity:.5;' : '');
+    fondoTema.append(s);
+  }
+}
+
+function estrellaFugaz() {
+  const f = el('span', 'fugaz');
+  f.style.left = azar(10, 70) + '%';
+  f.style.top = azar(2, 40) + '%';
+  fondoTema.append(f);
+  setTimeout(() => f.remove(), 1500);
+  tTimeout(estrellaFugaz, azar(5000, 12000));
+}
+
+const SVG_MUNECA = `
+<svg viewBox="0 0 100 140" aria-hidden="true">
+  <path d="M30 82 L70 82 L84 136 L16 136 Z" fill="#3b6ea5"/>
+  <path d="M30 82 L70 82 L66 96 L34 96 Z" fill="#2b4d75"/>
+  <rect x="42" y="72" width="16" height="14" rx="4" fill="#d9b98a"/>
+  <g class="brazo-saluda"><rect x="66" y="84" width="8" height="30" rx="4" fill="#d9b98a" transform="rotate(-25 70 86)"/></g>
+  <rect x="26" y="86" width="8" height="30" rx="4" fill="#d9b98a" transform="rotate(12 30 88)"/>
+  <circle cx="19" cy="52" r="9" fill="#4aa3df"/>
+  <circle cx="81" cy="52" r="9" fill="#4aa3df"/>
+  <rect x="17" y="60" width="5" height="6" rx="2" fill="#f5c542"/>
+  <rect x="78" y="60" width="5" height="6" rx="2" fill="#f5c542"/>
+  <ellipse cx="50" cy="48" rx="29" ry="31" fill="#e3c79b"/>
+  <ellipse cx="50" cy="48" rx="26" ry="28" fill="none" stroke="#a5834f" stroke-width="1.2" stroke-dasharray="3 3"/>
+  <path d="M21 46 Q20 14 50 14 Q80 14 79 46 Q68 30 50 32 Q32 30 21 46 Z" fill="#4aa3df"/>
+  <circle cx="37" cy="52" r="8.5" fill="#0d0d0f"/>
+  <circle cx="63" cy="52" r="8.5" fill="#0d0d0f"/>
+  <g fill="#666"><circle cx="35" cy="50" r="1.3"/><circle cx="39" cy="50" r="1.3"/><circle cx="35" cy="54" r="1.3"/><circle cx="39" cy="54" r="1.3"/>
+  <circle cx="61" cy="50" r="1.3"/><circle cx="65" cy="50" r="1.3"/><circle cx="61" cy="54" r="1.3"/><circle cx="65" cy="54" r="1.3"/></g>
+  <circle cx="34" cy="48" r="1.6" fill="#fff" opacity=".7"/>
+  <circle cx="60" cy="48" r="1.6" fill="#fff" opacity=".7"/>
+  <path d="M39 68 Q50 77 61 68" fill="none" stroke="#5a3b2a" stroke-width="1.8" stroke-linecap="round" stroke-dasharray="3 2.4"/>
+  <path d="M37 66 l4 4 m0 -4 l-4 4 M59 66 l4 4 m0 -4 l-4 4" stroke="#5a3b2a" stroke-width="1.2" stroke-linecap="round"/>
+</svg>`;
+
+function asomarMuneca() {
+  if (document.hidden || !$('pantalla-app').classList.contains('activa')) {
+    tTimeout(asomarMuneca, 8000);
+    return;
+  }
+  const m = el('div', 'muneca ' + (Math.random() < 0.5 ? 'izq' : 'der'));
+  m.innerHTML = SVG_MUNECA;
+  m.style.top = azar(16, 56) + 'vh';
+  m.addEventListener('pointerdown', () => {
+    const svg = m.querySelector('svg');
+    svg.classList.remove('risa');
+    void svg.getBoundingClientRect();
+    svg.classList.add('risa');
+    if (navigator.vibrate) navigator.vibrate(30);
+  });
+  document.body.append(m);
+  tTimeout(() => m.classList.add('asoma'), 60);
+  tTimeout(() => m.classList.remove('asoma'), 4600);
+  tTimeout(() => m.remove(), 5600);
+  tTimeout(asomarMuneca, azar(22000, 45000));
+}
+
+function aplicarTema(tema) {
+  if (!COLOR_TEMA[tema]) tema = 'rosa';
+  limpiarTema();
+  document.documentElement.dataset.tema = tema;
+  try { localStorage.setItem('tema', tema); } catch (_) { /* sin almacenamiento */ }
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.content = COLOR_TEMA[tema];
+  document.querySelectorAll('.tema-op').forEach((b) => b.classList.toggle('activa', b.dataset.tema === tema));
+
+  if (tema === 'coraline') {
+    for (let i = 0; i < 14; i++) {
+      const b = el('span', 'boton-flota');
+      const t = azar(14, 30);
+      b.style.cssText = `left:${azar(2, 96)}%;width:${t}px;height:${t}px;animation-duration:${azar(18, 34)}s;animation-delay:${-azar(0, 30)}s;`;
+      fondoTema.append(b);
+    }
+    tTimeout(asomarMuneca, 4000);
+  } else if (tema === 'astronomia') {
+    crearEstrellas(70, false);
+    fondoTema.append(el('div', 'planeta'), el('div', 'luna'), el('div', 'planeta-azul'));
+    tTimeout(estrellaFugaz, 3000);
+  } else if (tema === 'aurora') {
+    fondoTema.append(el('div', 'aurora-banda b1'), el('div', 'aurora-banda b2'), el('div', 'aurora-banda b3'));
+    crearEstrellas(45, true);
+  }
+}
+
+document.querySelectorAll('.tema-op').forEach((b) => {
+  b.addEventListener('click', () => aplicarTema(b.dataset.tema));
+});
+
+let temaGuardado = 'rosa';
+try { temaGuardado = localStorage.getItem('tema') || 'rosa'; } catch (_) { /* sin almacenamiento */ }
+aplicarTema(temaGuardado);

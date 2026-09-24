@@ -13,9 +13,11 @@
   <link rel="icon" href="icon-192.png">
   <link rel="apple-touch-icon" href="icon-192.png">
   <link rel="stylesheet" href="styles.css">
+  <script>try{var t=localStorage.getItem("tema");if(t)document.documentElement.dataset.tema=t}catch(e){}</script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
+  <div id="fondo-tema" class="fondo-tema" aria-hidden="true"></div>
 
   <!-- CARGANDO -->
   <section id="pantalla-cargando" class="pantalla activa centro">
@@ -211,6 +213,16 @@
           <h2>Tu pareja</h2>
           <p id="perfil-pareja"></p>
           <p class="sub">Código de vinculación: <b id="perfil-codigo"></b></p>
+        </div>
+        <div class="tarjeta">
+          <h2>Temática</h2>
+          <p class="sub" style="text-align:left;margin-top:0">Cambia cómo se ve la app. Se guarda en este dispositivo.</p>
+          <div class="temas" id="lista-temas">
+            <button type="button" class="tema-op activa" data-tema="rosa"><i class="tema-mini" style="background:linear-gradient(135deg,#ff7b9c,#e8537a)"></i><b>Rosa</b><small>Predeterminada 💞</small></button>
+            <button type="button" class="tema-op" data-tema="coraline"><i class="tema-mini" style="background:linear-gradient(135deg,#3b6ea5,#14262e)"></i><b>Muñeca de botones</b><small>Estilo Coraline 🪡</small></button>
+            <button type="button" class="tema-op" data-tema="astronomia"><i class="tema-mini" style="background:linear-gradient(135deg,#5b3fd1,#070a1f)"></i><b>Astronomía</b><small>Estrellas y planetas 🪐</small></button>
+            <button type="button" class="tema-op" data-tema="aurora"><i class="tema-mini" style="background:linear-gradient(135deg,#3df2b0,#1b6f9c 60%,#03131a)"></i><b>Auroras boreales</b><small>Cielo del norte 🌌</small></button>
+          </div>
         </div>
         <button class="btn btn-sec" data-accion="salir">Cerrar sesión</button>
       </div>
