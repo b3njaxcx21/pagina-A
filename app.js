@@ -75,12 +75,11 @@ function el(tag, clase, texto) {
 // =============================================
 //  AUTENTICACIÓN
 // =============================================
-// Usuarios permitidos (se entra solo con el nombre, después del código)
+// Usuarios permitidos (código de acceso, luego nombre y contraseña)
 const USUARIOS = {
   benjamin: { nombre: 'Benjamin', email: 'benjamin@nosotros.app', admin: true },
   alondra: { nombre: 'Alondra', email: 'alondra@nosotros.app', admin: false },
 };
-const CLAVE_INTERNA = CODIGO_ACCESO + '-nosotros';
 let desbloqueado = false;
 let esAdmin = false;
 
@@ -109,11 +108,9 @@ $('form-auth').addEventListener('submit', async (e) => {
   const btn = $('btn-auth');
   btn.disabled = true;
   $('auth-msg').textContent = '';
-  const { error } = await sb.auth.signInWithPassword({ email: u.email, password: CLAVE_INTERNA });
+  const { error } = await sb.auth.signInWithPassword({ email: u.email, password: $('auth-pass').value });
   if (error) {
-    $('auth-msg').textContent = error.message.includes('Invalid login')
-      ? 'La cuenta de este usuario aún no está creada en Supabase.'
-      : traducir(error);
+    $('auth-msg').textContent = traducir(error);
   }
   btn.disabled = false;
 });
