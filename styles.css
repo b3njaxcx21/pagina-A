@@ -408,14 +408,14 @@ html[data-tema="coraline"] .avatar.otro { background: #4aa3df; }
   box-shadow: inset 0 0 0 3px #222, 0 2px 8px rgba(0,0,0,.5); opacity: .8; animation: boton-sube linear infinite; }
 @keyframes boton-sube { from { transform: translateY(0) rotate(0); } to { transform: translateY(-115vh) rotate(360deg); } }
 
-.muneca { position: fixed; width: 96px; z-index: 35; transition: transform .7s cubic-bezier(.3,1.5,.5,1); cursor: pointer; touch-action: manipulation; }
+.muneca { position: fixed; width: 104px; z-index: 35; transition: transform .7s cubic-bezier(.3,1.5,.5,1); cursor: pointer; touch-action: manipulation; }
 .muneca.izq { left: 0; transform: translateX(-105%) rotate(-10deg); transform-origin: 0 100%; }
 .muneca.izq.asoma { transform: translateX(-16%) rotate(6deg); }
 .muneca.der { right: 0; transform: translateX(105%) rotate(10deg); transform-origin: 100% 100%; }
 .muneca.der.asoma { transform: translateX(16%) rotate(-6deg); }
 .muneca svg { display: block; width: 100%; height: auto; filter: drop-shadow(0 4px 8px rgba(0,0,0,.5)); overflow: visible; }
 .muneca svg * { transform-box: fill-box; }
-.muneca .brazo-saluda { transform-origin: 0% 100%; }
+.muneca .brazo-saluda { transform-origin: 100% 100%; }
 .muneca.asoma .brazo-saluda { animation: saluda .6s ease-in-out infinite alternate; }
 .muneca svg.risa { animation: muneca-risa .7s ease-in-out; }
 @keyframes saluda { from { transform: rotate(-16deg); } to { transform: rotate(18deg); } }

@@ -1080,28 +1080,76 @@ function estrellaFugaz() {
 }
 
 const SVG_MUNECA = `
-<svg viewBox="0 0 100 140" aria-hidden="true">
-  <path d="M30 82 L70 82 L84 136 L16 136 Z" fill="#3b6ea5"/>
-  <path d="M30 82 L70 82 L66 96 L34 96 Z" fill="#2b4d75"/>
-  <rect x="42" y="72" width="16" height="14" rx="4" fill="#d9b98a"/>
-  <g class="brazo-saluda"><rect x="66" y="84" width="8" height="30" rx="4" fill="#d9b98a" transform="rotate(-25 70 86)"/></g>
-  <rect x="26" y="86" width="8" height="30" rx="4" fill="#d9b98a" transform="rotate(12 30 88)"/>
-  <circle cx="19" cy="52" r="9" fill="#4aa3df"/>
-  <circle cx="81" cy="52" r="9" fill="#4aa3df"/>
-  <rect x="17" y="60" width="5" height="6" rx="2" fill="#f5c542"/>
-  <rect x="78" y="60" width="5" height="6" rx="2" fill="#f5c542"/>
-  <ellipse cx="50" cy="48" rx="29" ry="31" fill="#e3c79b"/>
-  <ellipse cx="50" cy="48" rx="26" ry="28" fill="none" stroke="#a5834f" stroke-width="1.2" stroke-dasharray="3 3"/>
-  <path d="M21 46 Q20 14 50 14 Q80 14 79 46 Q68 30 50 32 Q32 30 21 46 Z" fill="#4aa3df"/>
-  <circle cx="37" cy="52" r="8.5" fill="#0d0d0f"/>
-  <circle cx="63" cy="52" r="8.5" fill="#0d0d0f"/>
-  <g fill="#666"><circle cx="35" cy="50" r="1.3"/><circle cx="39" cy="50" r="1.3"/><circle cx="35" cy="54" r="1.3"/><circle cx="39" cy="54" r="1.3"/>
-  <circle cx="61" cy="50" r="1.3"/><circle cx="65" cy="50" r="1.3"/><circle cx="61" cy="54" r="1.3"/><circle cx="65" cy="54" r="1.3"/></g>
-  <circle cx="34" cy="48" r="1.6" fill="#fff" opacity=".7"/>
-  <circle cx="60" cy="48" r="1.6" fill="#fff" opacity=".7"/>
-  <path d="M39 68 Q50 77 61 68" fill="none" stroke="#5a3b2a" stroke-width="1.8" stroke-linecap="round" stroke-dasharray="3 2.4"/>
-  <path d="M37 66 l4 4 m0 -4 l-4 4 M59 66 l4 4 m0 -4 l-4 4" stroke="#5a3b2a" stroke-width="1.2" stroke-linecap="round"/>
-</svg>`;
+<svg viewBox="0 0 100 210" aria-hidden="true">
+  <defs>
+    <pattern id="mv-rayas" width="9" height="8" patternUnits="userSpaceOnUse"><rect width="9" height="4" fill="#94949f"/><rect y="4" width="9" height="4" fill="#5f2a3a"/></pattern>
+  </defs>
+  <!-- botas -->
+  <rect x="35" y="176" width="13" height="24" rx="3" fill="#f2c21b"/>
+  <rect x="29" y="195" width="22" height="11" rx="5.5" fill="#e5b414"/>
+  <rect x="29" y="203" width="22" height="3.5" rx="1.7" fill="#3d3d48"/>
+  <rect x="52" y="176" width="13" height="24" rx="3" fill="#f2c21b"/>
+  <rect x="49" y="195" width="22" height="11" rx="5.5" fill="#e5b414"/>
+  <rect x="49" y="203" width="22" height="3.5" rx="1.7" fill="#3d3d48"/>
+  <!-- medias de rayas -->
+  <rect x="37" y="138" width="10" height="40" rx="3" fill="url(#mv-rayas)"/>
+  <rect x="53" y="138" width="10" height="40" rx="3" fill="url(#mv-rayas)"/>
+  <!-- falda -->
+  <path d="M28 120 L72 120 L77 142 Q50 148 23 142 Z" fill="#8a2a3a"/>
+  <path d="M30 128 h40 M28 135 h44" stroke="#a5405a" stroke-width="1" stroke-dasharray="1.5 2.5"/>
+  <!-- bolsa (detrás del brazo) -->
+  <rect x="67" y="104" width="20" height="25" rx="3" fill="#7a1f3a"/>
+  <path d="M67 107 Q77 116 87 107 L87 104 L67 104 Z" fill="#5e1530"/>
+  <!-- abrigo amarillo -->
+  <path d="M30 62 Q34 56 45 58 L55 58 Q66 56 70 62 L76 124 Q50 131 24 124 Z" fill="#f2c21b"/>
+  <path d="M55 60 Q66 58 70 64 L76 124 Q66 127 58 128 Z" fill="#dcaa10" opacity=".55"/>
+  <path d="M50 66 L50 126" stroke="#b98a08" stroke-width="1.2"/>
+  <path d="M38 56 Q50 68 62 56 Q67 63 60 68 L40 68 Q33 63 38 56 Z" fill="#e6b512"/>
+  <circle cx="46" cy="66" r="1.4" fill="#a87c06"/><circle cx="54" cy="66" r="1.4" fill="#a87c06"/>
+  <!-- correa -->
+  <path d="M37 60 L74 110" stroke="#7a1f3a" stroke-width="4" stroke-linecap="round"/>
+  <!-- brazo en la cadera -->
+  <path d="M68 66 Q88 78 77 104" fill="none" stroke="#f2c21b" stroke-width="12" stroke-linecap="round"/>
+  <path d="M68 66 Q88 78 77 104" fill="none" stroke="#dcaa10" stroke-width="3" stroke-linecap="round" opacity=".5" transform="translate(3 0)"/>
+  <circle cx="76" cy="107" r="4.6" fill="#f2d0b0"/>
+  <!-- brazo que saluda -->
+  <g class="brazo-saluda">
+    <path d="M33 68 Q17 62 14 44" fill="none" stroke="#f2c21b" stroke-width="12" stroke-linecap="round"/>
+    <circle cx="13.5" cy="39.5" r="4.8" fill="#f2d0b0"/>
+  </g>
+  <!-- cuello -->
+  <rect x="45" y="53" width="10" height="9" rx="3" fill="#e8c29c"/>
+  <!-- pelo (atrás) -->
+  <path d="M27 40 Q24 11 50 10 Q76 11 73 40 L72 60 Q64 64 60 58 L40 58 Q36 64 28 60 Z" fill="#1f2b80"/>
+  <!-- orejas -->
+  <ellipse cx="33" cy="41" rx="3.2" ry="4.4" fill="#e9c4a0"/>
+  <ellipse cx="67" cy="41" rx="3.2" ry="4.4" fill="#e9c4a0"/>
+  <!-- cara -->
+  <ellipse cx="50" cy="38" rx="17" ry="19" fill="#f2d0b0"/>
+  <circle cx="39" cy="46" r="4" fill="#f0a89a" opacity=".35"/>
+  <circle cx="61" cy="46" r="4" fill="#f0a89a" opacity=".35"/>
+  <!-- ojos -->
+  <ellipse cx="43" cy="38" rx="4.3" ry="4.8" fill="#fff"/>
+  <ellipse cx="58" cy="38" rx="4.3" ry="4.8" fill="#fff"/>
+  <circle cx="43.6" cy="38.6" r="3.1" fill="#7d4030"/>
+  <circle cx="58.6" cy="38.6" r="3.1" fill="#7d4030"/>
+  <circle cx="43.8" cy="38.8" r="1.5" fill="#1a0f0f"/>
+  <circle cx="58.8" cy="38.8" r="1.5" fill="#1a0f0f"/>
+  <circle cx="42.6" cy="37" r="1" fill="#fff"/>
+  <circle cx="57.6" cy="37" r="1" fill="#fff"/>
+  <path d="M38.5 32 Q43 29.5 47.5 32 M53.5 32 Q58 29.5 62.5 32" fill="none" stroke="#2a1d3a" stroke-width="1.3" stroke-linecap="round"/>
+  <!-- nariz, boca, pecas -->
+  <path d="M50 40 Q48.5 45 50.5 46" fill="none" stroke="#d3a382" stroke-width="1.1" stroke-linecap="round"/>
+  <path d="M45 50.5 Q50.5 55 57 49.5 Q51 52 45 50.5 Z" fill="#c4566a" stroke="#a63f52" stroke-width=".8" stroke-linejoin="round"/>
+  <g fill="#d9a582"><circle cx="40" cy="43" r=".7"/><circle cx="43" cy="44.5" r=".7"/><circle cx="60" cy="43" r=".7"/><circle cx="57" cy="44.5" r=".7"/></g>
+  <!-- flequillo -->
+  <path d="M31 36 Q29 13 52 11 Q71 12 69 36 Q63 21 47 24 Q36 26 31 36 Z" fill="#2a3ba3"/>
+  <path d="M36 20 Q46 14 60 16" fill="none" stroke="#4a5fd0" stroke-width="1.6" stroke-linecap="round" opacity=".7"/>
+  <path d="M30 38 Q28 50 33 60 Q28 58 27 52 Z M70 38 Q72 50 67 60 Q72 58 73 52 Z" fill="#1f2b80"/>
+  <!-- broche de flor -->
+  <g transform="translate(32 26)"><circle r="2.4" fill="#d9d9e8"/><circle r="1" fill="#f2c21b"/><circle cx="0" cy="-3.4" r="1.6" fill="#c9c9dc"/><circle cx="3.2" cy="1" r="1.6" fill="#c9c9dc"/><circle cx="-3.2" cy="1" r="1.6" fill="#c9c9dc"/></g>
+</svg>
+`;
 
 function asomarMuneca() {
   if (document.hidden || !$('pantalla-app').classList.contains('activa')) {
@@ -1110,7 +1158,7 @@ function asomarMuneca() {
   }
   const m = el('div', 'muneca ' + (Math.random() < 0.5 ? 'izq' : 'der'));
   m.innerHTML = SVG_MUNECA;
-  m.style.top = azar(16, 56) + 'vh';
+  m.style.top = azar(6, 36) + 'vh';
   m.addEventListener('pointerdown', () => {
     const svg = m.querySelector('svg');
     svg.classList.remove('risa');

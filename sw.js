@@ -1,6 +1,6 @@
 // Service worker: permite instalar la app y abrirla aunque falle la red.
 // Siempre intenta traer la versión más nueva; si no hay internet usa la guardada.
-const CACHE = 'nosotros-v12';
+const CACHE = 'nosotros-v13';
 const ARCHIVOS = ['./', './index.html', './styles.css', './app.js', './manifest.json', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', (e) => {
