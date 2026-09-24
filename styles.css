@@ -389,29 +389,65 @@ html[data-tema="coraline"] .barra, html[data-tema="aurora"] .barra,
 html[data-tema="coraline"] .nav, html[data-tema="aurora"] .nav,
 html[data-tema="coraline"] .chat-input, html[data-tema="aurora"] .chat-input { backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
 
-/* ---------- Muñeca de botones (estilo Coraline) ---------- */
+/* ---------- Coraline: noche estrellada, túnel de colores y botones dorados ---------- */
 html[data-tema="coraline"] {
-  --fondo: #14262e; --tarjeta: #1e3842; --texto: #f3e9cf; --gris: #a9b7b5; --borde: #3b5963;
-  --rosa: #f5c542; --rosa-osc: #e0ae2a; --rosa-claro: #2c4a55; --sombra: 0 4px 18px rgba(0,0,0,.35);
+  --fondo: #0a1030; --tarjeta: rgba(16,26,66,.74); --texto: #eaf0ff; --gris: #a3b3e6; --borde: rgba(245,197,24,.28);
+  --rosa: #f5c518; --rosa-osc: #dba90e; --rosa-claro: rgba(245,197,24,.14); --sombra: 0 4px 22px rgba(0,0,0,.45);
 }
-html[data-tema="coraline"] body { background: radial-gradient(ellipse at 50% 0%, #24424e, #14262e 65%); }
-html[data-tema="coraline"] .tarjeta, html[data-tema="coraline"] .post, html[data-tema="coraline"] .stats div { outline: 2px dashed rgba(243,233,207,.28); outline-offset: -7px; }
-html[data-tema="coraline"] .contador { background: linear-gradient(135deg, #3b6ea5, #2b4d75 60%, #1f3852); color: #f3e9cf; }
-html[data-tema="coraline"] .contador .contador-titulo, html[data-tema="coraline"] .contador-dias { color: #f5c542; }
-html[data-tema="coraline"] .frase { background: #2c4a55; }
+html[data-tema="coraline"] body { background: radial-gradient(ellipse at 50% 35%, #33267a 0%, #182a72 45%, #090e2c 100%); background-attachment: fixed; }
+html[data-tema="coraline"] .tarjeta, html[data-tema="coraline"] .post, html[data-tema="coraline"] .stats div { outline: 2px dashed rgba(245,197,24,.3); outline-offset: -7px; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+html[data-tema="coraline"] .contador { background: linear-gradient(135deg, #5b3fb5, #2a3f9a 55%, #1a2a6e); color: #eaf0ff; }
+html[data-tema="coraline"] .contador .contador-titulo, html[data-tema="coraline"] .contador-dias { color: #f5c518; }
+html[data-tema="coraline"] .frase { background: rgba(245,197,24,.1); }
 html[data-tema="coraline"] .avatar.otro { background: #4aa3df; }
-.boton-flota { position: absolute; bottom: -40px; border-radius: 50%; background:
-  radial-gradient(circle at 36% 36%, #6a6a6a 9%, transparent 11%), radial-gradient(circle at 64% 36%, #6a6a6a 9%, transparent 11%),
-  radial-gradient(circle at 36% 64%, #6a6a6a 9%, transparent 11%), radial-gradient(circle at 64% 64%, #6a6a6a 9%, transparent 11%), #0d0d0f;
-  box-shadow: inset 0 0 0 3px #222, 0 2px 8px rgba(0,0,0,.5); opacity: .8; animation: boton-sube linear infinite; }
-@keyframes boton-sube { from { transform: translateY(0) rotate(0); } to { transform: translateY(-115vh) rotate(360deg); } }
+html[data-tema="coraline"] h1, html[data-tema="coraline"] h2, html[data-tema="coraline"] .contador-titulo, html[data-tema="coraline"] .frase-titulo { font-family: 'Mystery Quest', 'Segoe Print', cursive; letter-spacing: .5px; font-weight: 400; }
+html[data-tema="coraline"] h1, html[data-tema="coraline"] h2 { color: #f5c518; text-shadow: 0 2px 10px rgba(0,0,0,.5); }
+html[data-tema="coraline"] .mavis-svg .mv-ojo > ellipse:first-child { fill: #8fd3ff; }
+html[data-tema="coraline"] .mavis-svg .mv-ojo-feliz { stroke: #8fd3ff; }
 
-.muneca { position: fixed; width: 104px; z-index: 35; transition: transform .7s cubic-bezier(.3,1.5,.5,1); cursor: pointer; touch-action: manipulation; }
+.vortice { position: absolute; left: 50%; top: 42%; width: 150vmax; height: 150vmax; margin: -75vmax 0 0 -75vmax; border-radius: 50%; opacity: .55; will-change: transform;
+  background: repeating-radial-gradient(circle, #0a1244 0 14px, #26308f 24px, #5b3fb3 36px, #2b6bc4 48px, #14206b 60px);
+  -webkit-mask-image: radial-gradient(circle, transparent 4%, #000 14%, #000 42%, transparent 66%); mask-image: radial-gradient(circle, transparent 4%, #000 14%, #000 42%, transparent 66%);
+  animation: vortice-gira 150s linear infinite; }
+.vortice-centro { position: absolute; left: 50%; top: 42%; width: 70vmin; height: 70vmin; margin: -35vmin 0 0 -35vmin; border-radius: 50%; background: radial-gradient(circle, rgba(0,0,8,.85) 0, rgba(0,0,8,0) 65%); animation: vortice-late 9s ease-in-out infinite; }
+@keyframes vortice-gira { to { transform: rotate(360deg); } }
+@keyframes vortice-late { 0%,100% { transform: scale(1); opacity: .8; } 50% { transform: scale(1.12); opacity: 1; } }
+.estrella4 { position: absolute; background: #fff; clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%); animation: titilar ease-in-out infinite; filter: drop-shadow(0 0 3px #fff); }
+.luna-cresc { position: absolute; width: 26px; height: 26px; border-radius: 50%; box-shadow: inset -8px -3px 0 0 #dfe6ff; filter: drop-shadow(0 0 5px rgba(200,215,255,.6)); animation: flota-luna 8s ease-in-out infinite; }
+@keyframes flota-luna { 0%,100% { transform: rotate(-20deg) translateY(0); } 50% { transform: rotate(-20deg) translateY(-8px); } }
+.constelacion { position: absolute; width: 150px; opacity: .55; animation: titilar 6s ease-in-out infinite; }
+.constelacion svg { width: 100%; height: auto; overflow: visible; }
+
+.boton-flota { position: absolute; bottom: -120px; border-radius: 50%; background:
+  radial-gradient(circle at 36% 36%, #4a3600 9%, transparent 11%), radial-gradient(circle at 64% 36%, #4a3600 9%, transparent 11%),
+  radial-gradient(circle at 36% 64%, #4a3600 9%, transparent 11%), radial-gradient(circle at 64% 64%, #4a3600 9%, transparent 11%),
+  radial-gradient(circle at 34% 28%, #ffe886, #f5c518 55%, #b98400);
+  box-shadow: inset 0 0 0 3px rgba(140,98,0,.55), inset 0 0 0 6px rgba(255,235,150,.25), 0 3px 12px rgba(0,0,0,.45); opacity: .85; animation: boton-sube linear infinite; }
+.boton-flota.grande { filter: blur(2.5px); opacity: .65; }
+@keyframes boton-sube { from { transform: translateY(0) rotate(0); } to { transform: translateY(-130vh) rotate(420deg); } }
+
+/* objetos que aparecen de vez en cuando */
+.prop-coraline { position: fixed; z-index: 34; cursor: pointer; touch-action: manipulation; }
+.prop-coraline svg { display: block; width: 100%; height: auto; overflow: visible; }
+.prop-coraline svg.destello { animation: prop-destello .8s ease-out; }
+@keyframes prop-destello { 0% { filter: brightness(1); } 30% { filter: brightness(2.2) drop-shadow(0 0 22px #ffe27a); } 100% { filter: brightness(1); } }
+.prop-coraline.llave { left: 0; width: 36px; filter: drop-shadow(0 0 8px rgba(140,170,255,.8)); animation: llave-cruza 10s linear forwards; }
+@keyframes llave-cruza { 0% { transform: translate(-15vw, 0) rotate(-30deg); } 25% { transform: translate(25vw, 9vh) rotate(20deg); } 50% { transform: translate(55vw, 2vh) rotate(90deg); } 75% { transform: translate(85vw, 12vh) rotate(160deg); } 100% { transform: translate(120vw, 6vh) rotate(230deg); } }
+.prop-coraline.piedra { width: 62px; filter: drop-shadow(0 0 14px rgba(61,255,184,.85)); animation: piedra-brilla 6.4s ease-in-out forwards; }
+@keyframes piedra-brilla { 0% { opacity: 0; transform: scale(.4) rotate(-20deg); } 15% { opacity: 1; transform: scale(1) rotate(0); } 50% { transform: scale(1.1) rotate(4deg); } 85% { opacity: 1; transform: scale(1) rotate(-3deg); } 100% { opacity: 0; transform: scale(.6) rotate(10deg); } }
+.prop-coraline.libelula { left: 0; width: 64px; filter: drop-shadow(0 2px 6px rgba(0,0,0,.4)); animation: libelula-vuela 9.5s ease-in-out forwards; }
+@keyframes libelula-vuela { 0% { transform: translate(-15vw, 0) scaleX(1); } 25% { transform: translate(25vw, -6vh); } 50% { transform: translate(55vw, 6vh); } 75% { transform: translate(85vw, -4vh); } 100% { transform: translate(118vw, -9vh); } }
+.prop-coraline .ala { transform-origin: 50% 100%; animation: aletea .09s ease-in-out infinite alternate; }
+.prop-coraline .ala.b { animation-delay: -.045s; }
+@keyframes aletea { from { transform: scaleY(1); } to { transform: scaleY(.35); } }
+
+/* Coraline (la niña) */
+.muneca { position: fixed; width: 108px; z-index: 35; transition: transform .7s cubic-bezier(.3,1.5,.5,1); cursor: pointer; touch-action: manipulation; }
 .muneca.izq { left: 0; transform: translateX(-105%) rotate(-10deg); transform-origin: 0 100%; }
 .muneca.izq.asoma { transform: translateX(-16%) rotate(6deg); }
 .muneca.der { right: 0; transform: translateX(105%) rotate(10deg); transform-origin: 100% 100%; }
 .muneca.der.asoma { transform: translateX(16%) rotate(-6deg); }
-.muneca svg { display: block; width: 100%; height: auto; filter: drop-shadow(0 4px 8px rgba(0,0,0,.5)); overflow: visible; }
+.muneca svg { display: block; width: 100%; height: auto; filter: drop-shadow(0 6px 10px rgba(0,0,0,.55)); overflow: visible; }
 .muneca svg * { transform-box: fill-box; }
 .muneca .brazo-saluda { transform-origin: 100% 100%; }
 .muneca.asoma .brazo-saluda { animation: saluda .6s ease-in-out infinite alternate; }

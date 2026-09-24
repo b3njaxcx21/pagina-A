@@ -1072,7 +1072,7 @@ function limpiarTema() {
   temaTimers.forEach(clearTimeout);
   temaTimers = [];
   fondoTema.replaceChildren();
-  document.querySelectorAll('.muneca').forEach((n) => n.remove());
+  document.querySelectorAll('.muneca, .prop-coraline').forEach((n) => n.remove());
 }
 
 function crearEstrellas(cuantas, tenues) {
@@ -1088,72 +1088,93 @@ function crearEstrellas(cuantas, tenues) {
 const SVG_MUNECA = `
 <svg viewBox="0 0 100 210" aria-hidden="true">
   <defs>
-    <pattern id="mv-rayas" width="9" height="8" patternUnits="userSpaceOnUse"><rect width="9" height="4" fill="#94949f"/><rect y="4" width="9" height="4" fill="#5f2a3a"/></pattern>
+    <pattern id="mv-rayas" width="9" height="8" patternUnits="userSpaceOnUse"><rect width="9" height="4" fill="#9a9aa6"/><rect y="4" width="9" height="4" fill="#5b2636"/></pattern>
+    <radialGradient id="mv-piel" cx="42%" cy="38%" r="70%"><stop offset="0" stop-color="#fce9d8"/><stop offset=".7" stop-color="#f0cfb0"/><stop offset="1" stop-color="#dcae88"/></radialGradient>
+    <linearGradient id="mv-pelo" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3a4dc8"/><stop offset="1" stop-color="#121a63"/></linearGradient>
+    <linearGradient id="mv-abrigo" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fce052"/><stop offset=".55" stop-color="#f2c21b"/><stop offset="1" stop-color="#d59a06"/></linearGradient>
+    <linearGradient id="mv-bota" x1="0" x2="1"><stop offset="0" stop-color="#f7d43a"/><stop offset="1" stop-color="#d9a30c"/></linearGradient>
   </defs>
   <!-- botas -->
-  <rect x="35" y="176" width="13" height="24" rx="3" fill="#f2c21b"/>
-  <rect x="29" y="195" width="22" height="11" rx="5.5" fill="#e5b414"/>
-  <rect x="29" y="203" width="22" height="3.5" rx="1.7" fill="#3d3d48"/>
-  <rect x="52" y="176" width="13" height="24" rx="3" fill="#f2c21b"/>
-  <rect x="49" y="195" width="22" height="11" rx="5.5" fill="#e5b414"/>
-  <rect x="49" y="203" width="22" height="3.5" rx="1.7" fill="#3d3d48"/>
+  <rect x="35" y="176" width="13" height="24" rx="3" fill="url(#mv-bota)"/>
+  <rect x="29" y="195" width="22" height="11" rx="5.5" fill="url(#mv-bota)"/>
+  <rect x="29" y="203" width="22" height="3.5" rx="1.7" fill="#2f2f38"/>
+  <rect x="52" y="176" width="13" height="24" rx="3" fill="url(#mv-bota)"/>
+  <rect x="49" y="195" width="22" height="11" rx="5.5" fill="url(#mv-bota)"/>
+  <rect x="49" y="203" width="22" height="3.5" rx="1.7" fill="#2f2f38"/>
+  <path d="M36 180 v14 M62 180 v14" stroke="#fff" stroke-width="1.6" stroke-linecap="round" opacity=".35"/>
   <!-- medias de rayas -->
   <rect x="37" y="138" width="10" height="40" rx="3" fill="url(#mv-rayas)"/>
   <rect x="53" y="138" width="10" height="40" rx="3" fill="url(#mv-rayas)"/>
-  <!-- falda -->
+  <!-- falda tejida -->
   <path d="M28 120 L72 120 L77 142 Q50 148 23 142 Z" fill="#8a2a3a"/>
-  <path d="M30 128 h40 M28 135 h44" stroke="#a5405a" stroke-width="1" stroke-dasharray="1.5 2.5"/>
-  <!-- bolsa (detrás del brazo) -->
+  <path d="M30 128 h40 M28 135 h44" stroke="#b04a62" stroke-width="1" stroke-dasharray="1.5 2.5"/>
+  <!-- bolsa -->
   <rect x="67" y="104" width="20" height="25" rx="3" fill="#7a1f3a"/>
-  <path d="M67 107 Q77 116 87 107 L87 104 L67 104 Z" fill="#5e1530"/>
-  <!-- abrigo amarillo -->
-  <path d="M30 62 Q34 56 45 58 L55 58 Q66 56 70 62 L76 124 Q50 131 24 124 Z" fill="#f2c21b"/>
-  <path d="M55 60 Q66 58 70 64 L76 124 Q66 127 58 128 Z" fill="#dcaa10" opacity=".55"/>
-  <path d="M50 66 L50 126" stroke="#b98a08" stroke-width="1.2"/>
-  <path d="M38 56 Q50 68 62 56 Q67 63 60 68 L40 68 Q33 63 38 56 Z" fill="#e6b512"/>
-  <circle cx="46" cy="66" r="1.4" fill="#a87c06"/><circle cx="54" cy="66" r="1.4" fill="#a87c06"/>
+  <path d="M67 107 Q77 116 87 107 L87 104 L67 104 Z" fill="#561230"/>
+  <path d="M69 118 h16" stroke="#9c3556" stroke-width="1" stroke-dasharray="2 2"/>
+  <!-- impermeable -->
+  <path d="M30 62 Q34 56 45 58 L55 58 Q66 56 70 62 L76 124 Q50 131 24 124 Z" fill="url(#mv-abrigo)"/>
+  <path d="M58 60 Q66 58 70 64 L76 124 Q68 127 60 128 Z" fill="#b98005" opacity=".35"/>
+  <path d="M34 78 Q38 96 34 122 M66 84 Q62 100 66 124 M42 100 Q44 112 40 124" fill="none" stroke="#c48a05" stroke-width="1.2" stroke-linecap="round" opacity=".5"/>
+  <path d="M50 66 L50 126" stroke="#a87806" stroke-width="1.3"/>
+  <path d="M38 56 Q50 68 62 56 Q67 63 60 68 L40 68 Q33 63 38 56 Z" fill="#e8b310"/>
+  <path d="M40 60 Q50 68 60 60" fill="none" stroke="#fce052" stroke-width="1.2" opacity=".6"/>
+  <circle cx="46" cy="66" r="1.5" fill="#8a6205"/><circle cx="54" cy="66" r="1.5" fill="#8a6205"/>
+  <path d="M46 67 q-1 7 1 10 M54 67 q1 7 -1 10" stroke="#8a6205" stroke-width=".9" fill="none"/>
   <!-- correa -->
   <path d="M37 60 L74 110" stroke="#7a1f3a" stroke-width="4" stroke-linecap="round"/>
+  <path d="M38 59 L75 109" stroke="#a03052" stroke-width="1" stroke-linecap="round" opacity=".6"/>
   <!-- brazo en la cadera -->
-  <path d="M68 66 Q88 78 77 104" fill="none" stroke="#f2c21b" stroke-width="12" stroke-linecap="round"/>
-  <path d="M68 66 Q88 78 77 104" fill="none" stroke="#dcaa10" stroke-width="3" stroke-linecap="round" opacity=".5" transform="translate(3 0)"/>
-  <circle cx="76" cy="107" r="4.6" fill="#f2d0b0"/>
+  <path d="M68 66 Q88 78 77 104" fill="none" stroke="url(#mv-abrigo)" stroke-width="12" stroke-linecap="round"/>
+  <path d="M74 70 Q86 82 79 100" fill="none" stroke="#b98005" stroke-width="2.4" stroke-linecap="round" opacity=".4"/>
+  <circle cx="76" cy="107" r="4.6" fill="url(#mv-piel)"/>
   <!-- brazo que saluda -->
   <g class="brazo-saluda">
-    <path d="M33 68 Q17 62 14 44" fill="none" stroke="#f2c21b" stroke-width="12" stroke-linecap="round"/>
-    <circle cx="13.5" cy="39.5" r="4.8" fill="#f2d0b0"/>
+    <path d="M33 68 Q17 62 14 44" fill="none" stroke="url(#mv-abrigo)" stroke-width="12" stroke-linecap="round"/>
+    <path d="M22 60 Q17 54 16 48" fill="none" stroke="#b98005" stroke-width="2.4" stroke-linecap="round" opacity=".4"/>
+    <circle cx="13.5" cy="39.5" r="4.8" fill="url(#mv-piel)"/>
+    <path d="M11 36 v-3 M13.5 35 v-3.5 M16 36 v-3" stroke="#dcae88" stroke-width="1.4" stroke-linecap="round"/>
   </g>
   <!-- cuello -->
-  <rect x="45" y="53" width="10" height="9" rx="3" fill="#e8c29c"/>
-  <!-- pelo (atrás) -->
-  <path d="M27 40 Q24 11 50 10 Q76 11 73 40 L72 60 Q64 64 60 58 L40 58 Q36 64 28 60 Z" fill="#1f2b80"/>
+  <rect x="45" y="53" width="10" height="9" rx="3" fill="#e2b892"/>
+  <!-- pelo atrás -->
+  <path d="M27 40 Q23 10 50 9 Q77 10 73 40 L73 61 Q64 66 60 58 L40 58 Q36 66 27 61 Z" fill="url(#mv-pelo)"/>
   <!-- orejas -->
-  <ellipse cx="33" cy="41" rx="3.2" ry="4.4" fill="#e9c4a0"/>
-  <ellipse cx="67" cy="41" rx="3.2" ry="4.4" fill="#e9c4a0"/>
-  <!-- cara -->
-  <ellipse cx="50" cy="38" rx="17" ry="19" fill="#f2d0b0"/>
-  <circle cx="39" cy="46" r="4" fill="#f0a89a" opacity=".35"/>
-  <circle cx="61" cy="46" r="4" fill="#f0a89a" opacity=".35"/>
+  <ellipse cx="33" cy="41" rx="3.4" ry="4.6" fill="#e8bd98"/>
+  <ellipse cx="67" cy="41" rx="3.4" ry="4.6" fill="#e8bd98"/>
+  <!-- cara de muñeca de porcelana -->
+  <ellipse cx="50" cy="38" rx="17.5" ry="19.5" fill="url(#mv-piel)"/>
+  <circle cx="39" cy="46" r="4.2" fill="#f0a89a" opacity=".3"/>
+  <circle cx="61" cy="46" r="4.2" fill="#f0a89a" opacity=".3"/>
   <!-- ojos -->
-  <ellipse cx="43" cy="38" rx="4.3" ry="4.8" fill="#fff"/>
-  <ellipse cx="58" cy="38" rx="4.3" ry="4.8" fill="#fff"/>
-  <circle cx="43.6" cy="38.6" r="3.1" fill="#7d4030"/>
-  <circle cx="58.6" cy="38.6" r="3.1" fill="#7d4030"/>
-  <circle cx="43.8" cy="38.8" r="1.5" fill="#1a0f0f"/>
-  <circle cx="58.8" cy="38.8" r="1.5" fill="#1a0f0f"/>
-  <circle cx="42.6" cy="37" r="1" fill="#fff"/>
-  <circle cx="57.6" cy="37" r="1" fill="#fff"/>
-  <path d="M38.5 32 Q43 29.5 47.5 32 M53.5 32 Q58 29.5 62.5 32" fill="none" stroke="#2a1d3a" stroke-width="1.3" stroke-linecap="round"/>
+  <ellipse cx="43" cy="38" rx="4.5" ry="5" fill="#fff"/>
+  <ellipse cx="58" cy="38" rx="4.5" ry="5" fill="#fff"/>
+  <circle cx="43.6" cy="38.7" r="3.3" fill="#8a4a35"/>
+  <circle cx="58.6" cy="38.7" r="3.3" fill="#8a4a35"/>
+  <circle cx="43.6" cy="38.7" r="2" fill="#4a2417"/>
+  <circle cx="58.6" cy="38.7" r="2" fill="#4a2417"/>
+  <circle cx="43.8" cy="38.9" r="1.1" fill="#0f0806"/>
+  <circle cx="58.8" cy="38.9" r="1.1" fill="#0f0806"/>
+  <circle cx="42.4" cy="36.8" r="1.1" fill="#fff"/>
+  <circle cx="57.4" cy="36.8" r="1.1" fill="#fff"/>
+  <path d="M38 33 Q43 30 48 32.5 M53 32.5 Q58 30 63 33" fill="none" stroke="#5a3a2a" stroke-width="1.5" stroke-linecap="round"/>
   <!-- nariz, boca, pecas -->
-  <path d="M50 40 Q48.5 45 50.5 46" fill="none" stroke="#d3a382" stroke-width="1.1" stroke-linecap="round"/>
+  <path d="M50 40 Q48.5 45.5 51 46.5" fill="none" stroke="#c99878" stroke-width="1.2" stroke-linecap="round"/>
   <path d="M45 50.5 Q50.5 55 57 49.5 Q51 52 45 50.5 Z" fill="#c4566a" stroke="#a63f52" stroke-width=".8" stroke-linejoin="round"/>
-  <g fill="#d9a582"><circle cx="40" cy="43" r=".7"/><circle cx="43" cy="44.5" r=".7"/><circle cx="60" cy="43" r=".7"/><circle cx="57" cy="44.5" r=".7"/></g>
+  <g fill="#c99570"><circle cx="40" cy="43" r=".75"/><circle cx="43" cy="44.6" r=".75"/><circle cx="37.6" cy="45" r=".7"/><circle cx="60" cy="43" r=".75"/><circle cx="57" cy="44.6" r=".75"/><circle cx="62.4" cy="45" r=".7"/></g>
   <!-- flequillo -->
-  <path d="M31 36 Q29 13 52 11 Q71 12 69 36 Q63 21 47 24 Q36 26 31 36 Z" fill="#2a3ba3"/>
-  <path d="M36 20 Q46 14 60 16" fill="none" stroke="#4a5fd0" stroke-width="1.6" stroke-linecap="round" opacity=".7"/>
-  <path d="M30 38 Q28 50 33 60 Q28 58 27 52 Z M70 38 Q72 50 67 60 Q72 58 73 52 Z" fill="#1f2b80"/>
-  <!-- broche de flor -->
-  <g transform="translate(32 26)"><circle r="2.4" fill="#d9d9e8"/><circle r="1" fill="#f2c21b"/><circle cx="0" cy="-3.4" r="1.6" fill="#c9c9dc"/><circle cx="3.2" cy="1" r="1.6" fill="#c9c9dc"/><circle cx="-3.2" cy="1" r="1.6" fill="#c9c9dc"/></g>
+  <path d="M31 36 Q28 12 52 10 Q72 11 69 36 Q63 21 47 24 Q36 26 31 36 Z" fill="url(#mv-pelo)"/>
+  <path d="M35 20 Q46 13 62 16 M33 27 Q40 20 50 20" fill="none" stroke="#6b7df0" stroke-width="1.4" stroke-linecap="round" opacity=".65"/>
+  <path d="M30 38 Q27 50 33 61 Q27 59 26 52 Z M70 38 Q73 50 67 61 Q73 59 74 52 Z" fill="#141c69"/>
+  <path d="M31 40 Q29 52 32 58 M69 40 Q71 52 68 58" fill="none" stroke="#5062d8" stroke-width="1" opacity=".55"/>
+  <!-- broche de libélula -->
+  <g transform="translate(31 27) rotate(-30)">
+    <ellipse cx="-3" cy="-2.6" rx="3.6" ry="1.6" fill="#f4a9c8" stroke="#c9a24d" stroke-width=".5"/>
+    <ellipse cx="3" cy="-2.6" rx="3.6" ry="1.6" fill="#f4a9c8" stroke="#c9a24d" stroke-width=".5"/>
+    <ellipse cx="-2.6" cy="1.8" rx="3.2" ry="1.4" fill="#f4a9c8" stroke="#c9a24d" stroke-width=".5"/>
+    <ellipse cx="2.6" cy="1.8" rx="3.2" ry="1.4" fill="#f4a9c8" stroke="#c9a24d" stroke-width=".5"/>
+    <circle r="1.6" fill="#2ec1e0"/>
+  </g>
 </svg>
 `;
 
@@ -1179,6 +1200,100 @@ function asomarMuneca() {
   tTimeout(asomarMuneca, azar(22000, 45000));
 }
 
+const SVG_LLAVE = `
+<svg viewBox="0 0 40 100" aria-hidden="true">
+  <defs><linearGradient id="mv-metal" x1="0" x2="1"><stop offset="0" stop-color="#2b2b33"/><stop offset=".5" stop-color="#5a5a68"/><stop offset="1" stop-color="#1a1a20"/></linearGradient></defs>
+  <circle cx="20" cy="19" r="17" fill="url(#mv-metal)" stroke="#0d0d10" stroke-width="1.5"/>
+  <circle cx="20" cy="19" r="12" fill="#15151a"/>
+  <g fill="#8fb0ff" opacity=".85"><circle cx="15" cy="14" r="3"/><circle cx="25" cy="14" r="3"/><circle cx="15" cy="24" r="3"/><circle cx="25" cy="24" r="3"/></g>
+  <path d="M15 34 Q20 40 25 34 L26 42 Q20 46 14 42 Z" fill="url(#mv-metal)"/>
+  <rect x="17" y="42" width="6" height="40" fill="url(#mv-metal)"/>
+  <path d="M23 66 h11 v7 h-6 v6 h6 v9 h-11 z" fill="url(#mv-metal)" stroke="#0d0d10" stroke-width="1"/>
+  <path d="M18 44 v36" stroke="#8a8a9a" stroke-width="1" opacity=".5"/>
+</svg>`;
+
+const SVG_PIEDRA = `
+<svg viewBox="0 0 100 100" aria-hidden="true">
+  <defs><radialGradient id="mv-jade" cx="40%" cy="35%" r="75%"><stop offset="0" stop-color="#5cf0c0"/><stop offset=".6" stop-color="#1fb98a"/><stop offset="1" stop-color="#0a6b4d"/></radialGradient></defs>
+  <path d="M22 18 Q34 6 50 12 L84 36 Q98 48 88 62 L50 90 Q32 100 22 84 L12 34 Q11 24 22 18 Z" fill="#1c1c1c"/>
+  <path d="M25 22 Q35 13 48 18 L80 40 Q90 49 82 59 L48 84 Q34 92 27 80 L18 36 Q17 27 25 22 Z" fill="url(#mv-jade)"/>
+  <path d="M30 30 Q46 24 62 40 M28 52 Q44 46 60 62 M34 70 Q52 66 70 54" fill="none" stroke="#0a7a52" stroke-width="3" stroke-linecap="round"/>
+  <path d="M34 26 Q42 22 52 28 M30 60 Q38 58 46 66" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" opacity=".85"/>
+  <ellipse cx="50" cy="52" rx="11" ry="12" fill="#050505"/>
+  <ellipse cx="46" cy="47" rx="3.2" ry="2" fill="#fff" opacity=".55"/>
+</svg>`;
+
+const SVG_LIBELULA = `
+<svg viewBox="0 0 90 60" aria-hidden="true">
+  <g class="ala"><ellipse cx="28" cy="22" rx="24" ry="9" fill="#f4a9c8" fill-opacity=".8" stroke="#c9a24d" stroke-width="1.3" transform="rotate(-24 28 22)"/></g>
+  <g class="ala b"><ellipse cx="34" cy="38" rx="24" ry="8" fill="#f4a9c8" fill-opacity=".75" stroke="#c9a24d" stroke-width="1.3" transform="rotate(20 34 38)"/></g>
+  <g class="ala"><ellipse cx="46" cy="20" rx="20" ry="8" fill="#f9c4da" fill-opacity=".8" stroke="#c9a24d" stroke-width="1.3" transform="rotate(-38 46 20)"/></g>
+  <path d="M40 30 Q12 34 4 46" fill="none" stroke="#c9a24d" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="14" cy="42" r="2.2" fill="#3aa7c9"/><circle cx="22" cy="39" r="2.2" fill="#3aa7c9"/><circle cx="30" cy="36" r="2.2" fill="#3aa7c9"/>
+  <ellipse cx="46" cy="31" rx="9" ry="6" fill="#c9a24d"/>
+  <circle cx="46" cy="31" r="4.6" fill="#2ec1e0"/><circle cx="45" cy="29.5" r="1.4" fill="#fff" opacity=".8"/>
+  <circle cx="56" cy="29" r="3" fill="#d6283a"/><circle cx="56" cy="35" r="3" fill="#d6283a"/>
+</svg>`;
+
+const SVG_CONSTELACION = `
+<svg viewBox="0 0 150 60" aria-hidden="true">
+  <polyline points="6,44 34,20 70,32 104,8 142,30" fill="none" stroke="#cfd9ff" stroke-width="1" stroke-dasharray="3 3" opacity=".7"/>
+  <g fill="#fff"><circle cx="6" cy="44" r="2.4"/><circle cx="34" cy="20" r="2.8"/><circle cx="70" cy="32" r="2.2"/><circle cx="104" cy="8" r="3"/><circle cx="142" cy="30" r="2.4"/></g>
+</svg>`;
+
+function cieloCoraline() {
+  fondoTema.append(el('div', 'vortice'), el('div', 'vortice-centro'));
+  crearEstrellas(55, false);
+  for (let i = 0; i < 12; i++) {
+    const s = el('span', 'estrella4');
+    const t = azar(7, 15);
+    s.style.cssText = `left:${azar(2, 96)}%;top:${azar(2, 92)}%;width:${t}px;height:${t}px;animation-duration:${azar(3, 6)}s;animation-delay:${azar(0, 4)}s;`;
+    fondoTema.append(s);
+  }
+  [[8, 12], [82, 20], [70, 74]].forEach(([x, y], i) => {
+    const l = el('span', 'luna-cresc');
+    l.style.cssText = `left:${x}%;top:${y}%;animation-delay:${-i * 2}s;`;
+    fondoTema.append(l);
+  });
+  [[10, 60], [62, 8]].forEach(([x, y]) => {
+    const c = el('div', 'constelacion');
+    c.innerHTML = SVG_CONSTELACION;
+    c.style.cssText = `left:${x}%;top:${y}%;`;
+    fondoTema.append(c);
+  });
+  for (let i = 0; i < 16; i++) {
+    const grande = i < 3;
+    const t = grande ? azar(70, 110) : azar(14, 40);
+    const b = el('span', 'boton-flota' + (grande ? ' grande' : ''));
+    b.style.cssText = `left:${azar(0, 96)}%;width:${t}px;height:${t}px;` +
+      `animation-duration:${grande ? azar(40, 60) : azar(20, 38)}s;animation-delay:${-azar(0, 40)}s;`;
+    fondoTema.append(b);
+  }
+}
+
+// De vez en cuando cruza la llave, brilla la piedra o pasa la libélula
+function eventoCoraline() {
+  if (document.hidden || !$('pantalla-app').classList.contains('activa')) {
+    tTimeout(eventoCoraline, 8000);
+    return;
+  }
+  const tipo = ['llave', 'piedra', 'libelula'][Math.floor(Math.random() * 3)];
+  const p = el('div', 'prop-coraline ' + tipo);
+  p.innerHTML = { llave: SVG_LLAVE, piedra: SVG_PIEDRA, libelula: SVG_LIBELULA }[tipo];
+  p.style.top = (tipo === 'piedra' ? azar(15, 60) : azar(8, 45)) + 'vh';
+  if (tipo === 'piedra') p.style.left = azar(10, 80) + 'vw';
+  p.addEventListener('pointerdown', () => {
+    const svg = p.querySelector('svg');
+    svg.classList.remove('destello');
+    void svg.getBoundingClientRect();
+    svg.classList.add('destello');
+    if (navigator.vibrate) navigator.vibrate(20);
+  });
+  document.body.append(p);
+  tTimeout(() => p.remove(), tipo === 'llave' ? 10200 : tipo === 'libelula' ? 9700 : 6600);
+  tTimeout(eventoCoraline, azar(14000, 28000));
+}
+
 function aplicarTema(tema) {
   if (!COLOR_TEMA[tema]) tema = 'rosa';
   limpiarTema();
@@ -1189,13 +1304,9 @@ function aplicarTema(tema) {
   document.querySelectorAll('.tema-op').forEach((b) => b.classList.toggle('activa', b.dataset.tema === tema));
 
   if (tema === 'coraline') {
-    for (let i = 0; i < 14; i++) {
-      const b = el('span', 'boton-flota');
-      const t = azar(14, 30);
-      b.style.cssText = `left:${azar(2, 96)}%;width:${t}px;height:${t}px;animation-duration:${azar(18, 34)}s;animation-delay:${-azar(0, 30)}s;`;
-      fondoTema.append(b);
-    }
+    cieloCoraline();
     tTimeout(asomarMuneca, 4000);
+    tTimeout(eventoCoraline, 9000);
   } else if (tema === 'aurora') {
     fondoTema.append(el('div', 'aurora-banda b1'), el('div', 'aurora-banda b2'), el('div', 'aurora-banda b3'));
     crearEstrellas(45, true);
