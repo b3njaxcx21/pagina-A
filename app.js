@@ -7,6 +7,7 @@ const SUPABASE_KEY = 'sb_publishable_8DiVJX0CTBUtmPUnu3ihvw_aOgWsjpz';
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const BUCKET = 'recuerdos';
 const CODIGO_ACCESO = '30082026';
+const FECHA_INICIO = '2026-08-30'; // fecha fija del noviazgo (30/08/2026)
 const MAX_MB = 50;
 
 const $ = (id) => document.getElementById(id);
@@ -225,6 +226,7 @@ async function entrarApp() {
     return;
   }
   pareja = data;
+  pareja.fecha_inicio = FECHA_INICIO;
   await cargarPerfiles();
   llenarPerfil();
   mostrar('app');
@@ -690,8 +692,6 @@ function pintarContador() {
   const tiene = !!pareja.fecha_inicio;
   $('contador-sin-fecha').classList.toggle('oculto', tiene);
   $('contador-con-fecha').classList.toggle('oculto', !tiene);
-  $('form-fecha').classList.toggle('oculto', tiene);
-  $('btn-editar-fecha').classList.toggle('oculto', !tiene);
   $('proximas').classList.toggle('oculto', !tiene);
   if (!tiene) return;
 
@@ -767,26 +767,6 @@ function animarNumero(nodo, final) {
   }
   requestAnimationFrame(paso);
 }
-
-// Cambiar / poner fecha
-$('btn-editar-fecha').addEventListener('click', () => {
-  $('form-fecha').classList.toggle('oculto');
-  if (pareja.fecha_inicio) $('input-fecha').value = pareja.fecha_inicio;
-});
-
-$('form-fecha').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const fecha = $('input-fecha').value;
-  if (!fecha) return;
-  const { error } = await sb.rpc('actualizar_fecha_inicio', { p_fecha: fecha });
-  if (error) return alert(traducir(error));
-  pareja.fecha_inicio = fecha;
-  pintarContador();
-  $('contador').classList.remove('pop');
-  void $('contador').offsetWidth;
-  $('contador').classList.add('pop');
-  lluviaCorazones(25);
-});
 
 // ---------- Estadísticas ----------
 async function cargarStats() {
