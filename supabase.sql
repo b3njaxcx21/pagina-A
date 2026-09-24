@@ -206,3 +206,17 @@ drop table if exists public.prueba;
 -- ---------- FOTO DE PERFIL ----------
 alter table public.perfiles add column if not exists avatar_path text;
 grant update (nombre, avatar_path) on public.perfiles to authenticated;
+
+-- ---------- NUESTRA CANCIÓN (enlace de Spotify compartido) ----------
+alter table public.parejas add column if not exists cancion_url text;
+
+create or replace function public.actualizar_cancion(p_url text)
+returns void
+language sql security definer
+set search_path = public
+as $$
+  update parejas set cancion_url = p_url where id = (select pareja_id from perfiles where id = auth.uid());
+$$;
+
+revoke execute on function public.actualizar_cancion(text) from public, anon;
+grant execute on function public.actualizar_cancion(text) to authenticated;

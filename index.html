@@ -226,6 +226,12 @@
             <button type="button" class="tema-op" data-tema="aurora"><i class="tema-mini" style="background:linear-gradient(135deg,#3df2b0,#1b6f9c 60%,#03131a)"></i><b>Auroras boreales</b><small>Cielo del norte 🌌</small></button>
           </div>
         </div>
+        <div class="tarjeta">
+          <h2>Contador en notificaciones</h2>
+          <p class="sub" style="text-align:left;margin-top:0">Deja fijo en la barra de notificaciones de tu celular cuántos días llevan juntos.</p>
+          <button type="button" class="btn btn-sec" id="btn-noti-contador">Activar</button>
+          <p id="noti-msg" class="msg"></p>
+        </div>
         <button class="btn btn-sec" data-accion="salir">Cerrar sesión</button>
       </div>
     </main>
@@ -260,6 +266,22 @@
           </g>
         </svg>
       </div>
+    </div>
+
+    <!-- Nuestra canción (Spotify) -->
+    <button type="button" class="musica-btn" id="musica-btn" aria-label="Nuestra canción">🎵</button>
+    <div class="musica-panel" id="musica-panel">
+      <div class="musica-cab">
+        <b>Nuestra canción 🎵</b>
+        <button type="button" class="musica-cerrar" id="musica-cerrar" aria-label="Cerrar">✕</button>
+      </div>
+      <div id="musica-player"></div>
+      <a id="musica-abrir" class="musica-abrir oculto" target="_blank" rel="noopener">Abrir en la app de Spotify ↗</a>
+      <form id="musica-form" class="fila">
+        <input id="musica-url" type="url" placeholder="Enlace de Spotify (canción o playlist)">
+        <button class="btn btn-chico" type="submit">Guardar</button>
+      </form>
+      <p id="musica-msg" class="msg"></p>
     </div>
 
     <nav class="nav">

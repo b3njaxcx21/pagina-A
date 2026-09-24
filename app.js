@@ -248,6 +248,7 @@ async function entrarApp() {
   cargarStats();
   mostrarRecuerdoAzar();
   suscribir();
+  alEntrarApp();
 }
 
 async function cargarPerfiles() {
@@ -1320,3 +1321,143 @@ document.querySelectorAll('.tema-op').forEach((b) => {
 let temaGuardado = 'rosa';
 try { temaGuardado = localStorage.getItem('tema') || 'rosa'; } catch (_) { /* sin almacenamiento */ }
 aplicarTema(temaGuardado);
+
+// =============================================
+//  PARTÍCULAS AL TOCAR LA PANTALLA
+// =============================================
+const PARTICULAS = {
+  rosa: { arriba: ['💗', '💕', '❤️', '✨'], abajo: ['🌸', '🌹'] },
+  coraline: { arriba: ['⭐', '✨', '🌙'], abajo: ['🟡'] },
+  aurora: { arriba: ['✨', '💚', '💜', '⭐'], abajo: ['❄️'] },
+};
+let particulasVivas = 0;
+
+document.addEventListener('pointerdown', (e) => {
+  if (e.target.closest('input, textarea, iframe')) return;
+  const set = PARTICULAS[document.documentElement.dataset.tema] || PARTICULAS.rosa;
+  for (let i = 0; i < 6 && particulasVivas < 60; i++) {
+    const cae = Math.random() < 0.3;
+    const lista = cae ? set.abajo : set.arriba;
+    const p = el('span', 'particula', lista[Math.floor(Math.random() * lista.length)]);
+    p.style.left = e.clientX - 9 + 'px';
+    p.style.top = e.clientY - 9 + 'px';
+    p.style.fontSize = azar(14, 26) + 'px';
+    p.style.setProperty('--dx', azar(-70, 70) + 'px');
+    p.style.setProperty('--dy', (cae ? azar(50, 120) : -azar(60, 150)) + 'px');
+    p.style.setProperty('--rot', azar(-60, 60) + 'deg');
+    p.style.animationDuration = azar(1.3, 2.2) + 's';
+    document.body.append(p);
+    particulasVivas++;
+    setTimeout(() => { p.remove(); particulasVivas--; }, 2300);
+  }
+}, { passive: true });
+
+// =============================================
+//  NUESTRA CANCIÓN (Spotify)
+// =============================================
+const SPOTIFY_RE = /open\.spotify\.com\/(?:intl-[a-z]+\/)?(track|playlist|album|episode|show)\/([A-Za-z0-9]{10,30})/;
+let musicaCargada = false;
+
+function urlCancion() {
+  if (pareja && pareja.cancion_url) return pareja.cancion_url;
+  try { return (pareja && localStorage.getItem('cancion_' + pareja.id)) || ''; } catch (_) { return ''; }
+}
+
+function pintarMusica(url) {
+  const cont = $('musica-player');
+  const abrir = $('musica-abrir');
+  const m = url && SPOTIFY_RE.exec(url);
+  if (!m) {
+    cont.replaceChildren(el('p', 'sub', 'Aún no hay canción. Pega abajo el enlace de Spotify de "Nuestra canción".'));
+    abrir.classList.add('oculto');
+    return;
+  }
+  const [, tipo, id] = m;
+  const f = document.createElement('iframe');
+  f.src = `https://open.spotify.com/embed/${tipo}/${id}?utm_source=generator`;
+  f.width = '100%';
+  f.height = tipo === 'track' || tipo === 'episode' ? '152' : '352';
+  f.allow = 'autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture';
+  f.loading = 'lazy';
+  f.title = 'Nuestra canción';
+  f.style.border = '0';
+  f.style.borderRadius = '12px';
+  cont.replaceChildren(f);
+  abrir.href = `https://open.spotify.com/${tipo}/${id}`;
+  abrir.classList.remove('oculto');
+}
+
+$('musica-btn').addEventListener('click', () => {
+  const panel = $('musica-panel');
+  panel.classList.toggle('abierta');
+  if (panel.classList.contains('abierta') && !musicaCargada) {
+    musicaCargada = true;
+    pintarMusica(urlCancion());
+  }
+});
+$('musica-cerrar').addEventListener('click', () => $('musica-panel').classList.remove('abierta'));
+
+$('musica-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const msg = $('musica-msg');
+  const url = $('musica-url').value.trim();
+  if (!SPOTIFY_RE.test(url)) {
+    msg.textContent = 'Ese enlace no parece de Spotify.';
+    return;
+  }
+  const { error } = await sb.rpc('actualizar_cancion', { p_url: url });
+  if (error) {
+    try { localStorage.setItem('cancion_' + pareja.id, url); } catch (_) { /* sin almacenamiento */ }
+    msg.textContent = 'Guardada solo en este teléfono (falta correr el SQL para compartirla).';
+  } else {
+    pareja.cancion_url = url;
+    msg.textContent = '✓ Guardada para los dos';
+  }
+  $('musica-url').value = '';
+  musicaCargada = true;
+  pintarMusica(url);
+});
+
+// =============================================
+//  CONTADOR FIJO EN LAS NOTIFICACIONES
+// =============================================
+async function mostrarNotiContador() {
+  if (!('serviceWorker' in navigator) || !('Notification' in window) || Notification.permission !== 'granted') return false;
+  const reg = await navigator.serviceWorker.ready;
+  const d = Math.max(0, diasEntre(fechaLocal(FECHA_INICIO), soloDia(new Date())));
+  await reg.showNotification('Nosotros 💞', {
+    body: `Llevan ${fmt(d)} ${d === 1 ? 'día' : 'días'} juntos`,
+    tag: 'contador',
+    icon: 'icon-192.png',
+    badge: 'icon-192.png',
+    requireInteraction: true,
+    silent: true,
+  });
+  return true;
+}
+
+$('btn-noti-contador').addEventListener('click', async () => {
+  const msg = $('noti-msg');
+  if (!('Notification' in window) || !('serviceWorker' in navigator)) {
+    msg.textContent = 'Este navegador no permite notificaciones.';
+    return;
+  }
+  const permiso = await Notification.requestPermission();
+  if (permiso !== 'granted') {
+    msg.textContent = 'No diste permiso. Actívalo en los ajustes del navegador o de la app.';
+    return;
+  }
+  try { localStorage.setItem('noti_contador', '1'); } catch (_) { /* sin almacenamiento */ }
+  await mostrarNotiContador();
+  msg.textContent = '✓ Listo. Se actualiza cada vez que abres la app.';
+  $('btn-noti-contador').textContent = 'Actualizar ahora';
+});
+
+function alEntrarApp() {
+  try { if (localStorage.getItem('noti_contador') === '1') mostrarNotiContador(); } catch (_) { /* sin almacenamiento */ }
+  // Atajo del ícono de la app: "Pienso en ti"
+  if (new URLSearchParams(location.search).get('accion') === 'corazon') {
+    history.replaceState(null, '', location.pathname);
+    setTimeout(() => $('btn-corazon').click(), 700);
+  }
+}
