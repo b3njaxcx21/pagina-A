@@ -767,6 +767,7 @@ function pintarInicio() {
   $('frase-dia').textContent = `“${FRASES[idx]}”`;
 
   pintarContador();
+  pintarCumples();
   if (reloj) clearInterval(reloj);
   reloj = setInterval(tickVivo, 1000);
 }
@@ -830,7 +831,69 @@ function pintarContador() {
   }
 }
 
+// ---------- Cumpleaños ----------
+const CUMPLES = [
+  { nombre: 'Benjamin', fecha: '2004-08-21', color: '#2fbf71', corazon: '💚' },
+  { nombre: 'Alondra', fecha: '2005-04-12', color: '#9b6bd6', corazon: '💜' },
+];
+let cumplesDia = null;
+let cumplesFiesta = false;
+
+function pintarCumples() {
+  const hoy = soloDia(new Date());
+  cumplesDia = hoy.toDateString();
+  const caja = $('cumples');
+  const partes = [el('h2', '', '🎂 Cumpleaños')];
+  let hayHoy = null;
+
+  CUMPLES.forEach((c) => {
+    const nac = fechaLocal(c.fecha);
+    let prox = new Date(hoy.getFullYear(), nac.getMonth(), nac.getDate());
+    if (prox < hoy) prox = new Date(hoy.getFullYear() + 1, nac.getMonth(), nac.getDate());
+    const anterior = new Date(prox.getFullYear() - 1, nac.getMonth(), nac.getDate());
+    const dias = diasEntre(hoy, prox);
+    const edad = prox.getFullYear() - nac.getFullYear();
+    const esHoy = dias === 0;
+    if (esHoy) hayHoy = c;
+
+    const fila = el('div', 'cumple' + (esHoy ? ' hoy' : ''));
+    fila.style.setProperty('--c', c.color);
+    fila.append(el('div', 'cumple-ico', esHoy ? '🎂' : c.corazon));
+
+    const cuerpo = el('div', 'cumple-cuerpo');
+    cuerpo.append(
+      el('div', 'cumple-nombre', c.nombre),
+      el('div', 'cumple-fecha', nac.toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' })),
+    );
+    if (esHoy) {
+      cuerpo.append(el('div', 'cumple-hoy', `¡Hoy es un día muy especial! 🎉 Feliz cumpleaños, ${c.nombre}. Hoy cumple ${edad} años 💖`));
+    } else {
+      const d = el('div', 'cumple-dias', fmt(dias));
+      d.append(el('small', '', dias === 1 ? ' día' : ' días'));
+      cuerpo.append(d, el('div', 'cumple-fecha', `para que ${c.nombre} cumpla ${edad} años 🎈`));
+      const barra = el('div', 'barra-prog');
+      const relleno = document.createElement('i');
+      barra.append(relleno);
+      cuerpo.append(barra);
+      const prog = Math.min(100, Math.max(0, (diasEntre(anterior, hoy) / diasEntre(anterior, prox)) * 100));
+      setTimeout(() => { relleno.style.width = prog + '%'; relleno.style.background = c.color; }, 300);
+      cuerpo.append(el('div', 'cumple-msg', dias <= 7
+        ? '¡Ya casi! Se acerca un día muy especial 🎁'
+        : 'Un día muy especial: el día en que el mundo ganó a alguien increíble 💫'));
+    }
+    fila.append(cuerpo);
+    partes.push(fila);
+  });
+
+  caja.replaceChildren(...partes);
+  if (hayHoy && !cumplesFiesta) {
+    cumplesFiesta = true;
+    setTimeout(() => lluviaCorazones(45, [hayHoy.corazon, '🎉', '🎂', '✨']), 700);
+  }
+}
+
 function tickVivo() {
+  if (new Date().toDateString() !== cumplesDia && $('cumples')) pintarCumples();
   if (!pareja || !pareja.fecha_inicio) return;
   const ms = Date.now() - fechaLocal(pareja.fecha_inicio).getTime();
   if (ms < 0) { $('c-vivo').textContent = ''; return; }
@@ -1461,3 +1524,44 @@ function alEntrarApp() {
     setTimeout(() => $('btn-corazon').click(), 700);
   }
 }
+
+// =============================================
+//  APARECER SUAVEMENTE AL BAJAR POR LA PÁGINA
+// =============================================
+const REVELAR = [
+  '#vista-inicio > :not(.corazones-fondo):not(.grid-2):not(.stats)',
+  '#vista-inicio .grid-2 > *',
+  '#vista-inicio .stats > *',
+  '#vista-muro > :not(#lista-publicaciones)',
+  '#vista-muro .post',
+  '#vista-perfil > *',
+].join(',');
+
+const observador = 'IntersectionObserver' in window
+  ? new IntersectionObserver((entradas) => {
+    let n = 0;
+    entradas.forEach((en) => {
+      if (!en.isIntersecting) return;
+      en.target.style.transitionDelay = n++ * 90 + 'ms';
+      en.target.classList.add('visible');
+      observador.unobserve(en.target);
+    });
+  }, { threshold: 0.08, rootMargin: '0px 0px -30px 0px' })
+  : null;
+
+function prepararRevelado() {
+  document.querySelectorAll(REVELAR).forEach((nodo) => {
+    if (nodo.dataset.rev) return;
+    nodo.dataset.rev = '1';
+    if (!observador) return;
+    nodo.classList.add('revela');
+    observador.observe(nodo);
+  });
+}
+
+let revTimer = null;
+new MutationObserver(() => {
+  clearTimeout(revTimer);
+  revTimer = setTimeout(prepararRevelado, 40);
+}).observe(document.querySelector('main'), { childList: true, subtree: true });
+prepararRevelado();

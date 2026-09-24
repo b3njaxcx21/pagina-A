@@ -492,3 +492,30 @@ html[data-tema="aurora"] .avatar.otro { background: #9a7bff; }
 .musica-abrir { display: block; text-align: center; color: var(--rosa); font-size: 14px; font-weight: 600; margin: 10px 0; text-decoration: none; }
 .musica-panel .fila input { margin-bottom: 0; }
 .musica-panel .msg { min-height: 0; margin-top: 8px; }
+
+/* ---------- Cumpleaños ---------- */
+.cumples { display: flex; flex-direction: column; gap: 18px; }
+.cumples h2 { margin-bottom: 0; }
+.cumple { display: flex; gap: 12px; align-items: flex-start; }
+.cumple-ico { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; font-size: 22px; background: var(--c); flex-shrink: 0; box-shadow: 0 4px 12px rgba(0,0,0,.15); }
+.cumple-cuerpo { flex: 1; min-width: 0; }
+.cumple-nombre { font-weight: 700; }
+.cumple-fecha { font-size: 12px; color: var(--gris); }
+.cumple-dias { font-size: 32px; font-weight: 800; line-height: 1.1; margin-top: 4px; color: var(--c); }
+.cumple-dias small { font-size: 14px; font-weight: 600; color: var(--gris); }
+.cumple-msg { font-size: 13px; color: var(--gris); margin-top: 6px; line-height: 1.4; }
+.cumple .barra-prog { margin-top: 8px; }
+.cumple .barra-prog i { background: var(--c); }
+.cumple.hoy { padding: 12px; border-radius: 14px; background: color-mix(in srgb, var(--c) 14%, transparent); border: 2px solid var(--c); animation: cumple-late 1.6s ease-in-out infinite; }
+.cumple-hoy { margin-top: 6px; font-weight: 700; line-height: 1.4; }
+@keyframes cumple-late { 0%,100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--c) 40%, transparent); } 50% { box-shadow: 0 0 0 8px transparent; } }
+
+/* ---------- Aparecer al bajar ---------- */
+.revela { opacity: 0; translate: 0 26px; transition: opacity .7s ease, translate .7s cubic-bezier(.2,.7,.2,1); }
+.revela.visible { opacity: 1; translate: 0 0; }
+#vista-inicio .grid-2 > .revela:first-child { translate: -26px 0; }
+#vista-inicio .grid-2 > .revela:last-child { translate: 26px 0; }
+#vista-inicio .grid-2 > .revela.visible { translate: 0 0; }
+#vista-inicio .stats > .revela { translate: 0 20px; }
+#vista-inicio .stats > .revela.visible { translate: 0 0; }
+@media (prefers-reduced-motion: reduce) { .revela { opacity: 1; translate: 0 0; transition: none; } }
