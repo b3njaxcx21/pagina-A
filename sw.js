@@ -1,6 +1,6 @@
 // Service worker: permite instalar la app y abrirla aunque falle la red.
 // Siempre intenta traer la versión más nueva; si no hay internet usa la guardada.
-const CACHE = 'nosotros-v17';
+const CACHE = 'nosotros-v18';
 const ARCHIVOS = ['./', './index.html', './styles.css', './app.js', './manifest.json', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', (e) => {
@@ -29,20 +29,4 @@ self.addEventListener('fetch', (e) => {
       })
       .catch(() => caches.match(e.request))
   );
-});
-
-// Al tocar el contador de la barra de notificaciones: abre la app y lo deja fijo otra vez
-self.addEventListener('notificationclick', (e) => {
-  const n = e.notification;
-  e.notification.close();
-  e.waitUntil((async () => {
-    const lista = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
-    if (lista.length) await lista[0].focus();
-    else await self.clients.openWindow('./');
-    if (n.tag === 'contador') {
-      await self.registration.showNotification(n.title, {
-        body: n.body, tag: n.tag, icon: n.icon, badge: n.badge, requireInteraction: true, silent: true,
-      });
-    }
-  })());
 });

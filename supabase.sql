@@ -212,10 +212,16 @@ alter table public.parejas add column if not exists cancion_url text;
 
 create or replace function public.actualizar_cancion(p_url text)
 returns void
-language sql security definer
+language plpgsql security definer
 set search_path = public
 as $$
+begin
+  -- Solo la cuenta de Benjamin puede cambiar la canción
+  if (select email from auth.users where id = auth.uid()) is distinct from 'benjamin@nosotros.app' then
+    raise exception 'Solo Benjamin puede cambiar la canción';
+  end if;
   update parejas set cancion_url = p_url where id = (select pareja_id from perfiles where id = auth.uid());
+end;
 $$;
 
 revoke execute on function public.actualizar_cancion(text) from public, anon;

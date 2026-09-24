@@ -1422,8 +1422,7 @@ const SPOTIFY_RE = /open\.spotify\.com\/(?:intl-[a-z]+\/)?(track|playlist|album|
 let musicaCargada = false;
 
 function urlCancion() {
-  if (pareja && pareja.cancion_url) return pareja.cancion_url;
-  try { return (pareja && localStorage.getItem('cancion_' + pareja.id)) || ''; } catch (_) { return ''; }
+  return (pareja && pareja.cancion_url) || '';
 }
 
 function pintarMusica(url) {
@@ -1431,7 +1430,9 @@ function pintarMusica(url) {
   const abrir = $('musica-abrir');
   const m = url && SPOTIFY_RE.exec(url);
   if (!m) {
-    cont.replaceChildren(el('p', 'sub', 'Aún no hay canción. Pega abajo el enlace de Spotify de "Nuestra canción".'));
+    cont.replaceChildren(el('p', 'sub', esAdmin
+      ? 'Aún no hay canción. Pega abajo el enlace de Spotify de "Nuestra canción".'
+      : 'Aún no hay canción. Benjamin la elegirá pronto 🎶'));
     abrir.classList.add('oculto');
     return;
   }
@@ -1450,18 +1451,27 @@ function pintarMusica(url) {
   abrir.classList.remove('oculto');
 }
 
-$('musica-btn').addEventListener('click', () => {
+$('musica-btn').addEventListener('click', async () => {
   const panel = $('musica-panel');
   panel.classList.toggle('abierta');
-  if (panel.classList.contains('abierta') && !musicaCargada) {
+  if (!panel.classList.contains('abierta')) return;
+  // Solo Benjamin puede cambiar la canción
+  $('musica-form').classList.toggle('oculto', !esAdmin);
+  $('musica-msg').textContent = '';
+  // Trae la canción más reciente que puso Benjamin
+  const { data } = await sb.from('parejas').select('cancion_url').eq('id', pareja.id).single();
+  const nueva = (data && data.cancion_url) || '';
+  if (!musicaCargada || nueva !== (pareja.cancion_url || '')) {
+    pareja.cancion_url = nueva;
     musicaCargada = true;
-    pintarMusica(urlCancion());
+    pintarMusica(nueva);
   }
 });
 $('musica-cerrar').addEventListener('click', () => $('musica-panel').classList.remove('abierta'));
 
 $('musica-form').addEventListener('submit', async (e) => {
   e.preventDefault();
+  if (!esAdmin) return;
   const msg = $('musica-msg');
   const url = $('musica-url').value.trim();
   if (!SPOTIFY_RE.test(url)) {
@@ -1470,55 +1480,18 @@ $('musica-form').addEventListener('submit', async (e) => {
   }
   const { error } = await sb.rpc('actualizar_cancion', { p_url: url });
   if (error) {
-    try { localStorage.setItem('cancion_' + pareja.id, url); } catch (_) { /* sin almacenamiento */ }
-    msg.textContent = 'Guardada solo en este teléfono (falta correr el SQL para compartirla).';
-  } else {
-    pareja.cancion_url = url;
-    msg.textContent = '✓ Guardada para los dos';
+    msg.textContent = 'No se pudo guardar: ' + traducir(error);
+    return;
   }
+  pareja.cancion_url = url;
+  msg.textContent = '✓ Guardada. Alondra ya puede reproducirla';
   $('musica-url').value = '';
   musicaCargada = true;
   pintarMusica(url);
 });
 
-// =============================================
-//  CONTADOR FIJO EN LAS NOTIFICACIONES
-// =============================================
-async function mostrarNotiContador() {
-  if (!('serviceWorker' in navigator) || !('Notification' in window) || Notification.permission !== 'granted') return false;
-  const reg = await navigator.serviceWorker.ready;
-  const d = Math.max(0, diasEntre(fechaLocal(FECHA_INICIO), soloDia(new Date())));
-  await reg.showNotification('Nosotros 💞', {
-    body: `Llevan ${fmt(d)} ${d === 1 ? 'día' : 'días'} juntos`,
-    tag: 'contador',
-    icon: 'icon-192.png',
-    badge: 'icon-192.png',
-    requireInteraction: true,
-    silent: true,
-  });
-  return true;
-}
-
-$('btn-noti-contador').addEventListener('click', async () => {
-  const msg = $('noti-msg');
-  if (!('Notification' in window) || !('serviceWorker' in navigator)) {
-    msg.textContent = 'Este navegador no permite notificaciones.';
-    return;
-  }
-  const permiso = await Notification.requestPermission();
-  if (permiso !== 'granted') {
-    msg.textContent = 'No diste permiso. Actívalo en los ajustes del navegador o de la app.';
-    return;
-  }
-  try { localStorage.setItem('noti_contador', '1'); } catch (_) { /* sin almacenamiento */ }
-  await mostrarNotiContador();
-  msg.textContent = '✓ Listo. Se actualiza cada vez que abres la app.';
-  $('btn-noti-contador').textContent = 'Actualizar ahora';
-});
-
+// Atajo del ícono de la app: "Pienso en ti"
 function alEntrarApp() {
-  try { if (localStorage.getItem('noti_contador') === '1') mostrarNotiContador(); } catch (_) { /* sin almacenamiento */ }
-  // Atajo del ícono de la app: "Pienso en ti"
   if (new URLSearchParams(location.search).get('accion') === 'corazon') {
     history.replaceState(null, '', location.pathname);
     setTimeout(() => $('btn-corazon').click(), 700);
