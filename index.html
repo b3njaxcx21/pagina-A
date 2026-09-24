@@ -2,14 +2,132 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Mi App</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Nosotros</title>
+  <meta name="theme-color" content="#e8537a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Nosotros">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icon-192.png">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <link rel="stylesheet" href="styles.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
-  <h1>Mi App</h1>
-  <p id="estado">Conectando...</p>
+
+  <!-- CARGANDO -->
+  <section id="pantalla-cargando" class="pantalla activa centro">
+    <div class="logo">💞</div>
+  </section>
+
+  <!-- LOGIN / REGISTRO -->
+  <section id="pantalla-auth" class="pantalla centro">
+    <div class="tarjeta">
+      <div class="logo">💞</div>
+      <h1>Nosotros</h1>
+      <p class="sub">Su espacio para guardar recuerdos</p>
+
+      <div class="pestanas">
+        <button class="pestana activa" data-modo="entrar">Entrar</button>
+        <button class="pestana" data-modo="registro">Crear cuenta</button>
+      </div>
+
+      <form id="form-auth">
+        <input id="auth-nombre" type="text" placeholder="Tu nombre" autocomplete="name" class="oculto">
+        <input id="auth-email" type="email" placeholder="Correo" autocomplete="email" required>
+        <input id="auth-pass" type="password" placeholder="Contraseña (mínimo 6)" autocomplete="current-password" minlength="6" required>
+        <button type="submit" class="btn" id="btn-auth">Entrar</button>
+      </form>
+      <p id="auth-msg" class="msg"></p>
+    </div>
+  </section>
+
+  <!-- VINCULAR PAREJA -->
+  <section id="pantalla-vincular" class="pantalla centro">
+    <div class="tarjeta">
+      <div class="logo">🔗</div>
+      <h2>Vincula a tu pareja</h2>
+      <p class="sub">Uno crea el código y el otro lo escribe.</p>
+
+      <button id="btn-crear-codigo" class="btn">Crear código</button>
+      <div id="codigo-creado" class="codigo oculto"></div>
+
+      <div class="separador"><span>o</span></div>
+
+      <form id="form-unirse">
+        <input id="input-codigo" type="text" placeholder="Escribe el código" maxlength="6" autocapitalize="characters" required>
+        <button type="submit" class="btn btn-sec">Unirme</button>
+      </form>
+      <p id="vincular-msg" class="msg"></p>
+      <button class="link" data-accion="salir">Cerrar sesión</button>
+    </div>
+  </section>
+
+  <!-- APP PRINCIPAL -->
+  <section id="pantalla-app" class="pantalla">
+    <header class="barra">
+      <h1>💞 <span id="titulo-pareja">Nosotros</span></h1>
+    </header>
+
+    <main>
+      <!-- MURO -->
+      <div id="vista-muro" class="vista activa">
+        <form id="form-publicar" class="tarjeta publicar">
+          <textarea id="pub-texto" placeholder="Escribe un recuerdo..." rows="2"></textarea>
+          <div id="pub-preview" class="preview oculto"></div>
+          <div class="fila">
+            <label class="btn-icono" title="Foto o video">
+              📷
+              <input id="pub-archivo" type="file" accept="image/*,video/*" hidden>
+            </label>
+            <span id="pub-estado" class="estado"></span>
+            <button type="submit" class="btn btn-chico" id="btn-publicar">Publicar</button>
+          </div>
+        </form>
+        <div id="lista-publicaciones"></div>
+      </div>
+
+      <!-- CHAT -->
+      <div id="vista-chat" class="vista">
+        <div id="lista-mensajes"></div>
+        <form id="form-chat" class="chat-input">
+          <input id="chat-texto" type="text" placeholder="Escribe un mensaje..." autocomplete="off" maxlength="2000">
+          <button type="submit" class="btn btn-chico">➤</button>
+        </form>
+      </div>
+
+      <!-- PERFIL -->
+      <div id="vista-perfil" class="vista">
+        <div class="tarjeta">
+          <h2>Tu perfil</h2>
+          <label>Tu nombre</label>
+          <div class="fila">
+            <input id="perfil-nombre" type="text">
+            <button id="btn-guardar-nombre" class="btn btn-chico">Guardar</button>
+          </div>
+          <p class="sub" id="perfil-email"></p>
+        </div>
+        <div class="tarjeta">
+          <h2>Tu pareja</h2>
+          <p id="perfil-pareja"></p>
+          <p class="sub">Código de vinculación: <b id="perfil-codigo"></b></p>
+        </div>
+        <button class="btn btn-sec" data-accion="salir">Cerrar sesión</button>
+      </div>
+    </main>
+
+    <nav class="nav">
+      <button class="nav-btn activa" data-vista="muro"><span>🏠</span>Muro</button>
+      <button class="nav-btn" data-vista="chat"><span>💬</span>Chat<i id="badge-chat" class="badge oculto"></i></button>
+      <button class="nav-btn" data-vista="perfil"><span>👤</span>Perfil</button>
+    </nav>
+  </section>
+
+  <!-- VISOR DE FOTOS -->
+  <div id="visor" class="visor oculto"></div>
+
   <script type="module" src="app.js"></script>
 </body>
 </html>
-
