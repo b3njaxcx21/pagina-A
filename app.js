@@ -290,9 +290,9 @@ async function cargarPerfiles() {
 
 // ---------- Estado de ánimo (con caritas de gatitos) ----------
 const ANIMOS = [
-  { k: 'feliz1', img: 'animos/1.jpg', emoji: '😊', nombre: 'Feliz' },
+  { k: 'enamorado', img: 'animos/1.jpg', emoji: '🥰', nombre: 'Enamorado' },
   { k: 'emocionado', img: 'animos/2.jpg', emoji: '🤩', nombre: 'Emocionado' },
-  { k: 'feliz2', img: 'animos/3.jpg', emoji: '😄', nombre: 'Feliz' },
+  { k: 'feliz', img: 'animos/3.jpg', emoji: '😄', nombre: 'Feliz' },
   { k: 'cansado', img: 'animos/4.jpg', emoji: '😴', nombre: 'Cansado' },
   { k: 'sensible', img: 'animos/5.jpg', emoji: '🥺', nombre: 'Sensible' },
   { k: 'triste', img: 'animos/6.jpg', emoji: '😢', nombre: 'Triste' },
