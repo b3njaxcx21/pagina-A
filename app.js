@@ -288,24 +288,36 @@ async function cargarPerfiles() {
   $('btn-corazon').querySelector('span').textContent = (colorDe(usuario.id) || {}).corazon || '❤️';
 }
 
-// ---------- Estado de ánimo ----------
+// ---------- Estado de ánimo (con caritas de gatitos) ----------
 const ANIMOS = [
-  ['🥰', 'Con amor'], ['🤩', 'Emoción'], ['😊', 'Feliz'], ['😴', 'Cansancio'],
-  ['🥺', 'Sensible'], ['😢', 'Triste'], ['😡', 'Molestia'], ['🤒', 'Malestar'],
+  { k: 'feliz1', img: 'animos/1.jpg', emoji: '😊', nombre: 'Feliz' },
+  { k: 'emocionado', img: 'animos/2.jpg', emoji: '🤩', nombre: 'Emocionado' },
+  { k: 'feliz2', img: 'animos/3.jpg', emoji: '😄', nombre: 'Feliz' },
+  { k: 'cansado', img: 'animos/4.jpg', emoji: '😴', nombre: 'Cansado' },
+  { k: 'sensible', img: 'animos/5.jpg', emoji: '🥺', nombre: 'Sensible' },
+  { k: 'triste', img: 'animos/6.jpg', emoji: '😢', nombre: 'Triste' },
+  { k: 'molesto', img: 'animos/7.jpg', emoji: '😡', nombre: 'Molesto' },
+  { k: 'enfermo', img: 'animos/8.jpg', emoji: '🤒', nombre: 'Enfermo' },
 ];
+const animoDe = (k) => ANIMOS.find((a) => a.k === k) || null;
 
-ANIMOS.forEach(([emoji, nombre]) => {
-  const b = el('button', 'animo-op', emoji);
+ANIMOS.forEach((a) => {
+  const b = el('button', 'animo-op');
   b.type = 'button';
-  b.title = nombre;
-  b.dataset.animo = emoji;
-  b.addEventListener('click', () => ponerAnimo(emoji));
+  b.title = a.nombre;
+  b.dataset.animo = a.k;
+  const im = document.createElement('img');
+  im.src = a.img;
+  im.alt = a.nombre;
+  im.loading = 'lazy';
+  b.append(im, el('span', '', a.nombre));
+  b.addEventListener('click', () => ponerAnimo(a.k));
   $('animo-opciones').append(b);
 });
 
 function animoVigente(id) {
   const a = animos[id];
-  if (!a || !a.animo || !a.animo_en) return null;
+  if (!a || !animoDe(a.animo) || !a.animo_en) return null;
   return Date.now() - new Date(a.animo_en).getTime() < 24 * 3600 * 1000 ? a : null;
 }
 
@@ -323,26 +335,35 @@ function pintarAnimos() {
   const suyo = otro ? animoVigente(otro) : null;
   const poner = (id, a) => {
     const b = $(id);
-    b.textContent = a ? a.animo : '';
     b.classList.toggle('oculto', !a);
+    if (!a) { b.replaceChildren(); return; }
+    const im = document.createElement('img');
+    im.src = animoDe(a.animo).img;
+    im.alt = animoDe(a.animo).nombre;
+    b.replaceChildren(im);
   };
   poner('hero-animo-yo', mio);
   poner('hero-animo-otro', suyo);
   document.querySelectorAll('.animo-op').forEach((b) => b.classList.toggle('activa', !!mio && b.dataset.animo === mio.animo));
-  $('animo-otro').textContent = !otro
-    ? ''
-    : suyo
-      ? `${perfiles[otro]} se siente ${suyo.animo} · ${hace(suyo.animo_en)}`
-      : `${perfiles[otro]} aún no dice cómo se siente hoy`;
+  const linea = $('animo-otro');
+  if (!otro) { linea.replaceChildren(); return; }
+  if (suyo) {
+    const im = document.createElement('img');
+    im.src = animoDe(suyo.animo).img;
+    im.alt = '';
+    linea.replaceChildren(im, document.createTextNode(` ${perfiles[otro]} se siente ${animoDe(suyo.animo).nombre.toLowerCase()} · ${hace(suyo.animo_en)}`));
+  } else {
+    linea.textContent = `${perfiles[otro]} aún no dice cómo se siente hoy`;
+  }
 }
 
-async function ponerAnimo(emoji) {
+async function ponerAnimo(k) {
   const ahora = new Date().toISOString();
   const antes = animos[usuario.id];
-  animos[usuario.id] = { animo: emoji, animo_en: ahora };
+  animos[usuario.id] = { animo: k, animo_en: ahora };
   pintarAnimos();
-  lluviaCorazones(8, [emoji]);
-  const { error } = await sb.from('perfiles').update({ animo: emoji, animo_en: ahora }).eq('id', usuario.id);
+  lluviaCorazones(8, [animoDe(k).emoji]);
+  const { error } = await sb.from('perfiles').update({ animo: k, animo_en: ahora }).eq('id', usuario.id);
   if (error) {
     animos[usuario.id] = antes;
     pintarAnimos();
@@ -355,8 +376,8 @@ function perfilRemoto(f) {
   const antes = animos[f.id];
   animos[f.id] = { animo: f.animo, animo_en: f.animo_en };
   pintarAnimos();
-  if (f.animo && (!antes || antes.animo_en !== f.animo_en)) {
-    aviso(`${nombreDe(f.id)} se siente ${f.animo}`);
+  if (animoDe(f.animo) && (!antes || antes.animo_en !== f.animo_en)) {
+    aviso(`${nombreDe(f.id)} se siente ${animoDe(f.animo).nombre.toLowerCase()} ${animoDe(f.animo).emoji}`);
     mavisReaccion();
   }
 }
@@ -693,21 +714,8 @@ async function recibirMensaje(m) {
 // =============================================
 //  PLANES Y METAS JUNTOS
 // =============================================
-const CATEGORIAS = { viaje: '✈️', comida: '🍽️', plan: '🎬', sueno: '🌟', casa: '🏠', otro: '💫' };
 let planes = [];
-let catSel = 'plan';
 let planNuevo = null;
-
-Object.entries(CATEGORIAS).forEach(([clave, emoji]) => {
-  const chip = el('button', 'chip' + (clave === catSel ? ' activa' : ''), emoji);
-  chip.type = 'button';
-  chip.dataset.cat = clave;
-  chip.addEventListener('click', () => {
-    catSel = clave;
-    document.querySelectorAll('#plan-cats .chip').forEach((c) => c.classList.toggle('activa', c === chip));
-  });
-  $('plan-cats').append(chip);
-});
 
 async function cargarPlanes() {
   const { data, error } = await sb.from('planes').select('*').eq('pareja_id', pareja.id).order('creado_en', { ascending: false });
@@ -736,9 +744,6 @@ document.querySelectorAll('#planes-tabs .pestana').forEach((b) => {
 
 function pintarPlanes() {
   const pendientes = planes.filter((x) => !x.hecho).sort((a, b) => {
-    if (a.para && b.para) return a.para.localeCompare(b.para);
-    if (a.para) return -1;
-    if (b.para) return 1;
     return new Date(b.creado_en) - new Date(a.creado_en);
   });
   const hechos = planes.filter((x) => x.hecho).sort((a, b) => new Date(b.hecho_en || 0) - new Date(a.hecho_en || 0));
@@ -754,11 +759,11 @@ function pintarPlanes() {
   if (!lista.length) {
     const v = el('div', 'vacio');
     if (planesTab === 'cumplidos') {
-      v.append(el('div', '', '✅'), el('p', '', 'Aquí aparecerán los planes que vayan cumpliendo.'));
+      v.append(el('p', '', 'Aquí aparecerán los planes que vayan cumpliendo.'));
     } else if (total) {
-      v.append(el('div', '', '🎉'), el('p', '', '¡No queda nada pendiente! Agreguen nuevos planes a futuro.'));
+      v.append(el('p', '', '¡No queda nada pendiente! Agreguen nuevos planes a futuro.'));
     } else {
-      v.append(el('div', '', '🗺️'), el('p', '', 'Viajes, comidas, sueños… lo que quieran hacer juntos.'));
+      v.append(el('p', '', 'Viajes, comidas, sueños… lo que quieran hacer juntos.'));
     }
     partes.push(v);
   }
@@ -779,7 +784,7 @@ function crearPlan(p) {
 
   const cuerpo = el('div', 'plan-cuerpo');
   cuerpo.append(
-    el('div', 'plan-texto', `${CATEGORIAS[p.categoria] || '💫'} ${p.texto}`),
+    el('div', 'plan-texto', p.texto),
     el('div', 'plan-meta', `${nombreDe(p.autor_id)} · ${fechaCorta(p.creado_en)}` + (p.hecho && p.hecho_en ? ` · ✓ ${fechaCorta(p.hecho_en)}` : '')),
   );
 
@@ -787,13 +792,6 @@ function crearPlan(p) {
   borrar.type = 'button';
   borrar.title = 'Borrar';
   borrar.addEventListener('click', () => borrarPlan(p));
-  if (p.para) {
-    const f = fechaLocal(p.para);
-    const d = diasEntre(soloDia(new Date()), f);
-    let txt = '📅 ' + f.toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' });
-    if (!p.hecho) txt += d > 0 ? ` · faltan ${fmt(d)} ${d === 1 ? 'día' : 'días'}` : d === 0 ? ' · ¡es hoy!' : ' · ya pasó la fecha';
-    cuerpo.append(el('div', 'plan-para' + (!p.hecho && d < 0 ? ' vencido' : ''), txt));
-  }
   fila.append(chk, cuerpo, borrar);
   return fila;
 }
@@ -836,13 +834,12 @@ $('form-plan').addEventListener('submit', async (e) => {
   btn.disabled = true;
   const { data, error } = await sb
     .from('planes')
-    .insert({ pareja_id: pareja.id, texto, categoria: catSel, para: $('plan-fecha').value || null })
+    .insert({ pareja_id: pareja.id, texto })
     .select()
     .single();
   btn.disabled = false;
   if (error) return alert('No se pudo agregar: ' + traducir(error));
   $('plan-texto').value = '';
-  $('plan-fecha').value = '';
   if (!planes.some((x) => x.id === data.id)) {
     planes.unshift(data);
     planNuevo = data.id;

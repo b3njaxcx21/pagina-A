@@ -107,13 +107,6 @@
           </div>
         </div>
 
-        <!-- Estado de ánimo -->
-        <div class="tarjeta animo" id="animo">
-          <h2>¿Cómo te sientes hoy?</h2>
-          <div class="animo-opciones" id="animo-opciones"></div>
-          <p class="animo-otro" id="animo-otro"></p>
-        </div>
-
         <!-- Contador -->
         <div class="tarjeta contador" id="contador">
           <div id="contador-sin-fecha" class="oculto">
@@ -152,6 +145,13 @@
         <button id="btn-corazon" class="btn-corazon">
           <span>❤️</span> Mandar un corazón
         </button>
+
+        <!-- Estado de ánimo -->
+        <div class="tarjeta animo" id="animo">
+          <h2>¿Cómo te sientes hoy?</h2>
+          <div class="animo-opciones" id="animo-opciones"></div>
+          <p class="animo-otro" id="animo-otro"></p>
+        </div>
 
         <!-- Estadísticas -->
         <div class="stats">
@@ -208,9 +208,6 @@
         </div>
         <form id="form-plan" class="tarjeta publicar">
           <input id="plan-texto" type="text" placeholder="Ej: Viajar a la playa juntos…" maxlength="120" autocomplete="off">
-          <div class="plan-cats" id="plan-cats"></div>
-          <label class="plan-fecha-lbl">📅 Para cuándo (opcional)</label>
-          <input id="plan-fecha" type="date">
           <button type="submit" class="btn btn-chico" id="btn-plan">Agregar</button>
         </form>
         <div id="lista-planes"></div>
