@@ -226,3 +226,46 @@ $$;
 
 revoke execute on function public.actualizar_cancion(text) from public, anon;
 grant execute on function public.actualizar_cancion(text) to authenticated;
+
+-- ---------- PLANES Y METAS JUNTOS ----------
+create table if not exists public.planes (
+  id uuid primary key default gen_random_uuid(),
+  pareja_id uuid not null references public.parejas on delete cascade,
+  autor_id uuid not null default auth.uid() references auth.users on delete cascade,
+  texto text not null check (length(texto) between 1 and 200),
+  categoria text not null default 'plan',
+  hecho boolean not null default false,
+  hecho_en timestamptz,
+  creado_en timestamptz not null default now()
+);
+
+create index if not exists planes_pareja_idx on public.planes (pareja_id, creado_en desc);
+
+alter table public.planes enable row level security;
+
+drop policy if exists "ver planes" on public.planes;
+create policy "ver planes" on public.planes
+  for select to authenticated using (pareja_id = public.mi_pareja());
+
+drop policy if exists "crear planes" on public.planes;
+create policy "crear planes" on public.planes
+  for insert to authenticated
+  with check (pareja_id = public.mi_pareja() and autor_id = auth.uid());
+
+drop policy if exists "editar planes" on public.planes;
+create policy "editar planes" on public.planes
+  for update to authenticated
+  using (pareja_id = public.mi_pareja()) with check (pareja_id = public.mi_pareja());
+
+drop policy if exists "borrar planes" on public.planes;
+create policy "borrar planes" on public.planes
+  for delete to authenticated using (pareja_id = public.mi_pareja());
+
+revoke update on public.planes from authenticated;
+grant select, insert, delete on public.planes to authenticated;
+grant update (hecho, hecho_en) on public.planes to authenticated;
+
+do $$
+begin
+  begin alter publication supabase_realtime add table public.planes; exception when duplicate_object then null; end;
+end $$;

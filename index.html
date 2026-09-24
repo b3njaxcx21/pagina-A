@@ -147,7 +147,7 @@
         <!-- Estadísticas -->
         <div class="stats">
           <div><b id="s-recuerdos">0</b><span>📸 recuerdos</span></div>
-          <div><b id="s-mensajes">0</b><span>💬 mensajes</span></div>
+          <div><b id="s-planes">0</b><span>🎯 planes</span></div>
           <div><b id="s-corazones">0</b><span>❤️ corazones</span></div>
         </div>
 
@@ -186,13 +186,19 @@
         <div id="lista-publicaciones"></div>
       </div>
 
-      <!-- CHAT -->
-      <div id="vista-chat" class="vista">
-        <div id="lista-mensajes"></div>
-        <form id="form-chat" class="chat-input">
-          <input id="chat-texto" type="text" placeholder="Escribe un mensaje..." autocomplete="off" maxlength="2000">
-          <button type="submit" class="btn btn-chico">➤</button>
+      <!-- PLANES Y METAS -->
+      <div id="vista-planes" class="vista">
+        <div class="tarjeta planes-resumen">
+          <h2>🎯 Nuestros planes</h2>
+          <div class="planes-num" id="planes-num">Aún no hay planes</div>
+          <div class="barra-prog"><i id="planes-barra"></i></div>
+        </div>
+        <form id="form-plan" class="tarjeta publicar">
+          <input id="plan-texto" type="text" placeholder="Ej: Viajar a la playa juntos…" maxlength="120" autocomplete="off">
+          <div class="plan-cats" id="plan-cats"></div>
+          <button type="submit" class="btn btn-chico" id="btn-plan">Agregar</button>
         </form>
+        <div id="lista-planes"></div>
       </div>
 
       <!-- PERFIL -->
@@ -283,7 +289,7 @@
     <nav class="nav">
       <button class="nav-btn activa" data-vista="inicio"><span>💞</span>Inicio</button>
       <button class="nav-btn" data-vista="muro"><span>📸</span>Recuerdos</button>
-      <button class="nav-btn" data-vista="chat"><span>💬</span>Chat<i id="badge-chat" class="badge oculto"></i></button>
+      <button class="nav-btn" data-vista="planes"><span>🎯</span>Planes</button>
       <button class="nav-btn" data-vista="perfil"><span>👤</span>Perfil</button>
     </nav>
   </section>

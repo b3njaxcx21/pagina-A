@@ -176,7 +176,8 @@ function limpiar() {
   perfiles = {};
   fotos = {};
   $('lista-publicaciones').replaceChildren();
-  $('lista-mensajes').replaceChildren();
+  planes = [];
+  $('lista-planes').replaceChildren();
   quitarArchivo();
   codigoCreado = false;
   $('btn-crear-codigo').textContent = 'Crear código';
@@ -244,7 +245,7 @@ async function entrarApp() {
   mostrar('app');
   cambiarVista('inicio');
   pintarInicio();
-  await Promise.all([cargarPublicaciones(), cargarMensajes()]);
+  await Promise.all([cargarPublicaciones(), cargarPlanes()]);
   cargarStats();
   mostrarRecuerdoAzar();
   suscribir();
@@ -362,10 +363,6 @@ function cambiarVista(vista) {
   vistaActual = vista;
   document.querySelectorAll('.nav-btn').forEach((b) => b.classList.toggle('activa', b.dataset.vista === vista));
   document.querySelectorAll('.vista').forEach((v) => v.classList.toggle('activa', v.id === 'vista-' + vista));
-  if (vista === 'chat') {
-    $('badge-chat').classList.add('oculto');
-    bajarChat();
-  }
 }
 
 // =============================================
@@ -592,83 +589,176 @@ function abrirVisor(url) {
 $('visor').addEventListener('click', () => $('visor').classList.add('oculto'));
 
 // =============================================
-//  CHAT
+//  CORAZONES (usan la tabla de mensajes; el chat ya no existe)
 // =============================================
-let ultimoDia = null;
+const mensajesVistos = new Set();
 
-async function cargarMensajes() {
-  const { data, error } = await sb
-    .from('mensajes')
-    .select('*')
-    .eq('pareja_id', pareja.id)
-    .order('creado_en', { ascending: false })
-    .limit(200);
-  const lista = $('lista-mensajes');
-  lista.replaceChildren();
-  ultimoDia = null;
-  if (error) {
-    lista.append(el('p', 'vacio', traducir(error)));
-    return;
-  }
-  data.reverse().forEach(pintarMensaje);
-  bajarChat();
-}
-
-function pintarMensaje(m) {
-  const lista = $('lista-mensajes');
-  if (lista.querySelector(`[data-id="${m.id}"]`)) return false;
-  const d = dia(m.creado_en);
-  if (d !== ultimoDia) {
-    lista.append(el('div', 'dia', d));
-    ultimoDia = d;
-  }
-  const esCorazon = m.texto === CORAZON;
-  const b = el('div', 'burbuja ' + (m.autor_id === usuario.id ? 'mio' : 'suyo') + (esCorazon ? ' corazon' : ''),
-    esCorazon ? ((colorDe(m.autor_id) || {}).corazon || CORAZON) : m.texto);
-  b.dataset.id = m.id;
-  b.append(el('small', '', hora(m.creado_en)));
-  lista.append(b);
+function primeraVez(id) {
+  if (mensajesVistos.has(id)) return false;
+  mensajesVistos.add(id);
   return true;
 }
 
-function bajarChat() {
-  const lista = $('lista-mensajes');
-  requestAnimationFrame(() => { lista.scrollTop = lista.scrollHeight; });
-}
-
 async function recibirMensaje(m) {
+  if (m.texto !== CORAZON || !primeraVez(m.id)) return;
   if (!perfiles[m.autor_id]) await cargarPerfiles();
-  if (!pintarMensaje(m)) return;
-  bajarChat();
-  contarMensaje(m);
+  sumarStat('s-corazones', 1);
   if (m.autor_id === usuario.id) return;
-  if (m.texto === CORAZON) {
-    lluviaCorazones(24, [(colorDe(m.autor_id) || {}).corazon]);
-    aviso(`${(colorDe(m.autor_id) || {}).corazon || '💌'} ${nombreDe(m.autor_id)} te mandó un corazón`);
-  } else if (vistaActual !== 'chat') {
-    $('badge-chat').classList.remove('oculto');
-  }
+  lluviaCorazones(24, [(colorDe(m.autor_id) || {}).corazon]);
+  aviso(`${(colorDe(m.autor_id) || {}).corazon || '💌'} ${nombreDe(m.autor_id)} te mandó un corazón`);
 }
 
-$('form-chat').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const input = $('chat-texto');
-  const texto = input.value.trim();
-  if (!texto) return;
-  input.value = '';
-  const { data, error } = await sb
-    .from('mensajes')
-    .insert({ pareja_id: pareja.id, texto })
-    .select()
-    .single();
+// =============================================
+//  PLANES Y METAS JUNTOS
+// =============================================
+const CATEGORIAS = { viaje: '✈️', comida: '🍽️', plan: '🎬', sueno: '🌟', casa: '🏠', otro: '💫' };
+let planes = [];
+let catSel = 'plan';
+let planNuevo = null;
+
+Object.entries(CATEGORIAS).forEach(([clave, emoji]) => {
+  const chip = el('button', 'chip' + (clave === catSel ? ' activa' : ''), emoji);
+  chip.type = 'button';
+  chip.dataset.cat = clave;
+  chip.addEventListener('click', () => {
+    catSel = clave;
+    document.querySelectorAll('#plan-cats .chip').forEach((c) => c.classList.toggle('activa', c === chip));
+  });
+  $('plan-cats').append(chip);
+});
+
+async function cargarPlanes() {
+  const { data, error } = await sb.from('planes').select('*').eq('pareja_id', pareja.id).order('creado_en', { ascending: false });
   if (error) {
-    input.value = texto;
-    alert('No se pudo enviar: ' + traducir(error));
+    planes = [];
+    $('lista-planes').replaceChildren(el('p', 'vacio', 'Aún falta crear la tabla de planes en Supabase (correr el SQL).'));
     return;
   }
-  if (pintarMensaje(data)) contarMensaje(data);
-  bajarChat();
+  planes = data;
+  pintarPlanes();
+}
+
+function pintarPlanes() {
+  const pendientes = planes.filter((x) => !x.hecho);
+  const hechos = planes.filter((x) => x.hecho).sort((a, b) => new Date(b.hecho_en || 0) - new Date(a.hecho_en || 0));
+  const total = planes.length;
+  $('planes-num').textContent = total ? `${hechos.length} de ${total} cumplidos` : 'Aún no hay planes. ¡Agreguen el primero!';
+  $('planes-barra').style.width = (total ? (hechos.length / total) * 100 : 0) + '%';
+  $('s-planes').textContent = fmt(hechos.length);
+
+  const partes = [];
+  if (!total) {
+    const v = el('div', 'vacio');
+    v.append(el('div', '', '🗺️'), el('p', '', 'Viajes, comidas, sueños… lo que quieran hacer juntos.'));
+    partes.push(v);
+  }
+  if (pendientes.length) partes.push(el('h3', 'planes-tit', 'Por cumplir'), ...pendientes.map(crearPlan));
+  if (hechos.length) partes.push(el('h3', 'planes-tit', '¡Cumplidos! 🎉'), ...hechos.map(crearPlan));
+  $('lista-planes').replaceChildren(...partes);
+  planNuevo = null;
+}
+
+function crearPlan(p) {
+  const fila = el('div', 'plan' + (p.hecho ? ' hecho' : '') + (p.id === planNuevo ? ' nuevo' : ''));
+  fila.dataset.id = p.id;
+  const c = colorDe(p.autor_id);
+  if (c) fila.style.setProperty('--c', c.hex);
+
+  const chk = el('button', 'plan-chk', p.hecho ? '✓' : '');
+  chk.type = 'button';
+  chk.setAttribute('aria-label', p.hecho ? 'Marcar como pendiente' : 'Marcar como cumplido');
+  chk.addEventListener('click', () => alternarPlan(p));
+
+  const cuerpo = el('div', 'plan-cuerpo');
+  cuerpo.append(
+    el('div', 'plan-texto', `${CATEGORIAS[p.categoria] || '💫'} ${p.texto}`),
+    el('div', 'plan-meta', `${nombreDe(p.autor_id)} · ${fechaCorta(p.creado_en)}` + (p.hecho && p.hecho_en ? ` · ✓ ${fechaCorta(p.hecho_en)}` : '')),
+  );
+
+  const borrar = el('button', 'post-borrar', '🗑');
+  borrar.type = 'button';
+  borrar.title = 'Borrar';
+  borrar.addEventListener('click', () => borrarPlan(p));
+  fila.append(chk, cuerpo, borrar);
+  return fila;
+}
+
+function celebrarPlan() {
+  const mio = (colorDe(usuario.id) || {}).corazon || '❤️';
+  const todos = planes.length > 0 && planes.every((x) => x.hecho);
+  lluviaCorazones(todos ? 50 : 16, [mio, '🎉', '✨', '🎯']);
+  aviso(todos ? '🏆 ¡Cumplieron todos sus planes!' : '🎯 ¡Plan cumplido!');
+  if (navigator.vibrate) navigator.vibrate(todos ? [40, 40, 40, 40, 80] : 30);
+}
+
+async function alternarPlan(p) {
+  const antes = { hecho: p.hecho, hecho_en: p.hecho_en };
+  p.hecho = !p.hecho;
+  p.hecho_en = p.hecho ? new Date().toISOString() : null;
+  pintarPlanes();
+  if (p.hecho) celebrarPlan();
+  const { error } = await sb.from('planes').update({ hecho: p.hecho, hecho_en: p.hecho_en }).eq('id', p.id);
+  if (error) {
+    Object.assign(p, antes);
+    pintarPlanes();
+    alert('No se pudo actualizar: ' + traducir(error));
+  }
+}
+
+async function borrarPlan(p) {
+  if (!confirm('¿Borrar este plan?')) return;
+  const { error } = await sb.from('planes').delete().eq('id', p.id);
+  if (error) return alert(traducir(error));
+  planes = planes.filter((x) => x.id !== p.id);
+  pintarPlanes();
+}
+
+$('form-plan').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const texto = $('plan-texto').value.trim();
+  if (!texto) return;
+  const btn = $('btn-plan');
+  btn.disabled = true;
+  const { data, error } = await sb
+    .from('planes')
+    .insert({ pareja_id: pareja.id, texto, categoria: catSel })
+    .select()
+    .single();
+  btn.disabled = false;
+  if (error) return alert('No se pudo agregar: ' + traducir(error));
+  $('plan-texto').value = '';
+  if (!planes.some((x) => x.id === data.id)) {
+    planes.unshift(data);
+    planNuevo = data.id;
+    pintarPlanes();
+  }
 });
+
+function planRemoto(tipo, fila) {
+  if (!fila) return;
+  if (tipo === 'DELETE') {
+    if (!planes.some((x) => x.id === fila.id)) return;
+    planes = planes.filter((x) => x.id !== fila.id);
+    pintarPlanes();
+    return;
+  }
+  const actual = planes.find((x) => x.id === fila.id);
+  if (tipo === 'INSERT') {
+    if (actual) return;
+    planes.unshift(fila);
+    planNuevo = fila.id;
+    pintarPlanes();
+    if (fila.autor_id !== usuario.id) aviso(`🎯 ${nombreDe(fila.autor_id)} agregó un plan`);
+  } else if (actual) {
+    const avisar = fila.hecho && !actual.hecho;
+    Object.assign(actual, fila);
+    pintarPlanes();
+    if (avisar) {
+      lluviaCorazones(18, ['🎉', '✨', '🎯']);
+      aviso(`🎯 ¡Plan cumplido!: ${fila.texto}`);
+    }
+  }
+}
 
 // =============================================
 //  TIEMPO REAL
@@ -684,6 +774,12 @@ function suscribir() {
       (payload) => agregarPost(payload.new))
     .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'publicaciones' },
       (payload) => payload.old && quitarPost(payload.old.id))
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'planes', filter: filtro },
+      (payload) => planRemoto('INSERT', payload.new))
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'planes', filter: filtro },
+      (payload) => planRemoto('UPDATE', payload.new))
+    .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'planes' },
+      (payload) => planRemoto('DELETE', payload.old))
     .subscribe();
 }
 
@@ -916,23 +1012,17 @@ function animarNumero(nodo, final) {
 
 // ---------- Estadísticas ----------
 async function cargarStats() {
-  const base = () => sb.from('mensajes').select('id', { count: 'exact', head: true }).eq('pareja_id', pareja.id);
-  const [msgs, cors] = await Promise.all([base(), base().eq('texto', CORAZON)]);
+  const { count: cors } = await sb.from('mensajes').select('id', { count: 'exact', head: true }).eq('pareja_id', pareja.id).eq('texto', CORAZON);
   const { count: recs } = await sb.from('publicaciones').select('id', { count: 'exact', head: true }).eq('pareja_id', pareja.id);
   animarNumero($('s-recuerdos'), recs || 0);
-  animarNumero($('s-mensajes'), msgs.count || 0);
-  animarNumero($('s-corazones'), cors.count || 0);
+  animarNumero($('s-planes'), planes.filter((x) => x.hecho).length);
+  animarNumero($('s-corazones'), cors || 0);
 }
 
 function sumarStat(id, n) {
   const nodo = $(id);
   const actual = parseInt(nodo.textContent.replace(/\D/g, ''), 10) || 0;
   nodo.textContent = fmt(Math.max(0, actual + n));
-}
-
-function contarMensaje(m) {
-  sumarStat('s-mensajes', 1);
-  if (m.texto === CORAZON) sumarStat('s-corazones', 1);
 }
 
 // ---------- Recuerdo al azar ----------
@@ -980,7 +1070,7 @@ $('btn-corazon').addEventListener('click', async () => {
   if (navigator.vibrate) navigator.vibrate(40);
   const { data, error } = await sb.from('mensajes').insert({ pareja_id: pareja.id, texto: CORAZON }).select().single();
   if (error) return alert('No se pudo enviar: ' + traducir(error));
-  if (pintarMensaje(data)) contarMensaje(data);
+  if (primeraVez(data.id)) sumarStat('s-corazones', 1);
   aviso(((colorDe(usuario.id) || {}).corazon || '❤️') + ' Corazón enviado');
 });
 
@@ -1507,6 +1597,7 @@ const REVELAR = [
   '#vista-inicio .stats > *',
   '#vista-muro > :not(#lista-publicaciones)',
   '#vista-muro .post',
+  '#vista-planes > :not(#lista-planes)',
   '#vista-perfil > *',
 ].join(',');
 
