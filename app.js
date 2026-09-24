@@ -242,6 +242,7 @@ async function entrarApp() {
   }
   pareja = data;
   pareja.fecha_inicio = FECHA_INICIO;
+  revisarRacha();
   await cargarPerfiles();
   llenarPerfil();
   mostrar('app');
@@ -890,6 +891,8 @@ function suscribir() {
       (payload) => agregarPost(payload.new))
     .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'publicaciones' },
       (payload) => payload.old && quitarPost(payload.old.id))
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'parejas', filter: `id=eq.${pareja.id}` },
+      (payload) => mavisRemota(payload.new))
     .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'perfiles' },
       (payload) => perfilRemoto(payload.new))
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'planes', filter: filtro },
@@ -1333,12 +1336,6 @@ function mavisReaccion() {
 function claveDia(d) {
   return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 }
-function leerRacha() {
-  try { return JSON.parse(localStorage.getItem('mavis_racha')) || { dias: 0, ultimo: '' }; } catch (_) { return { dias: 0, ultimo: '' }; }
-}
-function guardarRacha(r) {
-  try { localStorage.setItem('mavis_racha', JSON.stringify(r)); } catch (_) { /* sin almacenamiento */ }
-}
 function aplicarTamano(dias) {
   mvAncho = 76 + Math.min(dias, 30) * 1.5;
   mavis.style.width = mvAncho + 'px';
@@ -1348,24 +1345,36 @@ function ayerDe(d) {
   a.setDate(a.getDate() - 1);
   return a;
 }
+// La racha es de los dos (se guarda en la pareja): si alguno la toca, cuenta para ambos
 function revisarRacha() {
-  const r = leerRacha();
   const hoy = new Date();
-  if (r.ultimo !== claveDia(hoy) && r.ultimo !== claveDia(ayerDe(hoy))) {
-    r.dias = 0;
-    guardarRacha(r);
-  }
-  aplicarTamano(r.dias);
+  const ult = pareja && pareja.mavis_ultimo;
+  const vigente = ult && (ult === claveDia(hoy) || ult === claveDia(ayerDe(hoy)));
+  aplicarTamano(vigente ? pareja.mavis_dias || 0 : 0);
 }
-function cuidarMavis() {
-  const r = leerRacha();
-  const hoy = new Date();
-  if (r.ultimo === claveDia(hoy)) return;
-  r.dias = r.ultimo === claveDia(ayerDe(hoy)) ? r.dias + 1 : 1;
-  r.ultimo = claveDia(hoy);
-  guardarRacha(r);
-  aplicarTamano(r.dias);
+
+let cuidandoMavis = false;
+async function cuidarMavis() {
+  if (!pareja || cuidandoMavis) return;
+  if (pareja.mavis_ultimo === claveDia(new Date())) return;
+  cuidandoMavis = true;
+  const { data, error } = await sb.rpc('cuidar_mavis');
+  cuidandoMavis = false;
+  if (error) return;
+  pareja.mavis_dias = data;
+  pareja.mavis_ultimo = claveDia(new Date());
+  aplicarTamano(data);
   mvCorazones(8);
+}
+
+// Cuando el otro la cuida, también crece aquí
+function mavisRemota(f) {
+  if (!pareja || !f) return;
+  const antes = pareja.mavis_dias;
+  pareja.mavis_dias = f.mavis_dias;
+  pareja.mavis_ultimo = f.mavis_ultimo;
+  revisarRacha();
+  if (f.mavis_dias !== antes) mavisReaccion();
 }
 revisarRacha();
 

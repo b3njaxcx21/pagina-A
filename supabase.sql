@@ -282,3 +282,36 @@ do $$
 begin
   begin alter publication supabase_realtime add table public.perfiles; exception when duplicate_object then null; end;
 end $$;
+
+-- ---------- MAVIS COMPARTIDA (racha de cuidado de la pareja) ----------
+alter table public.parejas add column if not exists mavis_dias int not null default 0;
+alter table public.parejas add column if not exists mavis_ultimo date;
+
+create or replace function public.cuidar_mavis()
+returns int
+language plpgsql security definer
+set search_path = public
+as $$
+declare
+  v_id uuid;
+  v_hoy date := (now() at time zone 'America/Mexico_City')::date;
+  v_ult date;
+  v_dias int;
+begin
+  select pareja_id into v_id from perfiles where id = auth.uid();
+  if v_id is null then raise exception 'Sin pareja vinculada'; end if;
+  select mavis_ultimo, mavis_dias into v_ult, v_dias from parejas where id = v_id for update;
+  if v_ult = v_hoy then return v_dias; end if;
+  if v_ult = v_hoy - 1 then v_dias := v_dias + 1; else v_dias := 1; end if;
+  update parejas set mavis_dias = v_dias, mavis_ultimo = v_hoy where id = v_id;
+  return v_dias;
+end;
+$$;
+
+revoke execute on function public.cuidar_mavis() from public, anon;
+grant execute on function public.cuidar_mavis() to authenticated;
+
+do $$
+begin
+  begin alter publication supabase_realtime add table public.parejas; exception when duplicate_object then null; end;
+end $$;
