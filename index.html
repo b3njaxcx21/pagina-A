@@ -134,47 +134,6 @@
           </div>
         </div>
 
-        <!-- Mavis, el gatito -->
-        <div class="tarjeta mavis" id="mavis">
-          <div class="mavis-burbuja oculto" id="mavis-burbuja"></div>
-          <div class="mavis-zzz oculto" id="mavis-zzz">z<span>z</span><span>Z</span></div>
-          <svg class="mavis-svg" id="mavis-svg" viewBox="0 0 200 220" role="button" aria-label="Mavis, el gatito. Tócalo">
-            <ellipse cx="100" cy="212" rx="60" ry="6" fill="rgba(0,0,0,.12)"/>
-            <path class="mv-cola" d="M146 178 C186 176 194 136 170 118" fill="none" stroke="#1c1c24" stroke-width="15" stroke-linecap="round"/>
-            <g class="mv-cuerpo">
-              <ellipse cx="100" cy="160" rx="54" ry="50" fill="#1c1c24"/>
-              <ellipse cx="80" cy="200" rx="17" ry="10" fill="#2a2a36"/>
-              <ellipse cx="120" cy="200" rx="17" ry="10" fill="#2a2a36"/>
-              <path d="M80 194 v8 M74 196 v6 M86 196 v6 M120 194 v8 M114 196 v6 M126 196 v6" stroke="#15151b" stroke-width="1.5" stroke-linecap="round"/>
-            </g>
-            <g class="mv-cabeza">
-              <g class="mv-oreja-izq"><path d="M56 74 L60 28 L94 56 Z" fill="#1c1c24"/><path d="M64 64 L66 42 L82 56 Z" fill="#f49ab5"/></g>
-              <g class="mv-oreja-der"><path d="M144 74 L140 28 L106 56 Z" fill="#1c1c24"/><path d="M136 64 L134 42 L118 56 Z" fill="#f49ab5"/></g>
-              <ellipse cx="100" cy="96" rx="50" ry="43" fill="#1c1c24"/>
-              <g class="mv-ojos">
-                <g class="mv-ojo"><ellipse cx="79" cy="94" rx="12" ry="14" fill="#ffe066"/><ellipse class="mv-pupila" cx="79" cy="95" rx="5" ry="10" fill="#111"/><circle cx="75" cy="89" r="3" fill="#fff"/></g>
-                <g class="mv-ojo"><ellipse cx="121" cy="94" rx="12" ry="14" fill="#ffe066"/><ellipse class="mv-pupila" cx="121" cy="95" rx="5" ry="10" fill="#111"/><circle cx="117" cy="89" r="3" fill="#fff"/></g>
-              </g>
-              <g class="mv-ojos-dormido">
-                <path d="M67 96 Q79 106 91 96" fill="none" stroke="#ffe066" stroke-width="3" stroke-linecap="round"/>
-                <path d="M109 96 Q121 106 133 96" fill="none" stroke="#ffe066" stroke-width="3" stroke-linecap="round"/>
-              </g>
-              <path d="M94 108 L106 108 L100 115 Z" fill="#f49ab5"/>
-              <path class="mv-boca" d="M100 115 Q95 123 88 119 M100 115 Q105 123 112 119" fill="none" stroke="#f49ab5" stroke-width="2" stroke-linecap="round"/>
-              <ellipse class="mv-boca-abierta" cx="100" cy="123" rx="7" ry="6" fill="#7a1f3d"/>
-              <circle cx="66" cy="112" r="7" fill="#f49ab5" opacity=".35"/>
-              <circle cx="134" cy="112" r="7" fill="#f49ab5" opacity=".35"/>
-              <path d="M62 110 L36 104 M62 116 L36 118 M138 110 L164 104 M138 116 L164 118" stroke="#8a8a9a" stroke-width="1.6" stroke-linecap="round"/>
-            </g>
-          </svg>
-          <div class="mavis-nombre">Mavis 🐈‍⬛</div>
-          <div class="mavis-botones">
-            <button type="button" class="btn-icono" id="mavis-comer">🐟 Comida</button>
-            <button type="button" class="btn-icono" id="mavis-jugar">🧶 Jugar</button>
-            <button type="button" class="btn-icono" id="mavis-dormir">😴 Dormir</button>
-          </div>
-        </div>
-
         <!-- Botón de amor -->
         <button id="btn-corazon" class="btn-corazon">
           <span>❤️</span> Mandar un corazón
@@ -256,6 +215,38 @@
         <button class="btn btn-sec" data-accion="salir">Cerrar sesión</button>
       </div>
     </main>
+
+    <!-- Mavis, la gatita que camina por la barra -->
+    <div class="mavis" id="mavis" aria-hidden="true">
+      <div class="mv-salto">
+        <svg class="mavis-svg" id="mavis-svg" viewBox="0 0 130 92">
+          <ellipse cx="66" cy="88" rx="40" ry="3.5" fill="rgba(0,0,0,.14)"/>
+          <path class="mv-cola" d="M31 54 C5 54 4 24 20 20" fill="none" stroke="#1c1c24" stroke-width="9" stroke-linecap="round"/>
+          <rect class="mv-pata p2" x="47" y="62" width="9" height="24" rx="4.5" fill="#2e2e3b"/>
+          <rect class="mv-pata p4" x="83" y="62" width="9" height="24" rx="4.5" fill="#2e2e3b"/>
+          <ellipse class="mv-cuerpo" cx="62" cy="58" rx="35" ry="19" fill="#1c1c24"/>
+          <rect class="mv-pata p1" x="34" y="62" width="10" height="24" rx="5" fill="#1c1c24"/>
+          <rect class="mv-pata p3" x="70" y="62" width="10" height="24" rx="5" fill="#1c1c24"/>
+          <g class="mv-cabeza">
+            <path d="M85 31 L86 10 L100 24 Z" fill="#1c1c24"/>
+            <path d="M89 27 L89.5 16 L96 24 Z" fill="#f49ab5"/>
+            <path d="M101 24 L113 10 L114 32 Z" fill="#1c1c24"/>
+            <path d="M106 25 L112 17 L112.5 29 Z" fill="#f49ab5"/>
+            <circle cx="99" cy="40" r="18" fill="#1c1c24"/>
+            <g class="mv-ojo">
+              <ellipse cx="106" cy="38" rx="4.4" ry="5.2" fill="#ffe066"/>
+              <ellipse cx="107" cy="38.5" rx="1.7" ry="3.8" fill="#111"/>
+              <circle cx="104.8" cy="36" r="1.2" fill="#fff"/>
+            </g>
+            <path class="mv-ojo-feliz" d="M101 39 Q106 33 111 39" fill="none" stroke="#ffe066" stroke-width="2.6" stroke-linecap="round"/>
+            <circle cx="114.5" cy="44" r="2.2" fill="#f49ab5"/>
+            <path d="M114.5 46 Q112 50 108 48.5" fill="none" stroke="#f49ab5" stroke-width="1.4" stroke-linecap="round"/>
+            <circle cx="100" cy="48" r="4.5" fill="#f49ab5" opacity=".35"/>
+            <path d="M113 44 L127 40 M113 46 L127 47" stroke="#8a8a9a" stroke-width="1.2" stroke-linecap="round"/>
+          </g>
+        </svg>
+      </div>
+    </div>
 
     <nav class="nav">
       <button class="nav-btn activa" data-vista="inicio"><span>💞</span>Inicio</button>

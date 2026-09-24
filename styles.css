@@ -323,63 +323,34 @@ main { flex: 1; overflow: hidden; position: relative; }
   .corazones-fondo span, .latido { animation: none; }
 }
 
-/* ---------- Mavis, el gatito ---------- */
-.mavis { position: relative; text-align: center; padding: 18px 12px 14px; overflow: hidden; }
-.mavis-svg { width: 180px; max-width: 60%; height: auto; cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent; user-select: none; overflow: visible; }
-.mavis-nombre { font-weight: 700; margin-top: 2px; }
-.mavis-botones { display: flex; justify-content: center; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+/* ---------- Mavis, la gatita que camina ---------- */
+.mavis { position: fixed; left: 0; bottom: calc(var(--nav-alto) + env(safe-area-inset-bottom) - 4px); width: 84px; z-index: 40; touch-action: manipulation; }
+.mavis.oculta { display: none; }
+.mv-salto { width: 100%; }
+.mavis-svg { display: block; width: 100%; height: auto; overflow: visible; cursor: pointer; -webkit-tap-highlight-color: transparent; user-select: none; }
+.mavis.izquierda .mavis-svg { transform: scaleX(-1); }
 .mavis-svg * { transform-box: fill-box; }
-.mv-cuerpo { transform-origin: 50% 100%; animation: mv-respira 3.2s ease-in-out infinite; }
+.mv-cola { transform-origin: 100% 100%; animation: mv-cola 2.4s ease-in-out infinite; }
 .mv-cabeza { transform-origin: 50% 90%; }
-.mv-cola { transform-origin: 0% 100%; animation: mv-cola 2.6s ease-in-out infinite; }
-.mv-oreja-izq { transform-origin: 80% 90%; animation: mv-oreja 7s ease-in-out infinite; }
-.mv-oreja-der { transform-origin: 20% 90%; animation: mv-oreja 9s ease-in-out infinite 2s; }
 .mv-ojo { transform-origin: 50% 50%; animation: mv-parpadeo 5s infinite; }
-.mv-ojos-dormido, .mv-boca-abierta { display: none; }
-.mv-pupila { transition: transform .12s ease-out; }
-@keyframes mv-respira { 0%,100% { transform: scaleY(1); } 50% { transform: scaleY(1.03); } }
-@keyframes mv-cola { 0%,100% { transform: rotate(-8deg); } 50% { transform: rotate(10deg); } }
-@keyframes mv-oreja { 0%,90%,100% { transform: rotate(0); } 93% { transform: rotate(-12deg); } 96% { transform: rotate(4deg); } }
+.mv-ojo-feliz { display: none; }
+.mv-pata { transform-origin: 50% 0%; }
+.mavis.camina .mv-pata.p1, .mavis.camina .mv-pata.p4 { animation: mv-paso .5s ease-in-out infinite; }
+.mavis.camina .mv-pata.p2, .mavis.camina .mv-pata.p3 { animation: mv-paso .5s ease-in-out infinite reverse; }
+.mavis.camina .mv-cuerpo, .mavis.camina .mv-cabeza { animation: mv-rebote .25s ease-in-out infinite alternate; }
+.mavis.camina .mv-cola { animation-duration: 1.2s; }
+.mavis.feliz .mv-salto { animation: mv-salto .75s ease-out; }
+.mavis.feliz .mv-ojo, .mavis.ronronea .mv-ojo { display: none; }
+.mavis.feliz .mv-ojo-feliz, .mavis.ronronea .mv-ojo-feliz { display: block; }
+.mavis.feliz .mv-cola { animation-duration: .4s; }
+.mavis.ronronea .mv-salto { animation: mv-ronroneo .1s linear infinite; }
+.mavis.ronronea .mv-cola { animation-duration: 1s; }
+@keyframes mv-cola { 0%,100% { transform: rotate(-9deg); } 50% { transform: rotate(9deg); } }
 @keyframes mv-parpadeo { 0%,92%,100% { transform: scaleY(1); } 95% { transform: scaleY(.08); } }
-
-/* estados */
-.mavis.dormida .mv-ojos { display: none; }
-.mavis.dormida .mv-ojos-dormido { display: block; }
-.mavis.dormida .mv-cuerpo { animation-duration: 5s; }
-.mavis.dormida .mv-cola { animation-duration: 6s; }
-.mavis.dormida .mv-cabeza { transform: rotate(4deg) translateY(4px); }
-.mavis.feliz .mavis-svg { animation: mv-salto .7s ease-out; }
-.mavis.feliz .mv-cola { animation-duration: .5s; }
-.mavis.feliz .mv-ojos { display: none; }
-.mavis.feliz .mv-ojos-dormido { display: block; }
-.mavis.ronronea .mv-cuerpo, .mavis.ronronea .mv-cabeza { animation: mv-ronroneo .12s linear infinite; }
-.mavis.ronronea .mv-ojos { display: none; }
-.mavis.ronronea .mv-ojos-dormido { display: block; }
-.mavis.comiendo .mv-cabeza { animation: mv-cabeceo .45s ease-in-out 4; }
-.mavis.comiendo .mv-boca { display: none; }
-.mavis.comiendo .mv-boca-abierta { display: block; animation: mv-mastica .22s ease-in-out infinite alternate; }
-.mavis.jugando .mavis-svg { animation: mv-salto .55s ease-out 2; }
-.mavis.jugando .mv-cola { animation-duration: .35s; }
-.mavis.despierta .mavis-svg { animation: mv-susto .5s ease-out; }
-@keyframes mv-salto { 0% { transform: translateY(0) scale(1.05,.92); } 35% { transform: translateY(-34px) scale(.95,1.08); } 70% { transform: translateY(0) scale(1.06,.93); } 100% { transform: translateY(0) scale(1); } }
-@keyframes mv-susto { 0% { transform: scale(1); } 30% { transform: translateY(-14px) scale(1.06); } 100% { transform: scale(1); } }
-@keyframes mv-ronroneo { 0% { transform: translateX(-.7px); } 50% { transform: translateX(.7px); } 100% { transform: translateX(-.7px); } }
-@keyframes mv-cabeceo { 0%,100% { transform: translateY(0); } 50% { transform: translateY(9px) rotate(3deg); } }
-@keyframes mv-mastica { from { transform: scaleY(.5); } to { transform: scaleY(1.1); } }
-
-.mavis-burbuja { position: absolute; top: 8px; left: 50%; transform: translateX(-50%); background: #fff; border-radius: 16px; padding: 7px 14px; font-size: 14px; font-weight: 600; box-shadow: 0 4px 14px rgba(0,0,0,.14); white-space: nowrap; z-index: 2; animation: mv-burbuja .25s ease-out; }
-.mavis-burbuja::after { content: ''; position: absolute; bottom: -6px; left: 50%; margin-left: -6px; border: 6px solid transparent; border-top-color: #fff; border-bottom: 0; }
-@keyframes mv-burbuja { from { opacity: 0; transform: translateX(-50%) translateY(6px) scale(.9); } to { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); } }
-.mavis-zzz { position: absolute; top: 34px; right: 22%; font-weight: 800; color: #7a7a9a; font-size: 20px; }
-.mavis-zzz span { display: inline-block; margin-left: 2px; animation: mv-zzz 2s ease-in-out infinite; }
-.mavis-zzz span:nth-child(2) { font-size: 26px; animation-delay: .4s; }
-@keyframes mv-zzz { 0%,100% { transform: translateY(0); opacity: .4; } 50% { transform: translateY(-8px); opacity: 1; } }
-.mv-corazon { position: absolute; pointer-events: none; font-size: 20px; animation: mv-sube 1.4s ease-out forwards; z-index: 3; }
-@keyframes mv-sube { from { transform: translateY(0) scale(.6); opacity: 1; } to { transform: translateY(-90px) scale(1.3); opacity: 0; } }
-.mv-extra { position: absolute; pointer-events: none; font-size: 30px; z-index: 3; }
-.mv-extra.pescado { animation: mv-cae .9s ease-in forwards; }
-@keyframes mv-cae { from { transform: translateY(-80px); opacity: 0; } 30% { opacity: 1; } to { transform: translateY(20px); opacity: 1; } }
-.mv-extra.ovillo { animation: mv-rueda 1.6s ease-in-out forwards; }
-@keyframes mv-rueda { 0% { transform: translateX(-120px) rotate(0); opacity: 0; } 15% { opacity: 1; } 100% { transform: translateX(120px) rotate(720deg); opacity: 0; } }
-@media (prefers-reduced-motion: reduce) { .mavis-svg *, .mavis-svg { animation: none !important; } }
-.mavis-botones .btn-icono { width: auto; height: auto; padding: 8px 14px; border-radius: 999px; font-size: 14px; font-weight: 600; color: inherit; }
+@keyframes mv-paso { 0%,100% { transform: rotate(26deg); } 50% { transform: rotate(-26deg); } }
+@keyframes mv-rebote { from { transform: translateY(0); } to { transform: translateY(-2px); } }
+@keyframes mv-salto { 0% { transform: translateY(0) scale(1.06,.9); } 35% { transform: translateY(-46px) scale(.94,1.1); } 70% { transform: translateY(0) scale(1.07,.92); } 85% { transform: translateY(-9px); } 100% { transform: translateY(0) scale(1); } }
+@keyframes mv-ronroneo { 0% { transform: translate(-.8px, 0); } 50% { transform: translate(.8px, .6px); } 100% { transform: translate(-.8px, 0); } }
+.mv-corazon { position: absolute; left: 30px; top: 0; pointer-events: none; font-size: 18px; animation: mv-sube 1.5s ease-out forwards; }
+@keyframes mv-sube { from { transform: translateY(0) scale(.6); opacity: 1; } to { transform: translateY(-80px) scale(1.3); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .mavis-svg *, .mv-salto { animation: none !important; } }

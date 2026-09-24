@@ -931,86 +931,84 @@ function aviso(texto) {
 }
 
 // =============================================
-//  MAVIS, el gatito negro
+//  MAVIS, la gatita negra que camina por la barra
 // =============================================
 const mavis = $('mavis');
-const mvSvg = $('mavis-svg');
-let mvTimerBurbuja = null;
-let mvTimerEstado = null;
-let mvDormidaTimer = null;
+const mvAncho = 84;
+let mvX = 20;
+let mvDir = 1;              // 1 = derecha, -1 = izquierda
+let mvModo = 'camina';      // camina | pausa | interaccion
+let mvHasta = 0;            // hora en que termina el modo actual
+let mvUltimo = 0;
 let mvPresion = null;
+let mvTimerEstado = null;
 
-const MV_CARICIAS = ['¡Miau! 💕', 'Purr purr~', '¡Me gusta! 😻', 'Más, más…', 'Miau miau 🐾', '¡Te quiero!'];
-const MV_HABLA = ['Miau~ 🐾', 'Los quiero mucho 💞', '¿Me das un snack? 🐟', 'Vigilo su amor 👀', 'Hoy es buen día para abrazarse'];
+function mvCambiarModo(modo, ms) {
+  mvModo = modo;
+  mvHasta = performance.now() + ms;
+  mavis.classList.toggle('camina', modo === 'camina');
+}
 
-function mvBurbuja(texto, ms = 2200) {
-  const b = $('mavis-burbuja');
-  b.textContent = texto;
-  b.classList.remove('oculto');
-  clearTimeout(mvTimerBurbuja);
-  mvTimerBurbuja = setTimeout(() => b.classList.add('oculto'), ms);
+function mvPonerX() {
+  mavis.style.left = mvX + 'px';
+  mavis.classList.toggle('izquierda', mvDir < 0);
+}
+
+function mvBucle(t) {
+  requestAnimationFrame(mvBucle);
+  const oculta = vistaActual === 'chat' || !$('pantalla-app').classList.contains('activa');
+  mavis.classList.toggle('oculta', oculta);
+  const dt = Math.min(0.1, (t - (mvUltimo || t)) / 1000);
+  mvUltimo = t;
+  if (oculta) return;
+
+  if (mvModo === 'camina') {
+    mvX += mvDir * 42 * dt;
+    const max = window.innerWidth - mvAncho;
+    if (mvX <= 0) { mvX = 0; mvDir = 1; }
+    if (mvX >= max) { mvX = max; mvDir = -1; }
+    mvPonerX();
+    if (t > mvHasta) {
+      // A veces se detiene un rato o da la vuelta
+      if (Math.random() < 0.35) mvDir *= -1;
+      mvCambiarModo('pausa', 1500 + Math.random() * 3000);
+    }
+  } else if (mvModo === 'pausa' && t > mvHasta) {
+    if (Math.random() < 0.3) mvDir *= -1;
+    mvCambiarModo('camina', 4000 + Math.random() * 6000);
+  } else if (mvModo === 'interaccion' && t > mvHasta) {
+    mvCambiarModo('camina', 3000 + Math.random() * 3000);
+  }
 }
 
 function mvEstado(clase, ms) {
-  ['feliz', 'ronronea', 'comiendo', 'jugando', 'despierta'].forEach((c) => mavis.classList.remove(c));
+  mavis.classList.remove('feliz', 'ronronea');
   void mavis.offsetWidth;
   mavis.classList.add(clase);
   clearTimeout(mvTimerEstado);
   mvTimerEstado = setTimeout(() => mavis.classList.remove(clase), ms);
+  mvCambiarModo('interaccion', ms + 300);
 }
 
-function mvCorazones(n = 3) {
-  const r = mvSvg.getBoundingClientRect();
-  const c = mavis.getBoundingClientRect();
+function mvCorazones(n) {
   for (let i = 0; i < n; i++) {
     const s = el('span', 'mv-corazon', ['❤️', '💕', '💗'][Math.floor(Math.random() * 3)]);
-    s.style.left = (r.left - c.left + r.width * (0.3 + Math.random() * 0.4)) + 'px';
-    s.style.top = (r.top - c.top + r.height * 0.3) + 'px';
-    s.style.animationDelay = i * 0.15 + 's';
+    s.style.left = 14 + Math.random() * 50 + 'px';
+    s.style.animationDelay = i * 0.18 + 's';
     mavis.append(s);
-    setTimeout(() => s.remove(), 1800);
+    setTimeout(() => s.remove(), 1900);
   }
 }
 
-function mvDespertar() {
-  if (!mavis.classList.contains('dormida')) return false;
-  mavis.classList.remove('dormida');
-  $('mavis-zzz').classList.add('oculto');
-  mvEstado('despierta', 600);
-  mvBurbuja('¡Miau! Me despertaron 😾');
-  return true;
-}
-
-function mvDormir() {
-  mavis.classList.add('dormida');
-  $('mavis-zzz').classList.remove('oculto');
-  $('mavis-burbuja').classList.add('oculto');
-}
-
-function mvActividad() {
-  clearTimeout(mvDormidaTimer);
-  mvDormidaTimer = setTimeout(() => { if (vistaActual === 'inicio') mvDormir(); }, 30000);
-}
-
-function mvAcariciar() {
-  if (mvDespertar()) { mvActividad(); return; }
-  mvEstado('feliz', 800);
-  mvCorazones(3);
-  mvBurbuja(MV_CARICIAS[Math.floor(Math.random() * MV_CARICIAS.length)]);
-  if (navigator.vibrate) navigator.vibrate(25);
-  mvActividad();
-}
-
-// Toque = caricia; mantener presionado = ronroneo
+// Toque = se pone feliz y brinca; mantener presionado = ronronea
+const mvSvg = $('mavis-svg');
 mvSvg.addEventListener('pointerdown', () => {
   mvPresion = setTimeout(() => {
     mvPresion = 'largo';
-    if (mavis.classList.contains('dormida')) mvDespertar();
-    mvEstado('ronronea', 2600);
-    mvBurbuja('Rrrr… rrrr… 😽', 2600);
+    mvEstado('ronronea', 2800);
     mvCorazones(4);
-    if (navigator.vibrate) navigator.vibrate([40, 30, 40, 30, 40, 30, 40]);
-  }, 550);
+    if (navigator.vibrate) navigator.vibrate([40, 30, 40, 30, 40, 30, 40, 30, 40]);
+  }, 500);
 });
 ['pointerup', 'pointerleave', 'pointercancel'].forEach((ev) => {
   mvSvg.addEventListener(ev, () => {
@@ -1018,58 +1016,14 @@ mvSvg.addEventListener('pointerdown', () => {
     const largo = mvPresion === 'largo';
     if (!largo) clearTimeout(mvPresion);
     mvPresion = null;
-    if (!largo && ev === 'pointerup') mvAcariciar();
-    mvActividad();
+    if (!largo && ev === 'pointerup') {
+      mvEstado('feliz', 900);
+      mvCorazones(3);
+      if (navigator.vibrate) navigator.vibrate(25);
+    }
   });
 });
 
-$('mavis-comer').addEventListener('click', () => {
-  mvDespertar();
-  const f = el('span', 'mv-extra pescado', '🐟');
-  f.style.left = '46%';
-  f.style.top = '30%';
-  mavis.append(f);
-  setTimeout(() => f.remove(), 900);
-  setTimeout(() => { mvEstado('comiendo', 1900); mvBurbuja('¡Ñam ñam! 😋', 1900); }, 800);
-  setTimeout(() => mvCorazones(3), 2700);
-  mvActividad();
-});
-
-$('mavis-jugar').addEventListener('click', () => {
-  mvDespertar();
-  const o = el('span', 'mv-extra ovillo', '🧶');
-  o.style.left = '44%';
-  o.style.top = '62%';
-  mavis.append(o);
-  setTimeout(() => o.remove(), 1700);
-  setTimeout(() => { mvEstado('jugando', 1200); mvBurbuja('¡Lo atrapé! 😼', 1500); }, 500);
-  mvActividad();
-});
-
-$('mavis-dormir').addEventListener('click', () => {
-  if (mavis.classList.contains('dormida')) { mvDespertar(); mvActividad(); }
-  else { mvBurbuja('Buenas noches… 🌙', 1600); setTimeout(mvDormir, 700); }
-});
-
-// Los ojos siguen el dedo o el mouse
-document.addEventListener('pointermove', (e) => {
-  if (mavis.classList.contains('dormida') || vistaActual !== 'inicio') return;
-  const r = mvSvg.getBoundingClientRect();
-  if (!r.width) return;
-  const dx = e.clientX - (r.left + r.width / 2);
-  const dy = e.clientY - (r.top + r.height * 0.45);
-  const d = Math.hypot(dx, dy) || 1;
-  const k = Math.min(1, d / 200) * 4;
-  mvSvg.querySelectorAll('.mv-pupila').forEach((p) => {
-    p.style.transform = `translate(${(dx / d) * k}px, ${(dy / d) * k * 0.6}px)`;
-  });
-}, { passive: true });
-
-// De vez en cuando dice algo
-setInterval(() => {
-  if (vistaActual !== 'inicio' || document.hidden || mavis.classList.contains('dormida')) return;
-  if (mavis.offsetParent === null) return;
-  mvBurbuja(MV_HABLA[Math.floor(Math.random() * MV_HABLA.length)], 2600);
-}, 22000);
-
-mvActividad();
+mvCambiarModo('camina', 6000);
+mvPonerX();
+requestAnimationFrame(mvBucle);
