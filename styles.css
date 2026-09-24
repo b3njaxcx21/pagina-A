@@ -195,3 +195,126 @@ main { flex: 1; overflow: hidden; position: relative; }
   display: flex; align-items: center; justify-content: center; cursor: zoom-out;
 }
 .visor img { max-width: 100%; max-height: 100%; object-fit: contain; }
+
+/* =============================================
+   INICIO
+   ============================================= */
+#vista-inicio { position: relative; overflow-x: hidden; }
+#vista-inicio > *:not(.corazones-fondo) { position: relative; z-index: 1; }
+#vista-inicio > .tarjeta, #vista-inicio > .grid-2, #vista-inicio > .stats, #vista-inicio > .btn-corazon { margin-bottom: 14px; }
+
+.saludo { text-align: center; color: var(--gris); font-size: 15px; margin: 4px 0 10px; }
+
+/* Corazones flotando de fondo */
+.corazones-fondo { position: absolute; inset: 0; pointer-events: none; overflow: hidden; z-index: 0; max-width: none !important; }
+.corazones-fondo span {
+  position: absolute; bottom: -40px; color: var(--rosa); opacity: .12; font-size: 26px;
+  animation: flotar 14s linear infinite;
+}
+.corazones-fondo span:nth-child(1) { left: 5%;  animation-delay: 0s;  font-size: 22px; }
+.corazones-fondo span:nth-child(2) { left: 18%; animation-delay: 3s;  font-size: 34px; }
+.corazones-fondo span:nth-child(3) { left: 32%; animation-delay: 7s; }
+.corazones-fondo span:nth-child(4) { left: 48%; animation-delay: 1.5s; font-size: 18px; }
+.corazones-fondo span:nth-child(5) { left: 62%; animation-delay: 9s;  font-size: 30px; }
+.corazones-fondo span:nth-child(6) { left: 75%; animation-delay: 5s; }
+.corazones-fondo span:nth-child(7) { left: 88%; animation-delay: 11s; font-size: 20px; }
+.corazones-fondo span:nth-child(8) { left: 95%; animation-delay: 2s;  font-size: 28px; }
+@keyframes flotar {
+  0%   { transform: translateY(0) rotate(0deg); }
+  100% { transform: translateY(-120vh) rotate(40deg); }
+}
+
+/* Hero con la pareja */
+.hero { display: flex; align-items: center; justify-content: center; gap: 18px; margin-bottom: 16px; }
+.hero-persona { display: flex; flex-direction: column; align-items: center; gap: 6px; font-weight: 600; font-size: 15px; min-width: 80px; text-align: center; }
+.avatar.grande { width: 68px; height: 68px; font-size: 28px; box-shadow: 0 6px 18px rgba(232,83,122,.3); border: 3px solid #fff; }
+.avatar.otro.grande { box-shadow: 0 6px 18px rgba(155,107,214,.3); }
+.latido { font-size: 34px; animation: latir 1.2s ease-in-out infinite; }
+@keyframes latir {
+  0%, 100% { transform: scale(1); }
+  15% { transform: scale(1.25); }
+  30% { transform: scale(1); }
+  45% { transform: scale(1.18); }
+}
+
+/* Contador */
+.contador { text-align: center; position: relative; background: linear-gradient(135deg, #ff7b9c, #e8537a 60%, #c93d63); color: #fff; }
+.contador .sub { color: rgba(255,255,255,.85); }
+.contador h2 { color: #fff; }
+.contador-titulo { font-size: 14px; opacity: .9; letter-spacing: .5px; text-transform: uppercase; }
+.contador-dias { font-size: 64px; font-weight: 800; line-height: 1.05; margin: 4px 0 10px; }
+.contador-dias small { font-size: 22px; font-weight: 600; }
+.contador-cajas { display: flex; gap: 10px; justify-content: center; margin-bottom: 12px; }
+.contador-cajas div { background: rgba(255,255,255,.18); border-radius: 12px; padding: 8px 4px; flex: 1; max-width: 90px; }
+.contador-cajas b { display: block; font-size: 24px; }
+.contador-cajas span { font-size: 12px; opacity: .9; }
+.contador-vivo { font-size: 13px; opacity: .92; font-variant-numeric: tabular-nums; }
+.contador-desde { font-size: 12.5px; opacity: .8; margin-top: 6px; }
+.contador input { margin: 0; }
+.contador .btn { background: #fff; color: var(--rosa-osc); }
+.btn-editar {
+  position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,.2); border: none;
+  width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-size: 14px;
+}
+.contador.pop { animation: pop .5s ease; }
+@keyframes pop { 50% { transform: scale(1.03); } }
+
+/* Próximas fechas */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.tarjeta.mini { padding: 16px 12px; text-align: center; }
+.mini-icono { font-size: 26px; }
+.mini-num { font-size: 26px; font-weight: 800; color: var(--rosa); margin: 2px 0; }
+.mini-txt { font-size: 12.5px; color: var(--gris); line-height: 1.3; }
+.barra-prog { height: 6px; background: var(--rosa-claro); border-radius: 3px; margin-top: 10px; overflow: hidden; }
+.barra-prog i { display: block; height: 100%; width: 0; background: var(--rosa); border-radius: 3px; transition: width 1s ease; }
+
+/* Botón corazón */
+.btn-corazon {
+  width: 100%; border: none; border-radius: 16px; padding: 16px; font-size: 17px; font-weight: 700;
+  background: #fff; color: var(--rosa-osc); box-shadow: var(--sombra); cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 10px; transition: transform .1s;
+}
+.btn-corazon span { font-size: 24px; display: inline-block; }
+.btn-corazon:active { transform: scale(.96); }
+.btn-corazon.enviado span { animation: latir .8s ease; }
+
+/* Estadísticas */
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.stats div { background: var(--tarjeta); border-radius: 14px; box-shadow: var(--sombra); padding: 12px 6px; text-align: center; }
+.stats b { display: block; font-size: 22px; color: var(--texto); }
+.stats span { font-size: 11.5px; color: var(--gris); }
+
+/* Recuerdo al azar */
+.fila.entre { justify-content: space-between; margin-bottom: 10px; }
+.fila.entre h2 { margin: 0; }
+.recuerdo-azar .btn-icono { border: none; font-size: 18px; }
+#recuerdo-azar img, #recuerdo-azar video { width: 100%; border-radius: 12px; max-height: 320px; object-fit: cover; display: block; cursor: zoom-in; }
+#recuerdo-azar .azar-texto { margin-top: 8px; line-height: 1.4; }
+#recuerdo-azar .azar-meta { font-size: 12px; color: var(--gris); margin-top: 4px; }
+#recuerdo-azar .vacio { padding: 16px; }
+.aparecer { animation: aparecer .4s ease; }
+@keyframes aparecer { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+/* Frase */
+.frase { background: var(--rosa-claro); box-shadow: none; text-align: center; }
+.frase-titulo { font-size: 13px; color: var(--rosa-osc); font-weight: 600; margin-bottom: 6px; }
+#frase-dia { font-size: 16px; font-style: italic; line-height: 1.45; }
+
+/* Lluvia de corazones */
+.lluvia { position: fixed; inset: 0; pointer-events: none; z-index: 60; overflow: hidden; }
+.lluvia span { position: absolute; bottom: -50px; animation: subir 2.6s ease-out forwards; }
+@keyframes subir {
+  0%   { transform: translateY(0) scale(.6); opacity: 1; }
+  100% { transform: translateY(-110vh) scale(1.2) rotate(25deg); opacity: 0; }
+}
+
+/* Aviso flotante */
+.toast {
+  position: fixed; top: max(16px, env(safe-area-inset-top)); left: 50%; transform: translateX(-50%);
+  background: var(--texto); color: #fff; padding: 12px 18px; border-radius: 24px; font-size: 15px;
+  z-index: 70; box-shadow: 0 8px 24px rgba(0,0,0,.2); animation: aparecer .3s ease; max-width: 90%; text-align: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .corazones-fondo span, .latido { animation: none; }
+}

@@ -38,6 +38,7 @@
         <input id="auth-nombre" type="text" placeholder="Tu nombre" autocomplete="name" class="oculto">
         <input id="auth-email" type="email" placeholder="Correo" autocomplete="email" required>
         <input id="auth-pass" type="password" placeholder="Contraseña (mínimo 6)" autocomplete="current-password" minlength="6" required>
+        <input id="auth-codigo" type="password" inputmode="numeric" placeholder="Código de acceso" autocomplete="off" required>
         <button type="submit" class="btn" id="btn-auth">Entrar</button>
       </form>
       <p id="auth-msg" class="msg"></p>
@@ -72,8 +73,96 @@
     </header>
 
     <main>
+      <!-- INICIO -->
+      <div id="vista-inicio" class="vista activa">
+        <div class="corazones-fondo" aria-hidden="true">
+          <span>❤</span><span>❤</span><span>❤</span><span>❤</span><span>❤</span><span>❤</span><span>❤</span><span>❤</span>
+        </div>
+
+        <p class="saludo" id="saludo"></p>
+
+        <!-- Pareja -->
+        <div class="hero">
+          <div class="hero-persona">
+            <div class="avatar grande" id="hero-av-yo"></div>
+            <span id="hero-nombre-yo"></span>
+          </div>
+          <div class="latido">❤️</div>
+          <div class="hero-persona">
+            <div class="avatar grande otro" id="hero-av-otro"></div>
+            <span id="hero-nombre-otro"></span>
+          </div>
+        </div>
+
+        <!-- Contador -->
+        <div class="tarjeta contador" id="contador">
+          <div id="contador-sin-fecha" class="oculto">
+            <h2>¿Desde cuándo son novios? 💘</h2>
+            <p class="sub">Pon la fecha y verán cuánto tiempo llevan juntos.</p>
+          </div>
+          <div id="contador-con-fecha" class="oculto">
+            <p class="contador-titulo">Llevamos juntos</p>
+            <div class="contador-dias"><span id="c-dias">0</span> <small>días</small></div>
+            <div class="contador-cajas">
+              <div><b id="c-anios">0</b><span>años</span></div>
+              <div><b id="c-meses">0</b><span>meses</span></div>
+              <div><b id="c-resto">0</b><span>días</span></div>
+            </div>
+            <p class="contador-vivo" id="c-vivo"></p>
+            <p class="contador-desde" id="c-desde"></p>
+          </div>
+          <form id="form-fecha" class="fila oculto">
+            <input id="input-fecha" type="date" required>
+            <button class="btn btn-chico" type="submit">Guardar</button>
+          </form>
+          <button id="btn-editar-fecha" class="btn-editar" title="Cambiar fecha">✏️</button>
+        </div>
+
+        <!-- Próximas fechas -->
+        <div class="grid-2" id="proximas">
+          <div class="tarjeta mini">
+            <div class="mini-icono">🌙</div>
+            <div class="mini-num" id="p-mes-dias">–</div>
+            <div class="mini-txt" id="p-mes-txt">para el próximo mesario</div>
+          </div>
+          <div class="tarjeta mini">
+            <div class="mini-icono">💍</div>
+            <div class="mini-num" id="p-anio-dias">–</div>
+            <div class="mini-txt" id="p-anio-txt">para el aniversario</div>
+            <div class="barra-prog"><i id="p-anio-barra"></i></div>
+          </div>
+        </div>
+
+        <!-- Botón de amor -->
+        <button id="btn-corazon" class="btn-corazon">
+          <span>❤️</span> Mandar un corazón
+        </button>
+
+        <!-- Estadísticas -->
+        <div class="stats">
+          <div><b id="s-recuerdos">0</b><span>📸 recuerdos</span></div>
+          <div><b id="s-mensajes">0</b><span>💬 mensajes</span></div>
+          <div><b id="s-corazones">0</b><span>❤️ corazones</span></div>
+        </div>
+
+        <!-- Recuerdo al azar -->
+        <div class="tarjeta recuerdo-azar">
+          <div class="fila entre">
+            <h2>✨ Un recuerdo</h2>
+            <button id="btn-otro-recuerdo" class="btn-icono" title="Otro recuerdo">🔀</button>
+          </div>
+          <div id="recuerdo-azar"></div>
+        </div>
+
+        <!-- Frase del día -->
+        <div class="tarjeta frase">
+          <p class="frase-titulo">💌 Frase del día</p>
+          <p id="frase-dia"></p>
+        </div>
+      </div>
+
       <!-- MURO -->
-      <div id="vista-muro" class="vista activa">
+      <div id="vista-muro" class="vista">
         <form id="form-publicar" class="tarjeta publicar">
           <textarea id="pub-texto" placeholder="Escribe un recuerdo..." rows="2"></textarea>
           <div id="pub-preview" class="preview oculto"></div>
@@ -119,7 +208,8 @@
     </main>
 
     <nav class="nav">
-      <button class="nav-btn activa" data-vista="muro"><span>🏠</span>Muro</button>
+      <button class="nav-btn activa" data-vista="inicio"><span>💞</span>Inicio</button>
+      <button class="nav-btn" data-vista="muro"><span>📸</span>Recuerdos</button>
       <button class="nav-btn" data-vista="chat"><span>💬</span>Chat<i id="badge-chat" class="badge oculto"></i></button>
       <button class="nav-btn" data-vista="perfil"><span>👤</span>Perfil</button>
     </nav>
@@ -127,6 +217,10 @@
 
   <!-- VISOR DE FOTOS -->
   <div id="visor" class="visor oculto"></div>
+
+  <!-- AVISOS Y ANIMACIONES -->
+  <div id="toast" class="toast oculto"></div>
+  <div id="lluvia" class="lluvia" aria-hidden="true"></div>
 
   <script type="module" src="app.js"></script>
 </body>

@@ -6,6 +6,7 @@ const SUPABASE_KEY = 'sb_publishable_8DiVJX0CTBUtmPUnu3ihvw_aOgWsjpz';
 
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const BUCKET = 'recuerdos';
+const CODIGO_ACCESO = '30082026';
 const MAX_MB = 50;
 
 const $ = (id) => document.getElementById(id);
@@ -18,7 +19,10 @@ let perfiles = {};        // id -> nombre
 let canal = null;
 let modoAuth = 'entrar';
 let archivoSel = null;
-let vistaActual = 'muro';
+let vistaActual = 'inicio';
+let postsCache = [];      // publicaciones cargadas (para el recuerdo al azar)
+let reloj = null;         // intervalo del contador en vivo
+let ultimoAzar = null;
 let sesionActual;         // para no cargar dos veces
 
 // ---------- Utilidades ----------
@@ -90,6 +94,10 @@ $('form-auth').addEventListener('submit', async (e) => {
   const email = $('auth-email').value.trim();
   const password = $('auth-pass').value;
   const nombre = $('auth-nombre').value.trim();
+  if ($('auth-codigo').value.trim() !== CODIGO_ACCESO) {
+    $('auth-msg').textContent = 'Código de acceso incorrecto.';
+    return;
+  }
   const btn = $('btn-auth');
   btn.disabled = true;
   $('auth-msg').textContent = '';
@@ -147,6 +155,8 @@ async function cargarPerfil() {
 
 function limpiar() {
   if (canal) { sb.removeChannel(canal); canal = null; }
+  if (reloj) { clearInterval(reloj); reloj = null; }
+  postsCache = [];
   usuario = perfil = pareja = null;
   perfiles = {};
   $('lista-publicaciones').replaceChildren();
@@ -215,8 +225,11 @@ async function entrarApp() {
   await cargarPerfiles();
   llenarPerfil();
   mostrar('app');
-  cambiarVista('muro');
+  cambiarVista('inicio');
+  pintarInicio();
   await Promise.all([cargarPublicaciones(), cargarMensajes()]);
+  cargarStats();
+  mostrarRecuerdoAzar();
   suscribir();
 }
 
@@ -231,6 +244,13 @@ async function cargarPerfiles() {
   $('perfil-pareja').textContent = otro
     ? `Vinculado con ${perfiles[otro]} 💞`
     : 'Tu pareja aún no se une. Compártele el código de abajo.';
+
+  // Tarjeta de la pareja en Inicio
+  const yo = perfiles[usuario.id] || 'Tú';
+  $('hero-av-yo').textContent = yo.charAt(0).toUpperCase();
+  $('hero-nombre-yo').textContent = yo;
+  $('hero-av-otro').textContent = otro ? perfiles[otro].charAt(0).toUpperCase() : '?';
+  $('hero-nombre-otro').textContent = otro ? perfiles[otro] : 'Esperando…';
 }
 
 function llenarPerfil() {
@@ -289,6 +309,7 @@ async function cargarPublicaciones() {
     return;
   }
   const urls = await urlsFirmadas(data.filter((p) => p.archivo_path).map((p) => p.archivo_path));
+  postsCache = data.map((p) => ({ ...p, url: urls[p.archivo_path] }));
   lista.replaceChildren(...data.map((p) => crearPost(p, urls[p.archivo_path])));
   revisarVacio();
 }
@@ -357,6 +378,9 @@ async function agregarPost(p) {
   if (lista.querySelector(`[data-id="${p.id}"]`)) return;
   lista.prepend(crearPost(p, urls[p.archivo_path]));
   revisarVacio();
+  postsCache.unshift({ ...p, url: urls[p.archivo_path] });
+  sumarStat('s-recuerdos', 1);
+  if (postsCache.length === 1) mostrarRecuerdoAzar();
 }
 
 async function borrarPost(p) {
@@ -369,8 +393,12 @@ async function borrarPost(p) {
 
 function quitarPost(id) {
   const nodo = $('lista-publicaciones').querySelector(`[data-id="${id}"]`);
-  if (nodo) nodo.remove();
+  if (!nodo) return;
+  nodo.remove();
   revisarVacio();
+  postsCache = postsCache.filter((p) => p.id !== id);
+  sumarStat('s-recuerdos', -1);
+  if (ultimoAzar === id) mostrarRecuerdoAzar();
 }
 
 // ---------- Publicar ----------
@@ -524,7 +552,12 @@ async function recibirMensaje(m) {
   if (!perfiles[m.autor_id]) await cargarPerfiles();
   if (!pintarMensaje(m)) return;
   bajarChat();
-  if (vistaActual !== 'chat' && m.autor_id !== usuario.id) {
+  contarMensaje(m);
+  if (m.autor_id === usuario.id) return;
+  if (m.texto === CORAZON) {
+    lluviaCorazones();
+    aviso(`💌 ${nombreDe(m.autor_id)} te mandó un corazón`);
+  } else if (vistaActual !== 'chat') {
     $('badge-chat').classList.remove('oculto');
   }
 }
@@ -545,7 +578,7 @@ $('form-chat').addEventListener('submit', async (e) => {
     alert('No se pudo enviar: ' + traducir(error));
     return;
   }
-  pintarMensaje(data);
+  if (pintarMensaje(data)) contarMensaje(data);
   bajarChat();
 });
 
@@ -573,4 +606,276 @@ if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('./sw.js').catch(() => {});
   });
+}
+
+// =============================================
+//  INICIO: contador, fechas, corazones
+// =============================================
+const CORAZON = '❤️';
+
+const FRASES = [
+  'Contigo, hasta lo simple se vuelve especial.',
+  'Eres mi lugar favorito.',
+  'Si tuviera que elegir otra vez, te elegiría a ti.',
+  'Me gustas en todas tus versiones.',
+  'Cada día a tu lado es mi día favorito.',
+  'Contigo el tiempo pasa volando, pero cada segundo vale.',
+  'Eres mi casualidad más bonita.',
+  'Lo mejor de mi día eres tú.',
+  'Tú y yo, siempre equipo.',
+  'Te quiero hoy más que ayer, pero menos que mañana.',
+  'Gracias por hacer de lo normal algo increíble.',
+  'Mi persona favorita para no hacer nada.',
+  'Tu risa es mi canción favorita.',
+  'Contigo aprendí que el amor también es paz.',
+  'Donde estés tú, ahí quiero estar.',
+  'Eres mi hoy y todos mis mañanas.',
+  'Somos la mejor historia que me ha pasado.',
+  'A tu lado todo tiene sentido.',
+  'No sé qué hice bien, pero te tengo a ti.',
+  'Mi abrazo favorito tiene tu nombre.',
+];
+
+function fechaLocal(iso) {
+  const [a, m, d] = iso.split('-').map(Number);
+  return new Date(a, m - 1, d);
+}
+
+function soloDia(d) {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+}
+
+function sumarMeses(fecha, n) {
+  const d = new Date(fecha.getFullYear(), fecha.getMonth() + n, 1);
+  const ultimo = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+  d.setDate(Math.min(fecha.getDate(), ultimo));
+  return d;
+}
+
+function desglose(inicio, hoy) {
+  let a = hoy.getFullYear() - inicio.getFullYear();
+  let m = hoy.getMonth() - inicio.getMonth();
+  let d = hoy.getDate() - inicio.getDate();
+  if (d < 0) { m--; d += new Date(hoy.getFullYear(), hoy.getMonth(), 0).getDate(); }
+  if (m < 0) { a--; m += 12; }
+  return { a, m, d };
+}
+
+function diasEntre(a, b) {
+  return Math.round((soloDia(b) - soloDia(a)) / 86400000);
+}
+
+function fmt(n) {
+  return n.toLocaleString('es-MX');
+}
+
+function pintarInicio() {
+  const h = new Date().getHours();
+  const saludo = h < 12 ? 'Buenos días' : h < 19 ? 'Buenas tardes' : 'Buenas noches';
+  $('saludo').textContent = `${saludo}, ${perfiles[usuario.id] || ''} ${h < 19 ? '☀️' : '🌙'}`;
+
+  const hoy = new Date();
+  const idx = Math.floor(soloDia(hoy) / 86400000) % FRASES.length;
+  $('frase-dia').textContent = `“${FRASES[idx]}”`;
+
+  pintarContador();
+  if (reloj) clearInterval(reloj);
+  reloj = setInterval(tickVivo, 1000);
+}
+
+function pintarContador() {
+  const tiene = !!pareja.fecha_inicio;
+  $('contador-sin-fecha').classList.toggle('oculto', tiene);
+  $('contador-con-fecha').classList.toggle('oculto', !tiene);
+  $('form-fecha').classList.toggle('oculto', tiene);
+  $('btn-editar-fecha').classList.toggle('oculto', !tiene);
+  $('proximas').classList.toggle('oculto', !tiene);
+  if (!tiene) return;
+
+  const inicio = fechaLocal(pareja.fecha_inicio);
+  const hoy = soloDia(new Date());
+  const total = diasEntre(inicio, hoy);
+
+  if (total < 0) {
+    $('c-dias').textContent = Math.abs(total);
+    $('contador-con-fecha').querySelector('.contador-titulo').textContent = 'Faltan para empezar';
+  } else {
+    $('contador-con-fecha').querySelector('.contador-titulo').textContent = 'Llevamos juntos';
+    animarNumero($('c-dias'), total);
+  }
+  const { a, m, d } = desglose(inicio, hoy);
+  const poner = (id, n, uno, varios) => {
+    $(id).textContent = n;
+    $(id).nextElementSibling.textContent = n === 1 ? uno : varios;
+  };
+  poner('c-anios', Math.max(a, 0), 'año', 'años');
+  poner('c-meses', Math.max(m, 0), 'mes', 'meses');
+  poner('c-resto', Math.max(d, 0), 'día', 'días');
+  $('c-desde').textContent = 'Desde el ' + inicio.toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' });
+  tickVivo();
+
+  // Próximo mesario
+  const mesesPasados = Math.max(0, a * 12 + m);
+  let n = mesesPasados;
+  let mesario = sumarMeses(inicio, n);
+  if (mesario < hoy || n === 0) mesario = sumarMeses(inicio, ++n);
+  const faltaMes = diasEntre(hoy, mesario);
+  $('p-mes-dias').textContent = faltaMes === 0 ? '¡Hoy! 🎉' : faltaMes + (faltaMes === 1 ? ' día' : ' días');
+  $('p-mes-txt').textContent = faltaMes === 0
+    ? `Cumplen ${n} ${n === 1 ? 'mes' : 'meses'}`
+    : `para cumplir ${n} ${n === 1 ? 'mes' : 'meses'}`;
+
+  // Próximo aniversario
+  let k = Math.max(0, a);
+  let aniv = sumarMeses(inicio, k * 12);
+  if (aniv < hoy || k === 0) aniv = sumarMeses(inicio, ++k * 12);
+  const anterior = sumarMeses(inicio, (k - 1) * 12);
+  const faltaAnio = diasEntre(hoy, aniv);
+  const aniversarioHoy = total > 0 && diasEntre(hoy, sumarMeses(inicio, a * 12)) === 0 && a > 0;
+  $('p-anio-dias').textContent = aniversarioHoy ? '¡Hoy! 🎉' : faltaAnio + (faltaAnio === 1 ? ' día' : ' días');
+  $('p-anio-txt').textContent = aniversarioHoy
+    ? `¡Cumplen ${a} ${a === 1 ? 'año' : 'años'}!`
+    : `para su ${k}.º aniversario`;
+  const progreso = Math.min(100, Math.max(0, (diasEntre(anterior, hoy) / diasEntre(anterior, aniv)) * 100));
+  requestAnimationFrame(() => { $('p-anio-barra').style.width = (aniversarioHoy ? 100 : progreso) + '%'; });
+
+  if (faltaMes === 0 || aniversarioHoy) {
+    setTimeout(() => lluviaCorazones(40), 600);
+  }
+}
+
+function tickVivo() {
+  if (!pareja || !pareja.fecha_inicio) return;
+  const ms = Date.now() - fechaLocal(pareja.fecha_inicio).getTime();
+  if (ms < 0) { $('c-vivo').textContent = ''; return; }
+  const seg = Math.floor(ms / 1000);
+  $('c-vivo').textContent =
+    `⏱ ${fmt(Math.floor(seg / 3600))} horas · ${fmt(Math.floor(seg / 60))} minutos · ${fmt(seg)} segundos`;
+}
+
+function animarNumero(nodo, final) {
+  const inicio = performance.now();
+  const dur = 900;
+  function paso(t) {
+    const p = Math.min(1, (t - inicio) / dur);
+    const eased = 1 - Math.pow(1 - p, 3);
+    nodo.textContent = fmt(Math.round(final * eased));
+    if (p < 1) requestAnimationFrame(paso);
+  }
+  requestAnimationFrame(paso);
+}
+
+// Cambiar / poner fecha
+$('btn-editar-fecha').addEventListener('click', () => {
+  $('form-fecha').classList.toggle('oculto');
+  if (pareja.fecha_inicio) $('input-fecha').value = pareja.fecha_inicio;
+});
+
+$('form-fecha').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const fecha = $('input-fecha').value;
+  if (!fecha) return;
+  const { error } = await sb.rpc('actualizar_fecha_inicio', { p_fecha: fecha });
+  if (error) return alert(traducir(error));
+  pareja.fecha_inicio = fecha;
+  pintarContador();
+  $('contador').classList.remove('pop');
+  void $('contador').offsetWidth;
+  $('contador').classList.add('pop');
+  lluviaCorazones(25);
+});
+
+// ---------- Estadísticas ----------
+async function cargarStats() {
+  const base = () => sb.from('mensajes').select('id', { count: 'exact', head: true }).eq('pareja_id', pareja.id);
+  const [msgs, cors] = await Promise.all([base(), base().eq('texto', CORAZON)]);
+  const { count: recs } = await sb.from('publicaciones').select('id', { count: 'exact', head: true }).eq('pareja_id', pareja.id);
+  animarNumero($('s-recuerdos'), recs || 0);
+  animarNumero($('s-mensajes'), msgs.count || 0);
+  animarNumero($('s-corazones'), cors.count || 0);
+}
+
+function sumarStat(id, n) {
+  const nodo = $(id);
+  const actual = parseInt(nodo.textContent.replace(/\D/g, ''), 10) || 0;
+  nodo.textContent = fmt(Math.max(0, actual + n));
+}
+
+function contarMensaje(m) {
+  sumarStat('s-mensajes', 1);
+  if (m.texto === CORAZON) sumarStat('s-corazones', 1);
+}
+
+// ---------- Recuerdo al azar ----------
+function mostrarRecuerdoAzar() {
+  const caja = $('recuerdo-azar');
+  if (!postsCache.length) {
+    const v = el('div', 'vacio');
+    v.append(el('p', '', 'Cuando suban recuerdos, aquí aparecerá uno al azar 💭'));
+    caja.replaceChildren(v);
+    ultimoAzar = null;
+    return;
+  }
+  const conFoto = postsCache.filter((p) => p.url);
+  const pool = (conFoto.length ? conFoto : postsCache).filter((p) => p.id !== ultimoAzar);
+  const p = (pool.length ? pool : postsCache)[Math.floor(Math.random() * (pool.length || postsCache.length))];
+  ultimoAzar = p.id;
+
+  const cont = el('div', 'aparecer');
+  if (p.url) {
+    if (p.tipo === 'video') {
+      const v = document.createElement('video');
+      v.src = p.url; v.controls = true; v.playsInline = true; v.preload = 'metadata';
+      cont.append(v);
+    } else {
+      const img = document.createElement('img');
+      img.src = p.url; img.alt = 'Recuerdo';
+      img.addEventListener('click', () => abrirVisor(p.url));
+      cont.append(img);
+    }
+  }
+  if (p.texto) cont.append(el('p', 'azar-texto', p.texto));
+  cont.append(el('p', 'azar-meta', `${nombreDe(p.autor_id)} · ${new Date(p.creado_en).toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' })}`));
+  caja.replaceChildren(cont);
+}
+
+$('btn-otro-recuerdo').addEventListener('click', mostrarRecuerdoAzar);
+
+// ---------- Mandar un corazón ----------
+$('btn-corazon').addEventListener('click', async () => {
+  const btn = $('btn-corazon');
+  btn.classList.remove('enviado');
+  void btn.offsetWidth;
+  btn.classList.add('enviado');
+  lluviaCorazones(18);
+  if (navigator.vibrate) navigator.vibrate(40);
+  const { data, error } = await sb.from('mensajes').insert({ pareja_id: pareja.id, texto: CORAZON }).select().single();
+  if (error) return alert('No se pudo enviar: ' + traducir(error));
+  if (pintarMensaje(data)) contarMensaje(data);
+  aviso('❤️ Corazón enviado');
+});
+
+// ---------- Animaciones ----------
+function lluviaCorazones(cantidad = 24) {
+  const capa = $('lluvia');
+  const emojis = ['❤️', '💖', '💕', '💗', '💘', '💞'];
+  for (let i = 0; i < cantidad; i++) {
+    const s = document.createElement('span');
+    s.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+    s.style.left = Math.random() * 100 + 'vw';
+    s.style.fontSize = 18 + Math.random() * 26 + 'px';
+    s.style.animationDelay = Math.random() * 0.8 + 's';
+    s.style.animationDuration = 2 + Math.random() * 1.5 + 's';
+    capa.append(s);
+    setTimeout(() => s.remove(), 4500);
+  }
+}
+
+let avisoTimer = null;
+function aviso(texto) {
+  const t = $('toast');
+  t.textContent = texto;
+  t.classList.remove('oculto');
+  clearTimeout(avisoTimer);
+  avisoTimer = setTimeout(() => t.classList.add('oculto'), 2800);
 }
