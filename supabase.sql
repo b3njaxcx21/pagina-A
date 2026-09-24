@@ -269,3 +269,16 @@ do $$
 begin
   begin alter publication supabase_realtime add table public.planes; exception when duplicate_object then null; end;
 end $$;
+
+-- ---------- PLANES: fecha objetivo y ESTADO DE ÁNIMO ----------
+alter table public.planes add column if not exists para date;
+
+alter table public.perfiles add column if not exists animo text;
+alter table public.perfiles add column if not exists animo_en timestamptz;
+revoke update on public.perfiles from authenticated;
+grant update (nombre, avatar_path, animo, animo_en) on public.perfiles to authenticated;
+
+do $$
+begin
+  begin alter publication supabase_realtime add table public.perfiles; exception when duplicate_object then null; end;
+end $$;

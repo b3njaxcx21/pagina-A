@@ -96,13 +96,22 @@
         <div class="hero">
           <div class="hero-persona">
             <div class="avatar grande" id="hero-av-yo" data-uid=""></div>
+            <span class="animo-badge oculto" id="hero-animo-yo"></span>
             <span id="hero-nombre-yo"></span>
           </div>
           <div class="latido">❤️</div>
           <div class="hero-persona">
             <div class="avatar grande otro" id="hero-av-otro"></div>
+            <span class="animo-badge oculto" id="hero-animo-otro"></span>
             <span id="hero-nombre-otro"></span>
           </div>
+        </div>
+
+        <!-- Estado de ánimo -->
+        <div class="tarjeta animo" id="animo">
+          <h2>¿Cómo te sientes hoy?</h2>
+          <div class="animo-opciones" id="animo-opciones"></div>
+          <p class="animo-otro" id="animo-otro"></p>
         </div>
 
         <!-- Contador -->
@@ -193,9 +202,15 @@
           <div class="planes-num" id="planes-num">Aún no hay planes</div>
           <div class="barra-prog"><i id="planes-barra"></i></div>
         </div>
+        <div class="pestanas" id="planes-tabs">
+          <button type="button" class="pestana activa" data-tab="pendientes">Por cumplir</button>
+          <button type="button" class="pestana" data-tab="cumplidos">Cumplidos ✓</button>
+        </div>
         <form id="form-plan" class="tarjeta publicar">
           <input id="plan-texto" type="text" placeholder="Ej: Viajar a la playa juntos…" maxlength="120" autocomplete="off">
           <div class="plan-cats" id="plan-cats"></div>
+          <label class="plan-fecha-lbl">📅 Para cuándo (opcional)</label>
+          <input id="plan-fecha" type="date">
           <button type="submit" class="btn btn-chico" id="btn-plan">Agregar</button>
         </form>
         <div id="lista-planes"></div>

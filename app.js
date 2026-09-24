@@ -17,6 +17,7 @@ let usuario = null;
 let perfil = null;
 let pareja = null;
 let perfiles = {};        // id -> nombre
+let animos = {};          // id -> { animo, animo_en }
 let fotos = {};           // id -> URL firmada de la foto de perfil
 let canal = null;
 let archivoSel = null;
@@ -174,6 +175,7 @@ function limpiar() {
   postsCache = [];
   usuario = perfil = pareja = null;
   perfiles = {};
+  animos = {};
   fotos = {};
   $('lista-publicaciones').replaceChildren();
   planes = [];
@@ -253,9 +255,13 @@ async function entrarApp() {
 }
 
 async function cargarPerfiles() {
-  const { data } = await sb.from('perfiles').select('id, nombre, avatar_path');
+  const { data } = await sb.from('perfiles').select('id, nombre, avatar_path, animo, animo_en');
   perfiles = {};
-  (data || []).forEach((p) => { perfiles[p.id] = p.nombre || 'Sin nombre'; });
+  animos = {};
+  (data || []).forEach((p) => {
+    perfiles[p.id] = p.nombre || 'Sin nombre';
+    animos[p.id] = { animo: p.animo, animo_en: p.animo_en };
+  });
   const rutas = (data || []).filter((p) => p.avatar_path).map((p) => p.avatar_path);
   const urls = await urlsFirmadas(rutas);
   fotos = {};
@@ -277,7 +283,81 @@ async function cargarPerfiles() {
   $('hero-nombre-yo').textContent = yo;
   $('hero-nombre-otro').textContent = otro ? perfiles[otro] : 'Esperando…';
   refrescarAvatares();
+  pintarAnimos();
   $('btn-corazon').querySelector('span').textContent = (colorDe(usuario.id) || {}).corazon || '❤️';
+}
+
+// ---------- Estado de ánimo ----------
+const ANIMOS = [
+  ['🥰', 'Con amor'], ['🤩', 'Emoción'], ['😊', 'Feliz'], ['😴', 'Cansancio'],
+  ['🥺', 'Sensible'], ['😢', 'Triste'], ['😡', 'Molestia'], ['🤒', 'Malestar'],
+];
+
+ANIMOS.forEach(([emoji, nombre]) => {
+  const b = el('button', 'animo-op', emoji);
+  b.type = 'button';
+  b.title = nombre;
+  b.dataset.animo = emoji;
+  b.addEventListener('click', () => ponerAnimo(emoji));
+  $('animo-opciones').append(b);
+});
+
+function animoVigente(id) {
+  const a = animos[id];
+  if (!a || !a.animo || !a.animo_en) return null;
+  return Date.now() - new Date(a.animo_en).getTime() < 24 * 3600 * 1000 ? a : null;
+}
+
+function hace(iso) {
+  const min = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
+  if (min < 1) return 'ahora mismo';
+  if (min < 60) return `hace ${min} min`;
+  return `hace ${Math.round(min / 60)} h`;
+}
+
+function pintarAnimos() {
+  if (!usuario) return;
+  const otro = Object.keys(perfiles).find((id) => id !== usuario.id);
+  const mio = animoVigente(usuario.id);
+  const suyo = otro ? animoVigente(otro) : null;
+  const poner = (id, a) => {
+    const b = $(id);
+    b.textContent = a ? a.animo : '';
+    b.classList.toggle('oculto', !a);
+  };
+  poner('hero-animo-yo', mio);
+  poner('hero-animo-otro', suyo);
+  document.querySelectorAll('.animo-op').forEach((b) => b.classList.toggle('activa', !!mio && b.dataset.animo === mio.animo));
+  $('animo-otro').textContent = !otro
+    ? ''
+    : suyo
+      ? `${perfiles[otro]} se siente ${suyo.animo} · ${hace(suyo.animo_en)}`
+      : `${perfiles[otro]} aún no dice cómo se siente hoy`;
+}
+
+async function ponerAnimo(emoji) {
+  const ahora = new Date().toISOString();
+  const antes = animos[usuario.id];
+  animos[usuario.id] = { animo: emoji, animo_en: ahora };
+  pintarAnimos();
+  lluviaCorazones(8, [emoji]);
+  const { error } = await sb.from('perfiles').update({ animo: emoji, animo_en: ahora }).eq('id', usuario.id);
+  if (error) {
+    animos[usuario.id] = antes;
+    pintarAnimos();
+    alert('No se pudo guardar tu ánimo: ' + traducir(error));
+  }
+}
+
+function perfilRemoto(f) {
+  if (!f || !usuario || f.id === usuario.id || perfiles[f.id] === undefined) return;
+  const antes = animos[f.id];
+  animos[f.id] = { animo: f.animo, animo_en: f.animo_en };
+  pintarAnimos();
+  if (f.animo && (!antes || antes.animo_en !== f.animo_en)) {
+    aviso(`${nombreDe(f.id)} se siente ${f.animo}`);
+    mavisReaccion();
+  }
 }
 
 // Muestra la foto de perfil (o la inicial si no tiene)
@@ -606,6 +686,7 @@ async function recibirMensaje(m) {
   if (m.autor_id === usuario.id) return;
   lluviaCorazones(24, [(colorDe(m.autor_id) || {}).corazon]);
   aviso(`${(colorDe(m.autor_id) || {}).corazon || '💌'} ${nombreDe(m.autor_id)} te mandó un corazón`);
+  mavisReaccion();
 }
 
 // =============================================
@@ -638,22 +719,48 @@ async function cargarPlanes() {
   pintarPlanes();
 }
 
+let planesTab = 'pendientes';
+
+function irAPestanaPlanes(tab) {
+  planesTab = tab;
+  document.querySelectorAll('#planes-tabs .pestana').forEach((x) => x.classList.toggle('activa', x.dataset.tab === tab));
+}
+
+document.querySelectorAll('#planes-tabs .pestana').forEach((b) => {
+  b.addEventListener('click', () => {
+    irAPestanaPlanes(b.dataset.tab);
+    pintarPlanes();
+  });
+});
+
 function pintarPlanes() {
-  const pendientes = planes.filter((x) => !x.hecho);
+  const pendientes = planes.filter((x) => !x.hecho).sort((a, b) => {
+    if (a.para && b.para) return a.para.localeCompare(b.para);
+    if (a.para) return -1;
+    if (b.para) return 1;
+    return new Date(b.creado_en) - new Date(a.creado_en);
+  });
   const hechos = planes.filter((x) => x.hecho).sort((a, b) => new Date(b.hecho_en || 0) - new Date(a.hecho_en || 0));
   const total = planes.length;
   $('planes-num').textContent = total ? `${hechos.length} de ${total} cumplidos` : 'Aún no hay planes. ¡Agreguen el primero!';
   $('planes-barra').style.width = (total ? (hechos.length / total) * 100 : 0) + '%';
   $('s-planes').textContent = fmt(hechos.length);
+  document.querySelector('#planes-tabs [data-tab="pendientes"]').textContent = `Por cumplir (${pendientes.length})`;
+  document.querySelector('#planes-tabs [data-tab="cumplidos"]').textContent = `Cumplidos ✓ (${hechos.length})`;
 
-  const partes = [];
-  if (!total) {
+  const lista = planesTab === 'pendientes' ? pendientes : hechos;
+  const partes = lista.map(crearPlan);
+  if (!lista.length) {
     const v = el('div', 'vacio');
-    v.append(el('div', '', '🗺️'), el('p', '', 'Viajes, comidas, sueños… lo que quieran hacer juntos.'));
+    if (planesTab === 'cumplidos') {
+      v.append(el('div', '', '✅'), el('p', '', 'Aquí aparecerán los planes que vayan cumpliendo.'));
+    } else if (total) {
+      v.append(el('div', '', '🎉'), el('p', '', '¡No queda nada pendiente! Agreguen nuevos planes a futuro.'));
+    } else {
+      v.append(el('div', '', '🗺️'), el('p', '', 'Viajes, comidas, sueños… lo que quieran hacer juntos.'));
+    }
     partes.push(v);
   }
-  if (pendientes.length) partes.push(el('h3', 'planes-tit', 'Por cumplir'), ...pendientes.map(crearPlan));
-  if (hechos.length) partes.push(el('h3', 'planes-tit', '¡Cumplidos! 🎉'), ...hechos.map(crearPlan));
   $('lista-planes').replaceChildren(...partes);
   planNuevo = null;
 }
@@ -679,6 +786,13 @@ function crearPlan(p) {
   borrar.type = 'button';
   borrar.title = 'Borrar';
   borrar.addEventListener('click', () => borrarPlan(p));
+  if (p.para) {
+    const f = fechaLocal(p.para);
+    const d = diasEntre(soloDia(new Date()), f);
+    let txt = '📅 ' + f.toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' });
+    if (!p.hecho) txt += d > 0 ? ` · faltan ${fmt(d)} ${d === 1 ? 'día' : 'días'}` : d === 0 ? ' · ¡es hoy!' : ' · ya pasó la fecha';
+    cuerpo.append(el('div', 'plan-para' + (!p.hecho && d < 0 ? ' vencido' : ''), txt));
+  }
   fila.append(chk, cuerpo, borrar);
   return fila;
 }
@@ -721,15 +835,17 @@ $('form-plan').addEventListener('submit', async (e) => {
   btn.disabled = true;
   const { data, error } = await sb
     .from('planes')
-    .insert({ pareja_id: pareja.id, texto, categoria: catSel })
+    .insert({ pareja_id: pareja.id, texto, categoria: catSel, para: $('plan-fecha').value || null })
     .select()
     .single();
   btn.disabled = false;
   if (error) return alert('No se pudo agregar: ' + traducir(error));
   $('plan-texto').value = '';
+  $('plan-fecha').value = '';
   if (!planes.some((x) => x.id === data.id)) {
     planes.unshift(data);
     planNuevo = data.id;
+    irAPestanaPlanes('pendientes');
     pintarPlanes();
   }
 });
@@ -774,6 +890,8 @@ function suscribir() {
       (payload) => agregarPost(payload.new))
     .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'publicaciones' },
       (payload) => payload.old && quitarPost(payload.old.id))
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'perfiles' },
+      (payload) => perfilRemoto(payload.new))
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'planes', filter: filtro },
       (payload) => planRemoto('INSERT', payload.new))
     .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'planes', filter: filtro },
@@ -1071,6 +1189,7 @@ $('btn-corazon').addEventListener('click', async () => {
   const { data, error } = await sb.from('mensajes').insert({ pareja_id: pareja.id, texto: CORAZON }).select().single();
   if (error) return alert('No se pudo enviar: ' + traducir(error));
   if (primeraVez(data.id)) sumarStat('s-corazones', 1);
+  mavisReaccion();
   aviso(((colorDe(usuario.id) || {}).corazon || '❤️') + ' Corazón enviado');
 });
 
@@ -1103,7 +1222,7 @@ function aviso(texto) {
 //  MAVIS, la gatita negra que camina por la barra
 // =============================================
 const mavis = $('mavis');
-const mvAncho = 84;
+let mvAncho = 84;
 let mvX = 20;
 let mvDir = 1;              // 1 = derecha, -1 = izquierda
 let mvModo = 'camina';      // camina | pausa | interaccion
@@ -1183,6 +1302,7 @@ mvSvg.addEventListener('pointerdown', () => {
   mvPresion = setTimeout(() => {
     mvPresion = 'largo';
     mvEstado('ronronea', 2800);
+    cuidarMavis();
     mvCorazones(4);
     if (navigator.vibrate) navigator.vibrate([40, 30, 40, 30, 40, 30, 40, 30, 40]);
   }, 500);
@@ -1195,11 +1315,59 @@ mvSvg.addEventListener('pointerdown', () => {
     mvPresion = null;
     if (!largo && ev === 'pointerup') {
       mvEstado('feliz', 900);
+      cuidarMavis();
       mvCorazones(3);
       if (navigator.vibrate) navigator.vibrate(25);
     }
   });
 });
+
+// Reacciona cuando llega un corazón o cambia el ánimo del otro
+function mavisReaccion() {
+  if (mavis.classList.contains('oculta')) return;
+  mvEstado('feliz', 900);
+  mvCorazones(3);
+}
+
+// Crece si la cuidan (la tocan) todos los días
+function claveDia(d) {
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+function leerRacha() {
+  try { return JSON.parse(localStorage.getItem('mavis_racha')) || { dias: 0, ultimo: '' }; } catch (_) { return { dias: 0, ultimo: '' }; }
+}
+function guardarRacha(r) {
+  try { localStorage.setItem('mavis_racha', JSON.stringify(r)); } catch (_) { /* sin almacenamiento */ }
+}
+function aplicarTamano(dias) {
+  mvAncho = 76 + Math.min(dias, 30) * 1.5;
+  mavis.style.width = mvAncho + 'px';
+}
+function ayerDe(d) {
+  const a = new Date(d);
+  a.setDate(a.getDate() - 1);
+  return a;
+}
+function revisarRacha() {
+  const r = leerRacha();
+  const hoy = new Date();
+  if (r.ultimo !== claveDia(hoy) && r.ultimo !== claveDia(ayerDe(hoy))) {
+    r.dias = 0;
+    guardarRacha(r);
+  }
+  aplicarTamano(r.dias);
+}
+function cuidarMavis() {
+  const r = leerRacha();
+  const hoy = new Date();
+  if (r.ultimo === claveDia(hoy)) return;
+  r.dias = r.ultimo === claveDia(ayerDe(hoy)) ? r.dias + 1 : 1;
+  r.ultimo = claveDia(hoy);
+  guardarRacha(r);
+  aplicarTamano(r.dias);
+  mvCorazones(8);
+}
+revisarRacha();
 
 mvCambiarModo('camina', 6000);
 mvPonerX();
