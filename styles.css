@@ -353,4 +353,5 @@ main { flex: 1; overflow: hidden; position: relative; }
 @keyframes mv-ronroneo { 0% { transform: translate(-.8px, 0); } 50% { transform: translate(.8px, .6px); } 100% { transform: translate(-.8px, 0); } }
 .mv-corazon { position: absolute; left: 30px; top: 0; pointer-events: none; font-size: 18px; animation: mv-sube 1.5s ease-out forwards; }
 @keyframes mv-sube { from { transform: translateY(0) scale(.6); opacity: 1; } to { transform: translateY(-80px) scale(1.3); opacity: 0; } }
-@media (prefers-reduced-motion: reduce) { .mavis-svg *, .mv-salto { animation: none !important; } }
+.mv-nombre { position: absolute; left: 50%; top: -30px; transform: translateX(-50%); background: #fff; color: var(--rosa); font-weight: 700; font-size: 14px; padding: 3px 12px; border-radius: 12px; box-shadow: 0 3px 10px rgba(0,0,0,.15); pointer-events: none; white-space: nowrap; animation: mv-nombre 1.8s ease-out forwards; }
+@keyframes mv-nombre { 0% { opacity: 0; transform: translateX(-50%) translateY(6px); } 12%,75% { opacity: 1; transform: translateX(-50%) translateY(0); } 100% { opacity: 0; transform: translateX(-50%) translateY(-4px); } }

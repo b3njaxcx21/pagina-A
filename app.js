@@ -990,6 +990,13 @@ function mvEstado(clase, ms) {
   mvCambiarModo('interaccion', ms + 300);
 }
 
+function mvNombre() {
+  mavis.querySelectorAll('.mv-nombre').forEach((n) => n.remove());
+  const n = el('span', 'mv-nombre', 'Mavis');
+  mavis.append(n);
+  setTimeout(() => n.remove(), 1900);
+}
+
 function mvCorazones(n) {
   for (let i = 0; i < n; i++) {
     const s = el('span', 'mv-corazon', ['❤️', '💕', '💗'][Math.floor(Math.random() * 3)]);
@@ -1006,6 +1013,7 @@ mvSvg.addEventListener('pointerdown', () => {
   mvPresion = setTimeout(() => {
     mvPresion = 'largo';
     mvEstado('ronronea', 2800);
+    mvNombre();
     mvCorazones(4);
     if (navigator.vibrate) navigator.vibrate([40, 30, 40, 30, 40, 30, 40, 30, 40]);
   }, 500);
@@ -1018,6 +1026,7 @@ mvSvg.addEventListener('pointerdown', () => {
     mvPresion = null;
     if (!largo && ev === 'pointerup') {
       mvEstado('feliz', 900);
+      mvNombre();
       mvCorazones(3);
       if (navigator.vibrate) navigator.vibrate(25);
     }
