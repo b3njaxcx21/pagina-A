@@ -1010,10 +1010,10 @@ function mvCorazones(n) {
 // Toque = se pone feliz y brinca; mantener presionado = ronronea
 const mvSvg = $('mavis-svg');
 mvSvg.addEventListener('pointerdown', () => {
+  mvNombre();
   mvPresion = setTimeout(() => {
     mvPresion = 'largo';
     mvEstado('ronronea', 2800);
-    mvNombre();
     mvCorazones(4);
     if (navigator.vibrate) navigator.vibrate([40, 30, 40, 30, 40, 30, 40, 30, 40]);
   }, 500);
@@ -1026,7 +1026,6 @@ mvSvg.addEventListener('pointerdown', () => {
     mvPresion = null;
     if (!largo && ev === 'pointerup') {
       mvEstado('feliz', 900);
-      mvNombre();
       mvCorazones(3);
       if (navigator.vibrate) navigator.vibrate(25);
     }
