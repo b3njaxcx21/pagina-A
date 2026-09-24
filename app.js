@@ -17,7 +17,6 @@ let perfil = null;
 let pareja = null;
 let perfiles = {};        // id -> nombre
 let canal = null;
-let modoAuth = 'entrar';
 let archivoSel = null;
 let vistaActual = 'inicio';
 let postsCache = [];      // publicaciones cargadas (para el recuerdo al azar)
@@ -76,48 +75,45 @@ function el(tag, clase, texto) {
 // =============================================
 //  AUTENTICACIÓN
 // =============================================
-document.querySelectorAll('.pestana').forEach((b) => {
-  b.addEventListener('click', () => {
-    modoAuth = b.dataset.modo;
-    document.querySelectorAll('.pestana').forEach((x) => x.classList.toggle('activa', x === b));
-    const registro = modoAuth === 'registro';
-    $('auth-nombre').classList.toggle('oculto', !registro);
-    $('auth-nombre').required = registro;
-    $('auth-pass').autocomplete = registro ? 'new-password' : 'current-password';
-    $('btn-auth').textContent = registro ? 'Crear cuenta' : 'Entrar';
-    $('auth-msg').textContent = '';
-  });
+// Usuarios permitidos (se entra solo con el nombre, después del código)
+const USUARIOS = {
+  benjamin: { nombre: 'Benjamin', email: 'benjamin@nosotros.app', admin: true },
+  alondra: { nombre: 'Alondra', email: 'alondra@nosotros.app', admin: false },
+};
+const CLAVE_INTERNA = CODIGO_ACCESO + '-nosotros';
+let desbloqueado = false;
+let esAdmin = false;
+
+$('form-codigo').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  if ($('input-acceso').value.trim() !== CODIGO_ACCESO) {
+    $('codigo-msg').textContent = 'Código incorrecto.';
+    $('input-acceso').value = '';
+    return;
+  }
+  desbloqueado = true;
+  $('input-acceso').value = '';
+  $('codigo-msg').textContent = '';
+  const { data } = await sb.auth.getSession();
+  iniciar(data.session);
 });
 
 $('form-auth').addEventListener('submit', async (e) => {
   e.preventDefault();
-  const email = $('auth-email').value.trim();
-  const password = $('auth-pass').value;
-  const nombre = $('auth-nombre').value.trim();
-  if ($('auth-codigo').value.trim() !== CODIGO_ACCESO) {
-    $('auth-msg').textContent = 'Código de acceso incorrecto.';
+  const clave = $('auth-usuario').value.trim().toLowerCase();
+  const u = USUARIOS[clave];
+  if (!u) {
+    $('auth-msg').textContent = 'Ese usuario no tiene acceso.';
     return;
   }
   const btn = $('btn-auth');
   btn.disabled = true;
   $('auth-msg').textContent = '';
-
-  if (modoAuth === 'registro') {
-    const { data, error } = await sb.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { nombre },
-        emailRedirectTo: location.origin + location.pathname,
-      },
-    });
-    if (error) $('auth-msg').textContent = traducir(error);
-    else if (!data.session) {
-      $('auth-msg').textContent = '📩 Te enviamos un correo. Ábrelo para confirmar tu cuenta y luego entra.';
-    }
-  } else {
-    const { error } = await sb.auth.signInWithPassword({ email, password });
-    if (error) $('auth-msg').textContent = traducir(error);
+  const { error } = await sb.auth.signInWithPassword({ email: u.email, password: CLAVE_INTERNA });
+  if (error) {
+    $('auth-msg').textContent = error.message.includes('Invalid login')
+      ? 'La cuenta de este usuario aún no está creada en Supabase.'
+      : traducir(error);
   }
   btn.disabled = false;
 });
@@ -131,6 +127,10 @@ sb.auth.onAuthStateChange((_evento, session) => {
 
 async function iniciar(session) {
   limpiar();
+  if (!desbloqueado) {
+    mostrar('codigo');
+    return;
+  }
   if (!session) {
     mostrar('auth');
     return;
@@ -150,6 +150,12 @@ async function cargarPerfil() {
     return false;
   }
   perfil = data;
+  const u = Object.values(USUARIOS).find((x) => x.email === usuario.email);
+  esAdmin = !!(u && u.admin);
+  if (u && perfil.nombre !== u.nombre) {
+    await sb.from('perfiles').update({ nombre: u.nombre }).eq('id', usuario.id);
+    perfil.nombre = u.nombre;
+  }
   return true;
 }
 
