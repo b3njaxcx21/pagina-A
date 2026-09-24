@@ -371,25 +371,23 @@ main { flex: 1; overflow: hidden; position: relative; }
 .tema-mini { display: block; width: 100%; height: 34px; border-radius: 9px; margin-bottom: 4px; }
 
 /* ---------- comunes a las temáticas oscuras ---------- */
-html[data-tema="coraline"], html[data-tema="astronomia"], html[data-tema="aurora"] { color-scheme: dark; }
-html[data-tema="coraline"] .corazones-fondo, html[data-tema="astronomia"] .corazones-fondo, html[data-tema="aurora"] .corazones-fondo { display: none; }
+html[data-tema="coraline"], html[data-tema="aurora"] { color-scheme: dark; }
+html[data-tema="coraline"] .corazones-fondo, html[data-tema="aurora"] .corazones-fondo { display: none; }
 html[data-tema="coraline"] input, html[data-tema="coraline"] textarea,
-html[data-tema="astronomia"] input, html[data-tema="astronomia"] textarea,
 html[data-tema="aurora"] input, html[data-tema="aurora"] textarea { background: rgba(255,255,255,.08); color: var(--texto); }
-html[data-tema="coraline"] .btn, html[data-tema="astronomia"] .btn, html[data-tema="aurora"] .btn,
-html[data-tema="coraline"] .burbuja.mio, html[data-tema="astronomia"] .burbuja.mio, html[data-tema="aurora"] .burbuja.mio,
-html[data-tema="coraline"] .avatar, html[data-tema="astronomia"] .avatar, html[data-tema="aurora"] .avatar { color: #10121c; }
-html[data-tema="coraline"] .btn-sec, html[data-tema="astronomia"] .btn-sec, html[data-tema="aurora"] .btn-sec { color: var(--rosa); }
-html[data-tema="coraline"] .btn-corazon, html[data-tema="astronomia"] .btn-corazon, html[data-tema="aurora"] .btn-corazon,
-html[data-tema="coraline"] .contador .btn, html[data-tema="astronomia"] .contador .btn, html[data-tema="aurora"] .contador .btn { background: var(--tarjeta); color: var(--rosa); }
-html[data-tema="coraline"] .toast, html[data-tema="astronomia"] .toast, html[data-tema="aurora"] .toast { background: var(--tarjeta); color: var(--texto); border: 1px solid var(--borde); }
-html[data-tema="coraline"] .mv-nombre, html[data-tema="astronomia"] .mv-nombre, html[data-tema="aurora"] .mv-nombre { background: var(--tarjeta); }
-html[data-tema="coraline"] .mavis-svg, html[data-tema="astronomia"] .mavis-svg, html[data-tema="aurora"] .mavis-svg { filter: drop-shadow(0 0 5px rgba(190,205,255,.75)); }
-html[data-tema="astronomia"] .tarjeta, html[data-tema="astronomia"] .post, html[data-tema="astronomia"] .stats div,
+html[data-tema="coraline"] .btn, html[data-tema="aurora"] .btn,
+html[data-tema="coraline"] .burbuja.mio, html[data-tema="aurora"] .burbuja.mio,
+html[data-tema="coraline"] .avatar, html[data-tema="aurora"] .avatar { color: #10121c; }
+html[data-tema="coraline"] .btn-sec, html[data-tema="aurora"] .btn-sec { color: var(--rosa); }
+html[data-tema="coraline"] .btn-corazon, html[data-tema="aurora"] .btn-corazon,
+html[data-tema="coraline"] .contador .btn, html[data-tema="aurora"] .contador .btn { background: var(--tarjeta); color: var(--rosa); }
+html[data-tema="coraline"] .toast, html[data-tema="aurora"] .toast { background: var(--tarjeta); color: var(--texto); border: 1px solid var(--borde); }
+html[data-tema="coraline"] .mv-nombre, html[data-tema="aurora"] .mv-nombre { background: var(--tarjeta); }
+html[data-tema="coraline"] .mavis-svg, html[data-tema="aurora"] .mavis-svg { filter: drop-shadow(0 0 5px rgba(190,205,255,.75)); }
 html[data-tema="aurora"] .tarjeta, html[data-tema="aurora"] .post, html[data-tema="aurora"] .stats div { backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
-html[data-tema="coraline"] .barra, html[data-tema="astronomia"] .barra, html[data-tema="aurora"] .barra,
-html[data-tema="coraline"] .nav, html[data-tema="astronomia"] .nav, html[data-tema="aurora"] .nav,
-html[data-tema="coraline"] .chat-input, html[data-tema="astronomia"] .chat-input, html[data-tema="aurora"] .chat-input { backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+html[data-tema="coraline"] .barra, html[data-tema="aurora"] .barra,
+html[data-tema="coraline"] .nav, html[data-tema="aurora"] .nav,
+html[data-tema="coraline"] .chat-input, html[data-tema="aurora"] .chat-input { backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
 
 /* ---------- Muñeca de botones (estilo Coraline) ---------- */
 html[data-tema="coraline"] {
@@ -421,24 +419,8 @@ html[data-tema="coraline"] .avatar.otro { background: #4aa3df; }
 @keyframes saluda { from { transform: rotate(-16deg); } to { transform: rotate(18deg); } }
 @keyframes muneca-risa { 0%,100% { transform: rotate(0) scale(1); } 25% { transform: rotate(-12deg) scale(1.08); } 55% { transform: rotate(10deg) scale(1.08); } 80% { transform: rotate(-5deg); } }
 
-/* ---------- Astronomía ---------- */
-html[data-tema="astronomia"] {
-  --fondo: #070a1f; --tarjeta: rgba(22,27,68,.72); --texto: #e8ecff; --gris: #9aa5d6; --borde: rgba(140,160,255,.25);
-  --rosa: #8fa8ff; --rosa-osc: #6f8cff; --rosa-claro: rgba(100,120,255,.18); --sombra: 0 4px 22px rgba(0,0,0,.4);
-}
-html[data-tema="astronomia"] body { background: linear-gradient(180deg, #05071a 0%, #0d1240 55%, #1b1052 100%); background-attachment: fixed; }
-html[data-tema="astronomia"] .contador { background: linear-gradient(135deg, #5b3fd1, #2f2a8f 60%, #1a1a5e); color: #fff; }
-html[data-tema="astronomia"] .frase { background: rgba(100,120,255,.16); }
-html[data-tema="astronomia"] .avatar.otro { background: #ffd166; }
 .estrella { position: absolute; border-radius: 50%; background: #fff; animation: titilar ease-in-out infinite; }
 @keyframes titilar { 0%,100% { opacity: .15; transform: scale(.8); } 50% { opacity: 1; transform: scale(1.2); } }
-.fugaz { position: absolute; width: 110px; height: 2px; background: linear-gradient(90deg, rgba(255,255,255,0), #fff); border-radius: 2px; transform: rotate(35deg); opacity: 0; animation: fugaz 1.4s ease-out forwards; }
-@keyframes fugaz { 0% { opacity: 0; transform: translate(0,0) rotate(35deg); } 15% { opacity: 1; } 100% { opacity: 0; transform: translate(240px,170px) rotate(35deg); } }
-.planeta { position: absolute; top: 12%; right: 8%; width: 74px; height: 74px; border-radius: 50%; background: radial-gradient(circle at 32% 30%, #ffe2b0, #d99a55 55%, #8a5a2b); box-shadow: 0 0 30px rgba(255,190,110,.35); animation: flota 9s ease-in-out infinite; }
-.planeta::after { content: ''; position: absolute; left: -32%; right: -32%; top: 40%; height: 22%; border: 4px solid rgba(255,225,170,.75); border-radius: 50%; transform: rotate(-16deg); }
-.luna { position: absolute; bottom: 24%; left: 6%; width: 46px; height: 46px; border-radius: 50%; background: radial-gradient(circle at 60% 40%, #f6f6ff, #c9cbe6 70%); box-shadow: 0 0 24px rgba(220,225,255,.5), inset -10px -6px 0 rgba(120,125,170,.35); animation: flota 11s ease-in-out infinite reverse; }
-.planeta-azul { position: absolute; top: 58%; right: 16%; width: 30px; height: 30px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #a6e3ff, #3a7bd5 70%); box-shadow: 0 0 16px rgba(90,160,255,.5); animation: flota 7s ease-in-out infinite; }
-@keyframes flota { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-14px); } }
 
 /* ---------- Auroras boreales ---------- */
 html[data-tema="aurora"] {
@@ -454,3 +436,5 @@ html[data-tema="aurora"] .avatar.otro { background: #9a7bff; }
 .aurora-banda.b2 { top: 10%; height: 38vh; background: linear-gradient(90deg, transparent 10%, rgba(140,90,255,.75) 40%, rgba(61,242,176,.6) 70%, transparent 95%); animation-duration: 19s; animation-delay: -6s; }
 .aurora-banda.b3 { top: 2%; height: 30vh; background: linear-gradient(90deg, transparent 0%, rgba(90,255,150,.7) 45%, transparent 85%); animation-duration: 23s; animation-delay: -11s; opacity: .45; }
 @keyframes aurora-mece { 0% { transform: translateX(-9%) skewX(-8deg) scaleY(.85); } 50% { transform: translateX(4%) skewX(6deg) scaleY(1.15); } 100% { transform: translateX(10%) skewX(-4deg) scaleY(.95); } }
+
+.burbuja.corazon { font-size: 30px; line-height: 1.1; padding: 6px 14px; background: transparent !important; box-shadow: none; }

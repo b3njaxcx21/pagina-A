@@ -63,6 +63,16 @@ function dia(iso) {
   return d.toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' });
 }
 
+// Cada quien tiene su color: Benjamin verde, Alondra morado
+const COLOR_PERSONA = {
+  benjamin: { hex: '#2fbf71', corazon: '💚' },
+  alondra: { hex: '#9b6bd6', corazon: '💜' },
+};
+
+function colorDe(id) {
+  return COLOR_PERSONA[(perfiles[id] || '').toLowerCase()] || null;
+}
+
 function nombreDe(id) {
   return perfiles[id] || 'Tu pareja';
 }
@@ -265,12 +275,15 @@ async function cargarPerfiles() {
   $('hero-nombre-yo').textContent = yo;
   $('hero-nombre-otro').textContent = otro ? perfiles[otro] : 'Esperando…';
   refrescarAvatares();
+  $('btn-corazon').querySelector('span').textContent = (colorDe(usuario.id) || {}).corazon || '❤️';
 }
 
 // Muestra la foto de perfil (o la inicial si no tiene)
 function pintarAvatar(nodo) {
   const id = nodo.dataset.uid;
   const url = fotos[id];
+  const color = colorDe(id);
+  nodo.style.background = color ? color.hex : '';
   if (url) {
     const img = document.createElement('img');
     img.src = url;
@@ -608,7 +621,9 @@ function pintarMensaje(m) {
     lista.append(el('div', 'dia', d));
     ultimoDia = d;
   }
-  const b = el('div', 'burbuja ' + (m.autor_id === usuario.id ? 'mio' : 'suyo'), m.texto);
+  const esCorazon = m.texto === CORAZON;
+  const b = el('div', 'burbuja ' + (m.autor_id === usuario.id ? 'mio' : 'suyo') + (esCorazon ? ' corazon' : ''),
+    esCorazon ? ((colorDe(m.autor_id) || {}).corazon || CORAZON) : m.texto);
   b.dataset.id = m.id;
   b.append(el('small', '', hora(m.creado_en)));
   lista.append(b);
@@ -627,8 +642,8 @@ async function recibirMensaje(m) {
   contarMensaje(m);
   if (m.autor_id === usuario.id) return;
   if (m.texto === CORAZON) {
-    lluviaCorazones();
-    aviso(`💌 ${nombreDe(m.autor_id)} te mandó un corazón`);
+    lluviaCorazones(24, [(colorDe(m.autor_id) || {}).corazon]);
+    aviso(`${(colorDe(m.autor_id) || {}).corazon || '💌'} ${nombreDe(m.autor_id)} te mandó un corazón`);
   } else if (vistaActual !== 'chat') {
     $('badge-chat').classList.remove('oculto');
   }
@@ -897,18 +912,18 @@ $('btn-corazon').addEventListener('click', async () => {
   btn.classList.remove('enviado');
   void btn.offsetWidth;
   btn.classList.add('enviado');
-  lluviaCorazones(18);
+  lluviaCorazones(18, [(colorDe(usuario.id) || {}).corazon]);
   if (navigator.vibrate) navigator.vibrate(40);
   const { data, error } = await sb.from('mensajes').insert({ pareja_id: pareja.id, texto: CORAZON }).select().single();
   if (error) return alert('No se pudo enviar: ' + traducir(error));
   if (pintarMensaje(data)) contarMensaje(data);
-  aviso('❤️ Corazón enviado');
+  aviso(((colorDe(usuario.id) || {}).corazon || '❤️') + ' Corazón enviado');
 });
 
 // ---------- Animaciones ----------
-function lluviaCorazones(cantidad = 24) {
+function lluviaCorazones(cantidad = 24, propios) {
   const capa = $('lluvia');
-  const emojis = ['❤️', '💖', '💕', '💗', '💘', '💞'];
+  const emojis = propios && propios.length && propios[0] ? propios : ['❤️', '💖', '💕', '💗', '💘', '💞'];
   for (let i = 0; i < cantidad; i++) {
     const s = document.createElement('span');
     s.textContent = emojis[Math.floor(Math.random() * emojis.length)];
@@ -1037,9 +1052,9 @@ mvPonerX();
 requestAnimationFrame(mvBucle);
 
 // =============================================
-//  TEMÁTICAS: rosa (predeterminada), muñeca de botones, astronomía, auroras
+//  TEMÁTICAS: rosa (predeterminada), Coraline, auroras boreales
 // =============================================
-const COLOR_TEMA = { rosa: '#e8537a', coraline: '#14262e', astronomia: '#070a1f', aurora: '#03131a' };
+const COLOR_TEMA = { rosa: '#e8537a', coraline: '#14262e', aurora: '#03131a' };
 const fondoTema = $('fondo-tema');
 let temaTimers = [];
 
@@ -1068,15 +1083,6 @@ function crearEstrellas(cuantas, tenues) {
       `animation-duration:${azar(2, 5)}s;animation-delay:${azar(0, 4)}s;` + (tenues ? 'opacity:.5;' : '');
     fondoTema.append(s);
   }
-}
-
-function estrellaFugaz() {
-  const f = el('span', 'fugaz');
-  f.style.left = azar(10, 70) + '%';
-  f.style.top = azar(2, 40) + '%';
-  fondoTema.append(f);
-  setTimeout(() => f.remove(), 1500);
-  tTimeout(estrellaFugaz, azar(5000, 12000));
 }
 
 const SVG_MUNECA = `
@@ -1190,10 +1196,6 @@ function aplicarTema(tema) {
       fondoTema.append(b);
     }
     tTimeout(asomarMuneca, 4000);
-  } else if (tema === 'astronomia') {
-    crearEstrellas(70, false);
-    fondoTema.append(el('div', 'planeta'), el('div', 'luna'), el('div', 'planeta-azul'));
-    tTimeout(estrellaFugaz, 3000);
   } else if (tema === 'aurora') {
     fondoTema.append(el('div', 'aurora-banda b1'), el('div', 'aurora-banda b2'), el('div', 'aurora-banda b3'));
     crearEstrellas(45, true);
