@@ -202,3 +202,7 @@ create policy "borrar mis archivos" on storage.objects
 
 -- ---------- LIMPIEZA: la tabla de prueba ya no se usa ----------
 drop table if exists public.prueba;
+
+-- ---------- FOTO DE PERFIL ----------
+alter table public.perfiles add column if not exists avatar_path text;
+grant update (nombre, avatar_path) on public.perfiles to authenticated;

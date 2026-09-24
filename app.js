@@ -17,6 +17,7 @@ let usuario = null;
 let perfil = null;
 let pareja = null;
 let perfiles = {};        // id -> nombre
+let fotos = {};           // id -> URL firmada de la foto de perfil
 let canal = null;
 let archivoSel = null;
 let vistaActual = 'inicio';
@@ -163,6 +164,7 @@ function limpiar() {
   postsCache = [];
   usuario = perfil = pareja = null;
   perfiles = {};
+  fotos = {};
   $('lista-publicaciones').replaceChildren();
   $('lista-mensajes').replaceChildren();
   quitarArchivo();
@@ -239,9 +241,14 @@ async function entrarApp() {
 }
 
 async function cargarPerfiles() {
-  const { data } = await sb.from('perfiles').select('id, nombre');
+  const { data } = await sb.from('perfiles').select('id, nombre, avatar_path');
   perfiles = {};
   (data || []).forEach((p) => { perfiles[p.id] = p.nombre || 'Sin nombre'; });
+  const rutas = (data || []).filter((p) => p.avatar_path).map((p) => p.avatar_path);
+  const urls = await urlsFirmadas(rutas);
+  fotos = {};
+  (data || []).forEach((p) => { if (urls[p.avatar_path]) fotos[p.id] = urls[p.avatar_path]; });
+  if (perfil) perfil.avatar_path = ((data || []).find((p) => p.id === usuario.id) || {}).avatar_path || null;
   const otro = Object.keys(perfiles).find((id) => id !== usuario.id);
   $('titulo-pareja').textContent = otro
     ? `${perfiles[usuario.id]} & ${perfiles[otro]}`
@@ -252,10 +259,30 @@ async function cargarPerfiles() {
 
   // Tarjeta de la pareja en Inicio
   const yo = perfiles[usuario.id] || 'Tú';
-  $('hero-av-yo').textContent = yo.charAt(0).toUpperCase();
+  $('hero-av-yo').dataset.uid = usuario.id;
+  $('hero-av-otro').dataset.uid = otro || '';
+  $('perfil-avatar').dataset.uid = usuario.id;
   $('hero-nombre-yo').textContent = yo;
-  $('hero-av-otro').textContent = otro ? perfiles[otro].charAt(0).toUpperCase() : '?';
   $('hero-nombre-otro').textContent = otro ? perfiles[otro] : 'Esperando…';
+  refrescarAvatares();
+}
+
+// Muestra la foto de perfil (o la inicial si no tiene)
+function pintarAvatar(nodo) {
+  const id = nodo.dataset.uid;
+  const url = fotos[id];
+  if (url) {
+    const img = document.createElement('img');
+    img.src = url;
+    img.alt = '';
+    nodo.replaceChildren(img);
+  } else {
+    nodo.textContent = id && perfiles[id] ? perfiles[id].charAt(0).toUpperCase() : '?';
+  }
+}
+
+function refrescarAvatares() {
+  document.querySelectorAll('.avatar[data-uid]').forEach(pintarAvatar);
 }
 
 function llenarPerfil() {
@@ -273,6 +300,43 @@ $('btn-guardar-nombre').addEventListener('click', async () => {
   await cargarPerfiles();
   $('btn-guardar-nombre').textContent = '✓';
   setTimeout(() => ($('btn-guardar-nombre').textContent = 'Guardar'), 1500);
+});
+
+// ---------- Foto de perfil ----------
+async function recortarCuadrada(file, lado = 480) {
+  const bmp = await createImageBitmap(file);
+  const min = Math.min(bmp.width, bmp.height);
+  const c = document.createElement('canvas');
+  c.width = c.height = lado;
+  c.getContext('2d').drawImage(bmp, (bmp.width - min) / 2, (bmp.height - min) / 2, min, min, 0, 0, lado, lado);
+  return new Promise((r) => c.toBlob(r, 'image/jpeg', 0.85));
+}
+
+$('perfil-foto').addEventListener('change', async (e) => {
+  const f = e.target.files[0];
+  e.target.value = '';
+  if (!f || !f.type.startsWith('image/')) return;
+  const estado = $('perfil-foto-estado');
+  estado.textContent = 'Subiendo…';
+  try {
+    const blob = await recortarCuadrada(f);
+    const ruta = `${pareja.id}/avatar-${usuario.id}-${Date.now()}.jpg`;
+    const { error: e1 } = await sb.storage.from(BUCKET).upload(ruta, blob, { contentType: 'image/jpeg' });
+    if (e1) throw e1;
+    const anterior = perfil.avatar_path;
+    const { error: e2 } = await sb.from('perfiles').update({ avatar_path: ruta }).eq('id', usuario.id);
+    if (e2) {
+      await sb.storage.from(BUCKET).remove([ruta]);
+      throw e2;
+    }
+    if (anterior) await sb.storage.from(BUCKET).remove([anterior]);
+    await cargarPerfiles();
+    estado.textContent = '✓ Foto actualizada';
+    setTimeout(() => (estado.textContent = ''), 2500);
+  } catch (err) {
+    estado.textContent = '';
+    alert('No se pudo cambiar la foto: ' + traducir(err));
+  }
 });
 
 // ---------- Navegación ----------
@@ -339,7 +403,10 @@ function crearPost(p, url) {
   const cab = el('div', 'post-cab');
   const esMio = p.autor_id === usuario.id;
   const nombre = nombreDe(p.autor_id);
-  cab.append(el('div', 'avatar' + (esMio ? '' : ' otro'), nombre.charAt(0).toUpperCase()));
+  const av = el('div', 'avatar' + (esMio ? '' : ' otro'));
+  av.dataset.uid = p.autor_id;
+  pintarAvatar(av);
+  cab.append(av);
   const info = el('div');
   info.append(el('div', 'post-autor', nombre), el('div', 'post-fecha', fechaCorta(p.creado_en)));
   cab.append(info);
@@ -862,3 +929,147 @@ function aviso(texto) {
   clearTimeout(avisoTimer);
   avisoTimer = setTimeout(() => t.classList.add('oculto'), 2800);
 }
+
+// =============================================
+//  MAVIS, el gatito negro
+// =============================================
+const mavis = $('mavis');
+const mvSvg = $('mavis-svg');
+let mvTimerBurbuja = null;
+let mvTimerEstado = null;
+let mvDormidaTimer = null;
+let mvPresion = null;
+
+const MV_CARICIAS = ['¡Miau! 💕', 'Purr purr~', '¡Me gusta! 😻', 'Más, más…', 'Miau miau 🐾', '¡Te quiero!'];
+const MV_HABLA = ['Miau~ 🐾', 'Los quiero mucho 💞', '¿Me das un snack? 🐟', 'Vigilo su amor 👀', 'Hoy es buen día para abrazarse'];
+
+function mvBurbuja(texto, ms = 2200) {
+  const b = $('mavis-burbuja');
+  b.textContent = texto;
+  b.classList.remove('oculto');
+  clearTimeout(mvTimerBurbuja);
+  mvTimerBurbuja = setTimeout(() => b.classList.add('oculto'), ms);
+}
+
+function mvEstado(clase, ms) {
+  ['feliz', 'ronronea', 'comiendo', 'jugando', 'despierta'].forEach((c) => mavis.classList.remove(c));
+  void mavis.offsetWidth;
+  mavis.classList.add(clase);
+  clearTimeout(mvTimerEstado);
+  mvTimerEstado = setTimeout(() => mavis.classList.remove(clase), ms);
+}
+
+function mvCorazones(n = 3) {
+  const r = mvSvg.getBoundingClientRect();
+  const c = mavis.getBoundingClientRect();
+  for (let i = 0; i < n; i++) {
+    const s = el('span', 'mv-corazon', ['❤️', '💕', '💗'][Math.floor(Math.random() * 3)]);
+    s.style.left = (r.left - c.left + r.width * (0.3 + Math.random() * 0.4)) + 'px';
+    s.style.top = (r.top - c.top + r.height * 0.3) + 'px';
+    s.style.animationDelay = i * 0.15 + 's';
+    mavis.append(s);
+    setTimeout(() => s.remove(), 1800);
+  }
+}
+
+function mvDespertar() {
+  if (!mavis.classList.contains('dormida')) return false;
+  mavis.classList.remove('dormida');
+  $('mavis-zzz').classList.add('oculto');
+  mvEstado('despierta', 600);
+  mvBurbuja('¡Miau! Me despertaron 😾');
+  return true;
+}
+
+function mvDormir() {
+  mavis.classList.add('dormida');
+  $('mavis-zzz').classList.remove('oculto');
+  $('mavis-burbuja').classList.add('oculto');
+}
+
+function mvActividad() {
+  clearTimeout(mvDormidaTimer);
+  mvDormidaTimer = setTimeout(() => { if (vistaActual === 'inicio') mvDormir(); }, 30000);
+}
+
+function mvAcariciar() {
+  if (mvDespertar()) { mvActividad(); return; }
+  mvEstado('feliz', 800);
+  mvCorazones(3);
+  mvBurbuja(MV_CARICIAS[Math.floor(Math.random() * MV_CARICIAS.length)]);
+  if (navigator.vibrate) navigator.vibrate(25);
+  mvActividad();
+}
+
+// Toque = caricia; mantener presionado = ronroneo
+mvSvg.addEventListener('pointerdown', () => {
+  mvPresion = setTimeout(() => {
+    mvPresion = 'largo';
+    if (mavis.classList.contains('dormida')) mvDespertar();
+    mvEstado('ronronea', 2600);
+    mvBurbuja('Rrrr… rrrr… 😽', 2600);
+    mvCorazones(4);
+    if (navigator.vibrate) navigator.vibrate([40, 30, 40, 30, 40, 30, 40]);
+  }, 550);
+});
+['pointerup', 'pointerleave', 'pointercancel'].forEach((ev) => {
+  mvSvg.addEventListener(ev, () => {
+    if (mvPresion === null) return;
+    const largo = mvPresion === 'largo';
+    if (!largo) clearTimeout(mvPresion);
+    mvPresion = null;
+    if (!largo && ev === 'pointerup') mvAcariciar();
+    mvActividad();
+  });
+});
+
+$('mavis-comer').addEventListener('click', () => {
+  mvDespertar();
+  const f = el('span', 'mv-extra pescado', '🐟');
+  f.style.left = '46%';
+  f.style.top = '30%';
+  mavis.append(f);
+  setTimeout(() => f.remove(), 900);
+  setTimeout(() => { mvEstado('comiendo', 1900); mvBurbuja('¡Ñam ñam! 😋', 1900); }, 800);
+  setTimeout(() => mvCorazones(3), 2700);
+  mvActividad();
+});
+
+$('mavis-jugar').addEventListener('click', () => {
+  mvDespertar();
+  const o = el('span', 'mv-extra ovillo', '🧶');
+  o.style.left = '44%';
+  o.style.top = '62%';
+  mavis.append(o);
+  setTimeout(() => o.remove(), 1700);
+  setTimeout(() => { mvEstado('jugando', 1200); mvBurbuja('¡Lo atrapé! 😼', 1500); }, 500);
+  mvActividad();
+});
+
+$('mavis-dormir').addEventListener('click', () => {
+  if (mavis.classList.contains('dormida')) { mvDespertar(); mvActividad(); }
+  else { mvBurbuja('Buenas noches… 🌙', 1600); setTimeout(mvDormir, 700); }
+});
+
+// Los ojos siguen el dedo o el mouse
+document.addEventListener('pointermove', (e) => {
+  if (mavis.classList.contains('dormida') || vistaActual !== 'inicio') return;
+  const r = mvSvg.getBoundingClientRect();
+  if (!r.width) return;
+  const dx = e.clientX - (r.left + r.width / 2);
+  const dy = e.clientY - (r.top + r.height * 0.45);
+  const d = Math.hypot(dx, dy) || 1;
+  const k = Math.min(1, d / 200) * 4;
+  mvSvg.querySelectorAll('.mv-pupila').forEach((p) => {
+    p.style.transform = `translate(${(dx / d) * k}px, ${(dy / d) * k * 0.6}px)`;
+  });
+}, { passive: true });
+
+// De vez en cuando dice algo
+setInterval(() => {
+  if (vistaActual !== 'inicio' || document.hidden || mavis.classList.contains('dormida')) return;
+  if (mavis.offsetParent === null) return;
+  mvBurbuja(MV_HABLA[Math.floor(Math.random() * MV_HABLA.length)], 2600);
+}, 22000);
+
+mvActividad();
