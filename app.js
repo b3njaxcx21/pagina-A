@@ -1406,10 +1406,14 @@ function mvBucle(t) {
   }
   mavis.classList.toggle('camina', mvModo === 'camina');
 
-  if (mvEnJardin && mvModo !== 'descanso') {
+  // se queda dormida si nadie la toca en un buen rato; despierta sola después de unos minutos
+  if (gato3d && (mvModo === 'camina' || mvModo === 'pausa') && !mavis.classList.contains('en-hamaca') && t - mvUltimoToque > 45000) mvDormir(t);
+  if (mvModo === 'duerme' && t - mvDormidaDesde > 180000) mvDespertar(true);
+
+  if (mvEnJardin && mvModo !== 'descanso' && mvModo !== 'duerme') {
     // camina entre las plantas y va cambiando de profundidad
     mvY += (mvYObj - mvY) * Math.min(1, dt * 0.9);
-    if (Math.abs(mvYObj - mvY) < 6 && Math.random() < dt * 0.15) mvYObj = azar(jardinH * 0.7, jardinH * 0.96);
+    if (mvModo !== 'juego' && Math.abs(mvYObj - mvY) < 6 && Math.random() < dt * 0.15) mvYObj = azar(jardinH * 0.7, jardinH * 0.96);
   }
   if (mvModo === 'camina') {
     mvX += mvDir * (mvEnJardin ? 30 : 42) * dt;
@@ -1429,11 +1433,15 @@ function mvBucle(t) {
     mvCambiarModo('camina', 4000 + Math.random() * 6000);
   } else if (mvModo === 'interaccion' && t > mvHasta) {
     mvCambiarModo('camina', 3000 + Math.random() * 3000);
+  } else if (mvModo === 'juego') {
+    jugarTick(dt, t);
   }
-  if (mvEnJardin && mvModo !== 'camina') mvPonerX();
+  if (mvEnJardin && mvModo !== 'camina' && mvModo !== 'juego') mvPonerX();
+  if (gato3d) gato3d.tick(dt, estado3D());
 }
 
 function mvEstado(clase, ms) {
+  if (clase === 'feliz' && gato3d) gato3d.salto();
   mavis.classList.remove('feliz', 'ronronea');
   void mavis.offsetWidth;
   mavis.classList.add(clase);
@@ -1460,11 +1468,13 @@ function mvCorazones(n) {
 }
 
 // Toque = se pone feliz y brinca; mantener presionado = ronronea
-const mvSvg = $('mavis-svg');
+const mvSvg = mavis.querySelector('.mv-salto');
 mvSvg.addEventListener('pointerdown', () => {
   mvNombre();
   mvPresion = setTimeout(() => {
     mvPresion = 'largo';
+    mvUltimoToque = performance.now();
+    if (mvModo === 'duerme') mvDespertar(false);
     mvEstado('ronronea', 2800);
     cuidarMavis();
     mvCorazones(4);
@@ -1477,14 +1487,231 @@ mvSvg.addEventListener('pointerdown', () => {
     const largo = mvPresion === 'largo';
     if (!largo) clearTimeout(mvPresion);
     mvPresion = null;
-    if (!largo && ev === 'pointerup') {
-      mvEstado('feliz', 900);
-      cuidarMavis();
-      mvCorazones(3);
-      if (navigator.vibrate) navigator.vibrate(25);
-    }
+    if (!largo && ev === 'pointerup') tocarMavis();
   });
 });
+
+
+// =============================================
+//  MAVIS EN 3D, SIESTA Y BOLA DE HILO
+// =============================================
+const SVG_BOLA = `
+<svg viewBox="-4 -4 48 48" aria-hidden="true">
+  <defs>
+    <radialGradient id="mvHiloG" cx="36%" cy="30%" r="80%"><stop offset="0" stop-color="#ff8a9a"/><stop offset=".5" stop-color="#d8384f"/><stop offset="1" stop-color="#8a1a30"/></radialGradient>
+  </defs>
+  <path d="M30 34 C40 38 46 30 40 24" fill="none" stroke="#d8384f" stroke-width="1.6" stroke-linecap="round"/>
+  <circle cx="20" cy="20" r="17" fill="url(#mvHiloG)"/>
+  <g fill="none" stroke-linecap="round">
+    <path d="M5 17 C10 5 30 4 35 17" stroke="rgba(255,205,212,.55)" stroke-width="1.3"/>
+    <path d="M4 22 C12 10 30 12 36 24" stroke="rgba(255,170,182,.45)" stroke-width="1.2"/>
+    <path d="M6 27 C14 16 28 20 35 30" stroke="rgba(255,205,212,.4)" stroke-width="1.2"/>
+    <path d="M9 32 C16 24 26 27 31 35" stroke="rgba(120,10,30,.4)" stroke-width="1.2"/>
+    <path d="M7 12 C15 20 26 18 33 9" stroke="rgba(120,10,30,.35)" stroke-width="1.1"/>
+    <path d="M13 4 C11 16 14 28 22 36" stroke="rgba(255,190,200,.4)" stroke-width="1.1"/>
+    <path d="M26 4 C30 14 30 26 24 37" stroke="rgba(110,8,26,.35)" stroke-width="1.1"/>
+  </g>
+  <ellipse cx="14" cy="12" rx="6" ry="3.6" fill="rgba(255,255,255,.4)" transform="rotate(-30 14 12)"/>
+</svg>`;
+
+let gato3d = null;
+let mvUltimoToque = performance.now();
+let mvDormidaDesde = 0;
+let mvCorriendo = false;
+let bola = null;            // { el, x, y, vx, giro }
+let juegoFase = '';         // corre | agazapa | golpe
+let juegoHasta = 0;
+let faseHasta = 0;
+let golpeado = false;
+
+function activar3D() {
+  if (gato3d) return;
+  import('./gato3d.js').then((m) => {
+    const canvas = document.createElement('canvas');
+    canvas.className = 'mavis-3d';
+    canvas.setAttribute('aria-hidden', 'true');
+    const g = m.crearGato3D(canvas);
+    if (!g) return;
+    mavis.querySelector('.mv-salto').prepend(canvas);
+    gato3d = g;
+    mavis.classList.add('en-3d');
+  }).catch(() => { /* se queda el dibujo 2D */ });
+}
+window.addEventListener('load', () => setTimeout(activar3D, 700));
+
+function estado3D() {
+  const ancho = mvEnJardin ? anchoMavisJardin() : mvAncho;
+  const vel = mvModo === 'juego' ? (mvEnJardin ? 70 : 95) : (mvEnJardin ? 30 : 42);
+  return {
+    camina: (mvModo === 'camina' || (mvModo === 'juego' && mvCorriendo)) && !mavis.classList.contains('en-hamaca'),
+    velUnidades: vel / (ancho / 4.6),
+    dormida: mvModo === 'duerme' || mavis.classList.contains('en-hamaca'),
+    agazapada: mvModo === 'juego' && juegoFase === 'agazapa',
+    olfatea: mavis.classList.contains('olfatea'),
+    ronronea: mavis.classList.contains('ronronea'),
+    feliz: mavis.classList.contains('feliz'),
+  };
+}
+
+// ---------- dormir y despertar ----------
+function mvDormir(ahora) {
+  mvModo = 'duerme';
+  mvDormidaDesde = ahora;
+  mavis.classList.add('duerme');
+  mavis.classList.remove('camina');
+  terminarJuego(true);
+}
+
+function mvDespertar(volverACaminar) {
+  if (mvModo !== 'duerme') return;
+  mavis.classList.remove('duerme');
+  mvUltimoToque = performance.now();
+  if (gato3d) gato3d.estirar();
+  mvCambiarModo(volverACaminar ? 'camina' : 'interaccion', volverACaminar ? 5000 : 1400);
+}
+
+// ---------- bola de hilo ----------
+function limitesJuego() {
+  return mvEnJardin
+    ? [jardinLeft + 14, jardinLeft + jardinW - 14]
+    : [14, window.innerWidth - 14];
+}
+
+function anchoBola() {
+  if (!mvEnJardin) return 28;
+  const prof = limitar((bola.y - jardinH * 0.6) / (jardinH * 0.4), 0, 1);
+  return 22 + prof * 12;
+}
+
+function pintarBola() {
+  if (!bola) return;
+  const w = anchoBola();
+  const e = bola.el;
+  e.style.width = w + 'px';
+  if (mvEnJardin) {
+    e.style.left = bola.x - jardinLeft - w / 2 + 'px';
+    e.style.top = bola.y - w * 1.02 + 'px';
+    e.style.zIndex = String(Math.round(bola.y) + 1);
+  } else {
+    e.style.left = bola.x - w / 2 + 'px';
+  }
+  e.firstElementChild.style.transform = `rotate(${bola.giro}deg)`;
+}
+
+function crearBola() {
+  const e = el('div', 'bola-hilo cae' + (mvEnJardin ? ' en-jardin' : ''));
+  e.innerHTML = SVG_BOLA;
+  e.addEventListener('pointerdown', (ev) => {
+    ev.stopPropagation();
+    patearBola(ev.clientX);
+  });
+  (mvEnJardin ? capaFlores : $('pantalla-app')).append(e);
+  return { el: e, x: 0, y: mvEnJardin ? mvY : 0, vx: 0, giro: 0 };
+}
+
+function iniciarJuego() {
+  if (!gato3d || mvModo === 'duerme' || mavis.classList.contains('en-hamaca') || mavis.classList.contains('oculta')) return;
+  const ancho = mvEnJardin ? anchoMavisJardin() : mvAncho;
+  const [izq, der] = limitesJuego();
+  if (!bola) bola = crearBola();
+  bola.y = mvEnJardin ? mvY : 0;
+  bola.x = limitar(mvX + ancho / 2 + mvDir * ancho * 1.05, izq, der);
+  bola.vx = mvDir * 80;
+  bola.el.classList.remove('se-va');
+  mvModo = 'juego';
+  mavis.classList.remove('camina');
+  juegoFase = 'corre';
+  juegoHasta = performance.now() + 12000;
+  pintarBola();
+}
+
+function patearBola(clienteX) {
+  if (!bola) return;
+  mvUltimoToque = performance.now();
+  const dir = clienteX < bola.x ? 1 : -1;
+  bola.vx = dir * (260 + Math.random() * 120);
+  bola.el.classList.remove('cae');
+  if (mvModo !== 'juego') {
+    if (mvModo === 'duerme') { mvDespertar(false); setTimeout(iniciarJuego, 900); return; }
+    mvModo = 'juego';
+    juegoFase = 'corre';
+  }
+  juegoHasta = performance.now() + 10000;
+}
+
+function terminarJuego(inmediato) {
+  if (bola) {
+    const b = bola;
+    bola = null;
+    if (inmediato) b.el.remove();
+    else { b.el.classList.add('se-va'); setTimeout(() => b.el.remove(), 700); }
+  }
+  juegoFase = '';
+  mvCorriendo = false;
+  if (mvModo === 'juego') mvCambiarModo('camina', 3000 + Math.random() * 3000);
+}
+
+function jugarTick(dt, t) {
+  if (!bola) { terminarJuego(true); return; }
+  const ancho = mvEnJardin ? anchoMavisJardin() : mvAncho;
+  const [izq, der] = limitesJuego();
+
+  // la bola rueda y se frena
+  bola.x += bola.vx * dt;
+  bola.vx *= Math.pow(0.3, dt);
+  if (Math.abs(bola.vx) < 6) bola.vx = 0;
+  bola.giro += bola.vx * dt * 2.4;
+  if (bola.x < izq) { bola.x = izq; bola.vx = Math.abs(bola.vx) * 0.6; }
+  if (bola.x > der) { bola.x = der; bola.vx = -Math.abs(bola.vx) * 0.6; }
+
+  const dx = bola.x - (mvX + ancho / 2);
+  mvCorriendo = false;
+  if (mvEnJardin) mvYObj = bola.y;
+  if (juegoFase === 'corre') {
+    mvDir = dx >= 0 ? 1 : -1;
+    if (Math.abs(dx) > ancho * 0.62) {
+      mvX += mvDir * (mvEnJardin ? 70 : 95) * dt;
+      mvCorriendo = true;
+    } else if (Math.abs(bola.vx) < 40) {
+      juegoFase = 'agazapa';
+      faseHasta = t + 450 + Math.random() * 500;
+    }
+  } else if (juegoFase === 'agazapa') {
+    mvDir = dx >= 0 ? 1 : -1;
+    if (t > faseHasta) {
+      juegoFase = 'golpe';
+      golpeado = false;
+      faseHasta = t + 340;
+      if (gato3d) gato3d.zarpazo();
+    }
+  } else if (juegoFase === 'golpe') {
+    if (!golpeado && t > faseHasta - 200) {
+      golpeado = true;
+      bola.vx = mvDir * (240 + Math.random() * 190);
+    }
+    if (t > faseHasta) juegoFase = 'corre';
+  }
+  mvX = limitar(mvX, izq - ancho * 0.3, der - ancho * 0.7);
+  mvPonerX();
+  pintarBola();
+  if (t > juegoHasta) terminarJuego(false);
+}
+
+// Toque en Mavis: despierta, se emociona y juega con la bola de hilo
+function tocarMavis() {
+  mvUltimoToque = performance.now();
+  cuidarMavis();
+  mvCorazones(3);
+  if (navigator.vibrate) navigator.vibrate(25);
+  if (mvModo === 'duerme') {
+    mvDespertar(false);
+    setTimeout(iniciarJuego, 1200);
+    return;
+  }
+  if (mavis.classList.contains('en-hamaca')) return;
+  mvEstado('feliz', 900);
+  setTimeout(iniciarJuego, 450);
+}
 
 // Reacciona cuando llega un corazón o cambia el ánimo del otro
 function mavisReaccion() {
@@ -2222,6 +2449,99 @@ function svgHierba() {
   return `<svg viewBox="0 0 40 40" aria-hidden="true">${b}</svg>`;
 }
 
+// ---------- lirios ----------
+const LIRIOS = [
+  { base: '#c8367a', borde: '#fbe3ee', punto: '#7a1244', antera: '#8a4a1a' },   // oriental rosa
+  { base: '#dfe9c4', borde: '#ffffff', punto: null, antera: '#e08a1a' },         // blanco
+  { base: '#e2540b', borde: '#f8a23c', punto: '#3f1706', antera: '#5a2a0a' },   // naranja tigre
+  { base: '#e6ad00', borde: '#fff1a8', punto: '#6b4200', antera: '#7a3f10' },   // amarillo
+  { base: '#b03a8f', borde: '#f3d2e6', punto: '#5e1044', antera: '#7a4a1a' },   // fucsia
+];
+
+function svgLirio(v) {
+  const id = 'l' + (++gid);
+  const h = 'h' + gid;
+  const t = 't' + gid;
+  const cx = 50;
+  const cy = 46;
+  let tepalos = '';
+  const tepalo = (ang, largo, ancho, ondulado) => {
+    const L = largo;
+    const A = ancho;
+    const borde = ondulado
+      ? `C${-A * 0.9} ${-L * 0.3} ${-A * 1.05} ${-L * 0.7} ${-A * 0.2} ${-L * 0.97} C${-A * 0.05} ${-L * 1.03} ${A * 0.05} ${-L * 1.03} ${A * 0.2} ${-L * 0.97} C${A * 1.05} ${-L * 0.7} ${A * 0.9} ${-L * 0.3} 0 0Z`
+      : `C${-A} ${-L * 0.28} ${-A * 1.0} ${-L * 0.72} ${-A * 0.1} ${-L} C${-A * 0.02} ${-L * 1.02} ${A * 0.02} ${-L * 1.02} ${A * 0.1} ${-L} C${A} ${-L * 0.72} ${A} ${-L * 0.28} 0 0Z`;
+    let manchas = '';
+    if (v.punto) {
+      for (let i = 0; i < 8; i++) {
+        const x = (Math.random() - 0.5) * A * 0.85;
+        const y = -(5 + Math.random() * L * 0.55);
+        manchas += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${(0.7 + Math.random() * 0.9).toFixed(1)}" fill="${v.punto}" opacity=".85"/>`;
+      }
+    }
+    tepalos += `<g transform="translate(${cx} ${cy}) rotate(${ang}) scale(1 .8)">
+      <path d="M0 0 ${borde}" fill="url(#${id})" stroke="rgba(90,20,60,.28)" stroke-width=".7"/>
+      <path d="M0 0 C0 ${-L * 0.3} 0 ${-L * 0.65} 0 ${-L * 0.95}" fill="none" stroke="rgba(255,255,255,.55)" stroke-width="1"/>
+      <path d="M0 -2 C${-A * 0.4} ${-L * 0.3} ${-A * 0.5} ${-L * 0.6} ${-A * 0.3} ${-L * 0.85} M0 -2 C${A * 0.4} ${-L * 0.3} ${A * 0.5} ${-L * 0.6} ${A * 0.3} ${-L * 0.85}" fill="none" stroke="rgba(120,30,80,.16)" stroke-width=".6"/>
+      ${manchas}
+    </g>`;
+  };
+  [0, 120, 240].forEach((a) => tepalo(a + 2, 36, 12.5, false));
+  [60, 180, 300].forEach((a) => tepalo(a, 34, 11.5, true));
+
+  let estambres = '';
+  for (let i = 0; i < 6; i++) {
+    const a = (i / 6) * Math.PI * 2 + 0.3;
+    const x2 = cx + Math.cos(a) * 15;
+    const y2 = cy + Math.sin(a) * 9 - 6;
+    estambres += `<path d="M${cx} ${cy} Q${(cx + x2) / 2} ${cy - 10} ${x2.toFixed(1)} ${y2.toFixed(1)}" fill="none" stroke="#e8e2b8" stroke-width=".9"/><ellipse cx="${x2.toFixed(1)}" cy="${y2.toFixed(1)}" rx="3" ry="1.2" fill="${v.antera}" transform="rotate(${(a * 57.3).toFixed(0)} ${x2.toFixed(1)} ${y2.toFixed(1)})"/>`;
+  }
+  const hojas = [[104, -1, 26], [92, 1, 24], [80, -1, 22], [70, 1, 20]].map(([y, s, l]) =>
+    `<path d="M50 ${y + 8} C${50 + s * l} ${y - 2} ${50 + s * l * 1.1} ${y - 14} ${50 + s * l * 0.8} ${y - 22} C${50 + s * 6} ${y - 12} 50 ${y - 2} 50 ${y + 8}Z" fill="url(#${h})"/><path d="M50 ${y + 6} C${50 + s * l * 0.5} ${y - 4} ${50 + s * l * 0.7} ${y - 14} ${50 + s * l * 0.8} ${y - 22}" fill="none" stroke="rgba(255,255,255,.3)" stroke-width=".6"/>`).join('');
+  const capullo = (x, y, r, esc) => `<path d="M${x} ${y} C${x + esc * 6} ${y - 4} ${x + esc * 5} ${y - 16} ${x} ${y - 24} C${x - esc * 5} ${y - 16} ${x - esc * 6} ${y - 4} ${x} ${y}Z" fill="${v.base}" opacity=".95" transform="rotate(${r} ${x} ${y})"/><path d="M${x} ${y} C${x + esc * 3} ${y - 6} ${x + esc * 3} ${y - 16} ${x} ${y - 24}" fill="none" stroke="rgba(255,255,255,.4)" stroke-width=".6" transform="rotate(${r} ${x} ${y})"/>`;
+  return `<svg viewBox="0 0 100 140" aria-hidden="true">
+  <defs>
+    <radialGradient id="${id}" cx="50%" cy="100%" r="105%"><stop offset="0" stop-color="${v.base}"/><stop offset="1" stop-color="${v.borde}"/></radialGradient>
+    ${DEF_HOJA(h)}${DEF_TALLO(t)}
+  </defs>
+  <path d="M50 138 C49 116 51 90 50 60" fill="none" stroke="url(#${t})" stroke-width="3.6" stroke-linecap="round"/>
+  ${hojas}
+  ${capullo(46, 66, -22, 1)}${capullo(56, 60, 24, 0.85)}
+  ${tepalos}
+  ${estambres}
+  <path d="M${cx} ${cy} Q${cx + 4} ${cy - 12} ${cx + 12} ${cy - 15}" fill="none" stroke="#6f9a3c" stroke-width="1.3"/><circle cx="${cx + 12.5}" cy="${cy - 15.5}" r="1.9" fill="#8bb04a"/>
+</svg>`;
+}
+
+function svgCala(color) {
+  const id = 'c' + (++gid);
+  const h = 'h' + gid;
+  const t = 't' + gid;
+  const [luz, base, sombra, espadice] = {
+    blanca: ['#ffffff', '#f4f2ea', '#c9c6b6', '#f2c418'],
+    amarilla: ['#fff4a8', '#f6d23a', '#c99c10', '#8a5a10'],
+    rosa: ['#f6c4dc', '#d95c95', '#93245c', '#f2c418'],
+  }[color];
+  return `<svg viewBox="0 0 70 130" aria-hidden="true">
+  <defs>
+    <linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${luz}"/><stop offset=".55" stop-color="${base}"/><stop offset="1" stop-color="${sombra}"/></linearGradient>
+    <linearGradient id="${id}i" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${sombra}" stop-opacity=".55"/><stop offset="1" stop-color="${base}" stop-opacity="0"/></linearGradient>
+    ${DEF_HOJA(h)}${DEF_TALLO(t)}
+  </defs>
+  <path d="M35 128 C34 104 37 80 35 56" fill="none" stroke="url(#${t})" stroke-width="3.2" stroke-linecap="round"/>
+  <path d="M35 122 C14 112 6 96 10 80 C22 88 32 104 35 122Z" fill="url(#${h})"/>
+  <path d="M35 118 C56 108 64 92 60 76 C48 84 38 100 35 118Z" fill="url(#${h})"/>
+  <path d="M35 120 C22 108 16 96 14 84 M35 116 C48 106 54 94 56 82" fill="none" stroke="rgba(255,255,255,.3)" stroke-width=".7"/>
+  <path d="M35 10 C56 14 62 42 46 60 C40 66 32 66 27 58 C14 42 14 18 35 10Z" fill="url(#${id})" stroke="rgba(0,0,0,.14)" stroke-width=".6"/>
+  <path d="M35 10 C46 20 44 44 46 60 C40 66 32 66 27 58 C24 40 26 22 35 10Z" fill="url(#${id}i)"/>
+  <path d="M35 12 C30 30 30 46 33 62 M40 14 C44 30 44 46 42 60" fill="none" stroke="rgba(0,0,0,.09)" stroke-width=".6"/>
+  <path d="M30 16 C25 30 26 46 31 56" fill="none" stroke="rgba(255,255,255,.65)" stroke-width="1.2" stroke-linecap="round"/>
+  <ellipse cx="37" cy="40" rx="3.6" ry="14" fill="${espadice}" transform="rotate(8 37 40)"/>
+  <ellipse cx="36" cy="34" rx="1.6" ry="9" fill="rgba(255,255,255,.35)" transform="rotate(8 37 40)"/>
+  <g fill="rgba(120,80,0,.4)"><circle cx="37" cy="30" r=".6"/><circle cx="38.4" cy="36" r=".6"/><circle cx="37" cy="42" r=".6"/><circle cx="39" cy="47" r=".6"/></g>
+</svg>`;
+}
+
 // ---------- árboles y hamaca ----------
 function svgArbol() {
   const id = 'a' + (++gid);
@@ -2360,8 +2680,8 @@ function plantar(x, y, tipo, animar) {
   const { H } = tamanoJardin();
   const prof = limitar((y - H * 0.6) / (H * 0.4), 0, 1);
   const esc = 0.7 + prof * 0.6;
-  const elegido = tipo || elige(['tulipan', 'tulipan', 'tulipan', 'peonia', 'peonia', 'narciso', 'jacinto', 'margarita', 'margarita', 'lavanda', 'bulbo']);
-  const base = { tulipan: 44, peonia: 84, narciso: 54, jacinto: 44, bulbo: 40, margarita: 46, lavanda: 52 }[elegido];
+  const elegido = tipo || elige(['tulipan', 'tulipan', 'tulipan', 'peonia', 'peonia', 'narciso', 'jacinto', 'margarita', 'margarita', 'lavanda', 'lirio', 'lirio', 'lirio', 'cala', 'bulbo']);
+  const base = { tulipan: 44, peonia: 84, narciso: 54, jacinto: 44, bulbo: 40, margarita: 46, lavanda: 52, lirio: 74, cala: 46 }[elegido];
   const svg = {
     tulipan: () => svgTulipan(elige(TULIPANES)),
     peonia: () => svgPeonia(elige(PEONIAS)),
@@ -2369,6 +2689,8 @@ function plantar(x, y, tipo, animar) {
     jacinto: () => svgJacinto(elige(JACINTOS)),
     margarita: () => svgMargarita(elige(MARGARITAS)),
     lavanda: () => svgLavanda(elige(LAVANDAS)),
+    lirio: () => svgLirio(elige(LIRIOS)),
+    cala: () => svgCala(elige(['blanca', 'blanca', 'amarilla', 'rosa'])),
     bulbo: svgBulbo,
   }[elegido]();
   const w = base * esc;
@@ -2377,6 +2699,7 @@ function plantar(x, y, tipo, animar) {
   f.style.left = x - w / 2 + 'px';
   f.style.bottom = Math.max(0, H - y) + 'px';
   f.style.zIndex = String(Math.round(y));
+  f.style.transform = `rotate(${azarEntre(-3.5, 3.5).toFixed(1)}deg) scaleX(${Math.random() < 0.5 ? -1 : 1})`;
   f.style.setProperty('--dur', azarEntre(6, 10) + 's');
   f.style.setProperty('--del', -azarEntre(0, 6) + 's');
   const dentro = el('div', 'flor-i');
@@ -2607,6 +2930,7 @@ function posicionarMavisJardin() {
 
 function mavisAlJardin() {
   if (mvEnJardin || !jardinListo) return;
+  terminarJuego(true);
   const { r, W, H } = tamanoJardin();
   jardinW = W;
   jardinH = H;
@@ -2624,6 +2948,7 @@ function mavisAlJardin() {
 
 function salirDelJardin() {
   if (!mvEnJardin) return;
+  terminarJuego(true);
   cancelarMantener();
   if (mavis.classList.contains('en-hamaca')) bajarDeHamaca(true);
   mvEnJardin = false;
@@ -2669,7 +2994,7 @@ mavis.addEventListener('pointerdown', () => {
 
 // Mavis olfatea y roza las flores, persigue mariposas y descansa en la hamaca
 function mavisEnJardin(r) {
-  if (!mvEnJardin || mavis.classList.contains('oculta')) return;
+  if (!mvEnJardin || mavis.classList.contains('oculta') || mvModo === 'duerme' || mvModo === 'juego') return;
   const ahora = performance.now();
 
   if (mavis.classList.contains('en-hamaca')) {

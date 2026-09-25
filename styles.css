@@ -790,3 +790,19 @@ html.sin-anim .j-hold .avance { animation: j-hold-ring 4.2s linear .8s forwards 
 /* gato: los ojos azules de la temática de botones siguen funcionando */
 html[data-tema="coraline"] .mavis-svg .mv-ojo .iris { fill: #8fd3ff; }
 html[data-tema="coraline"] .mavis-svg .mv-ojo-feliz { stroke: #8fd3ff; }
+
+/* =============================================
+   Mavis en 3D, siesta y bola de hilo
+   ============================================= */
+.mavis-3d { display: block; width: 100%; height: auto; aspect-ratio: 360 / 254; cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent; user-select: none; filter: drop-shadow(0 3px 3px rgba(0,0,0,.22)); }
+.mavis.en-3d .mavis-svg { display: none; }
+.mavis.izquierda .mavis-3d { transform: scaleX(-1); }
+html[data-tema="coraline"] .mavis-3d, html[data-tema="aurora"] .mavis-3d { filter: drop-shadow(0 0 6px rgba(190,205,255,.55)); }
+
+.bola-hilo { position: fixed; left: 0; bottom: calc(var(--nav-alto) + env(safe-area-inset-bottom) - 2px); width: 28px; z-index: 41; cursor: pointer; touch-action: manipulation; }
+.bola-hilo svg { display: block; width: 100%; height: auto; overflow: visible; filter: drop-shadow(0 3px 2px rgba(0,0,0,.32)); }
+.bola-hilo.en-jardin { position: absolute; bottom: auto; }
+.bola-hilo.se-va { opacity: 0; transition: opacity .6s; pointer-events: none; }
+.bola-hilo.cae { animation: bola-cae .6s ease-out; }
+@keyframes bola-cae { 0% { transform: translateY(-70px); opacity: 0; } 15% { opacity: 1; } 55% { transform: translateY(0); } 72% { transform: translateY(-14px); } 88% { transform: translateY(0); } 94% { transform: translateY(-4px); } 100% { transform: translateY(0); } }
+html.sin-anim .bola-hilo { display: none; }
