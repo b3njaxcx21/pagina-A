@@ -387,16 +387,21 @@ async function cargarPerfiles() {
 
 // ---------- Estado de ánimo (con caritas de gatitos) ----------
 const ANIMOS = [
-  { k: 'enamorado', img: 'animos/1.jpg', emoji: '🥰', nombre: 'Enamorado' },
-  { k: 'emocionado', img: 'animos/2.jpg', emoji: '🤩', nombre: 'Emocionado' },
+  { k: 'enamorado', img: 'animos/1.jpg', emoji: '🥰', nombre: 'Enamorado', f: 'Enamorada' },
+  { k: 'emocionado', img: 'animos/2.jpg', emoji: '🤩', nombre: 'Emocionado', f: 'Emocionada' },
   { k: 'feliz', img: 'animos/3.jpg', emoji: '😄', nombre: 'Feliz' },
-  { k: 'cansado', img: 'animos/4.jpg', emoji: '😴', nombre: 'Cansado' },
+  { k: 'cansado', img: 'animos/4.jpg', emoji: '😴', nombre: 'Cansado', f: 'Cansada' },
   { k: 'sensible', img: 'animos/5.jpg', emoji: '🥺', nombre: 'Sensible' },
   { k: 'triste', img: 'animos/6.jpg', emoji: '😢', nombre: 'Triste' },
-  { k: 'molesto', img: 'animos/7.jpg', emoji: '😡', nombre: 'Molesto' },
-  { k: 'enfermo', img: 'animos/8.jpg', emoji: '🤒', nombre: 'Enfermo' },
+  { k: 'molesto', img: 'animos/7.jpg', emoji: '😡', nombre: 'Molesto', f: 'Molesta' },
+  { k: 'enfermo', img: 'animos/8.jpg', emoji: '🤒', nombre: 'Enfermo', f: 'Enferma' },
 ];
 const animoDe = (k) => ANIMOS.find((a) => a.k === k) || null;
+
+// Las palabras cambian según sea él o ella (Enamorado / Enamorada)
+const GENERO = { benjamin: 'm', alondra: 'f' };
+const esMujer = (id) => GENERO[(perfiles[id] || '').toLowerCase()] === 'f';
+const nombreAnimo = (a, id) => (a.f && esMujer(id) ? a.f : a.nombre);
 
 ANIMOS.forEach((a) => {
   const b = el('button', 'animo-op');
@@ -430,17 +435,23 @@ function pintarAnimos() {
   const otro = Object.keys(perfiles).find((id) => id !== usuario.id);
   const mio = animoVigente(usuario.id);
   const suyo = otro ? animoVigente(otro) : null;
-  const poner = (id, a) => {
+  const poner = (id, a, dueno) => {
     const b = $(id);
     b.classList.toggle('oculto', !a);
     if (!a) { b.replaceChildren(); return; }
     const im = document.createElement('img');
     im.src = animoDe(a.animo).img;
-    im.alt = 'Ánimo: ' + animoDe(a.animo).nombre;
+    im.alt = 'Ánimo: ' + nombreAnimo(animoDe(a.animo), dueno);
     b.replaceChildren(im);
   };
-  poner('hero-animo-yo', mio);
-  poner('hero-animo-otro', suyo);
+  poner('hero-animo-yo', mio, usuario.id);
+  poner('hero-animo-otro', suyo, otro);
+  // los nombres de las opciones se adaptan a quien las está viendo
+  document.querySelectorAll('.animo-op').forEach((b) => {
+    const n = nombreAnimo(animoDe(b.dataset.animo), usuario.id);
+    b.title = n;
+    b.querySelector('span').textContent = n;
+  });
   document.querySelectorAll('.animo-op').forEach((b) => b.classList.toggle('activa', !!mio && b.dataset.animo === mio.animo));
   const linea = $('animo-otro');
   if (!otro) { linea.replaceChildren(); return; }
@@ -448,7 +459,7 @@ function pintarAnimos() {
     const im = document.createElement('img');
     im.src = animoDe(suyo.animo).img;
     im.alt = '';
-    linea.replaceChildren(im, document.createTextNode(` ${perfiles[otro]} se siente ${animoDe(suyo.animo).nombre.toLowerCase()} · ${hace(suyo.animo_en)}`));
+    linea.replaceChildren(im, document.createTextNode(` ${perfiles[otro]} se siente ${nombreAnimo(animoDe(suyo.animo), otro).toLowerCase()} · ${hace(suyo.animo_en)}`));
   } else {
     linea.textContent = `${perfiles[otro]} aún no dice cómo se siente hoy`;
   }
@@ -473,7 +484,7 @@ function perfilRemoto(f) {
   animos[f.id] = { animo: f.animo, animo_en: f.animo_en };
   pintarAnimos();
   if (animoDe(f.animo) && (!antes || antes.animo_en !== f.animo_en)) {
-    aviso(`${nombreDe(f.id)} se siente ${animoDe(f.animo).nombre.toLowerCase()} ${animoDe(f.animo).emoji}`);
+    aviso(`${nombreDe(f.id)} se siente ${nombreAnimo(animoDe(f.animo), f.id).toLowerCase()} ${animoDe(f.animo).emoji}`);
     mavisReaccion();
   }
 }
