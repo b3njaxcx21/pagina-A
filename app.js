@@ -2197,241 +2197,265 @@ function mezclar(hex, con, f) {
   return '#' + [0, 2, 4].map((i) => c(i).toString(16).padStart(2, '0')).join('');
 }
 
-const DEF_HOJA = (id) => `<linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7cc078"/><stop offset=".55" stop-color="#4a9a4a"/><stop offset="1" stop-color="#2a6c33"/></linearGradient>`;
-const DEF_TALLO = (id) => `<linearGradient id="${id}" x1="0" x2="1"><stop offset="0" stop-color="#2f7034"/><stop offset=".5" stop-color="#58a251"/><stop offset="1" stop-color="#2a6a30"/></linearGradient>`;
+// ---------- flores estilo anime: colores pastel, contorno fino y sombreado suave ----------
+const trazo = (c, f = 0.36) => mezclar(c, '#4a1f3a', f);
+const VERDE = { hoja: '#8ad176', sombra: '#4fa65a', linea: '#2f7a3d', vena: '#dff5c4', tallo: '#7ccb6c' };
 
-// paletas: [claro, base, oscuro]
-const TULIPANES = [
-  { c: ['#f0606b', '#d62839', '#8f1523'] },                                   // rojo
-  { c: ['#ffe98a', '#f4c430', '#b88a0a'] },                                   // amarillo
-  { c: ['#f9b6cd', '#ee7ba2', '#b23a66'] },                                   // rosa
-  { c: ['#c5a1ec', '#8a4fc4', '#57298c'] },                                   // morado
-  { c: ['#ffc37a', '#f28c1e', '#b4560a'] },                                   // naranja
-  { c: ['#ffffff', '#f1ebdf', '#c8bfa8'] },                                   // blanco
-  { c: ['#ffab98', '#f2634e', '#b03323'] },                                   // coral
-  { c: ['#f78ccb', '#d63a95', '#8c1660'] },                                   // fucsia
-  { c: ['#c8546f', '#8f1f3d', '#4a0a1c'] },                                   // vino
-  { c: ['#e6d6f8', '#bb9ce2', '#8460b8'] },                                   // lavanda
-  { c: ['#ffffff', '#f1ebdf', '#c8bfa8'], borde: '#d62839' },                 // blanco con borde rojo
-  { c: ['#ffe98a', '#f4c430', '#b88a0a'], borde: '#d62839' },                 // amarillo con llamas rojas
-  { c: ['#ffffff', '#f4eaf2', '#cdb6cb'], borde: '#d94a9a' },                 // blanco con borde fucsia
+const DEF_HOJA = (id) => `<linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#9adf85"/><stop offset="1" stop-color="#4fa65a"/></linearGradient>`;
+const DEF_TALLO = (id) => `<linearGradient id="${id}" x1="0" x2="1"><stop offset="0" stop-color="#4fa65a"/><stop offset=".5" stop-color="#7ccb6c"/><stop offset="1" stop-color="#4fa65a"/></linearGradient>`;
+const defSombra = (id, sombra) => `<linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff" stop-opacity=".28"/><stop offset=".55" stop-color="#ffffff" stop-opacity="0"/><stop offset="1" stop-color="${sombra}" stop-opacity=".5"/></linearGradient>`;
+
+function tallo(d, w = 3) {
+  return `<path d="${d}" fill="none" stroke="${VERDE.linea}" stroke-width="${w + 1.7}" stroke-linecap="round"/><path d="${d}" fill="none" stroke="${VERDE.tallo}" stroke-width="${w}" stroke-linecap="round"/>`;
+}
+
+function hoja(x, y, largo, ancho, ang) {
+  const d = `M0 0 C${ancho} ${-largo * 0.25} ${ancho * 0.9} ${-largo * 0.75} 0 ${-largo} C${-ancho * 0.9} ${-largo * 0.75} ${-ancho} ${-largo * 0.25} 0 0Z`;
+  let venas = '';
+  for (let i = 1; i <= 4; i++) {
+    const yy = -largo * (0.16 + i * 0.17);
+    venas += `M0 ${yy} L${ancho * 0.55} ${yy - largo * 0.1} M0 ${yy} L${-ancho * 0.55} ${yy - largo * 0.1} `;
+  }
+  return `<g transform="translate(${x} ${y}) rotate(${ang})"><path d="${d}" fill="${VERDE.hoja}" stroke="${VERDE.linea}" stroke-width=".9" stroke-linejoin="round"/><path d="M0 0 C${ancho} ${-largo * 0.25} ${ancho * 0.9} ${-largo * 0.75} 0 ${-largo} C${ancho * 0.2} ${-largo * 0.7} ${ancho * 0.3} ${-largo * 0.25} 0 0Z" fill="${VERDE.sombra}" opacity=".4"/><path d="M0 0 L0 ${-largo * 0.94}" stroke="${VERDE.vena}" stroke-width=".8" stroke-linecap="round"/><path d="${venas}" stroke="${VERDE.vena}" stroke-width=".5" opacity=".75" fill="none"/></g>`;
+}
+
+const petaloD = (rx, ry) => `M0 0 C${-rx * 0.95} ${-ry * 0.12} ${-rx * 1.08} ${-ry * 0.85} 0 ${-ry} C${rx * 1.08} ${-ry * 0.85} ${rx * 0.95} ${-ry * 0.12} 0 0Z`;
+
+function petalo(cx, cy, ang, rx, ry, fill, gid) {
+  const s = trazo(fill);
+  const d = petaloD(rx, ry);
+  return `<g transform="translate(${cx} ${cy}) rotate(${ang.toFixed(1)})"><path d="${d}" fill="${fill}" stroke="${s}" stroke-width=".85" stroke-linejoin="round"/><path d="${d}" fill="url(#${gid})"/><path d="M${-rx * 0.15} ${-ry * 0.2} C${-rx * 0.5} ${-ry * 0.45} ${-rx * 0.45} ${-ry * 0.7} ${-rx * 0.1} ${-ry * 0.9}" fill="none" stroke="rgba(255,255,255,.65)" stroke-width=".9" stroke-linecap="round"/><path d="M0 ${-ry * 0.12} L0 ${-ry * 0.62}" stroke="${s}" stroke-width=".4" opacity=".55"/></g>`;
+}
+
+// estambres y centro oscuro con puntitos amarillos (como en las ilustraciones anime)
+function centroFlor(cx, cy, r, oscuro = '#a3204f') {
+  let p = '';
+  for (let i = 0; i < 14; i++) {
+    const a = (i / 14) * Math.PI * 2;
+    p += `<path d="M${cx} ${cy} L${(cx + Math.cos(a) * (r + 2.6)).toFixed(1)} ${(cy + Math.sin(a) * (r + 2.6)).toFixed(1)}" stroke="#7a1a3f" stroke-width=".5"/><circle cx="${(cx + Math.cos(a) * (r + 3)).toFixed(1)}" cy="${(cy + Math.sin(a) * (r + 3)).toFixed(1)}" r="1" fill="#f6c445" stroke="#b6862a" stroke-width=".3"/>`;
+  }
+  return `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${oscuro}" stroke="#5a1030" stroke-width=".7"/>${p}<circle cx="${cx}" cy="${cy}" r="${r * 0.35}" fill="#f6c445"/>`;
+}
+
+// ---------- paletas pastel ----------
+const ROSAS = [
+  { a: '#f6d3a0', s: '#d99a58', abierta: false },   // durazno
+  { a: '#f4a9c8', s: '#d0648f', abierta: true },    // rosa
+  { a: '#fbd0dc', s: '#e08aa6', abierta: false },   // rosa pálido
+  { a: '#f7a6a0', s: '#d8635e', abierta: false },   // coral
+  { a: '#fff0c8', s: '#e0b866', abierta: false },   // crema
 ];
-const PEONIAS = [
-  { a: ['#ec9dbb', '#f9d3e2'], b: ['#e07aa2', '#f4b5cd'], c: ['#cf4f82', '#ea8db1'] },   // rosa
-  { a: ['#f5a08e', '#fbd0c4'], b: ['#ee7c68', '#f7b4a6'], c: ['#dc5a48', '#f09080'] },   // coral
-  { a: ['#efdde0', '#fff7f7'], b: ['#e8c9ce', '#faeef0'], c: ['#dfb0ba', '#f4dadd'] },   // blanco rosado
-  { a: ['#d9508f', '#f08cb8'], b: ['#c02f74', '#e46aa0'], c: ['#9c1858', '#d24a86'] },   // magenta
-  { a: ['#f6d98a', '#fdf0c6'], b: ['#f0c65c', '#f9e2a0'], c: ['#e3a92f', '#f2cf72'] },   // amarillo crema
-  { a: ['#b98ae0', '#e0cdf5'], b: ['#9c66cf', '#cdb0ee'], c: ['#7a44ad', '#b78ae0'] },   // lila
+const CAMELIAS = [
+  { a: '#e7f3d6', s: '#9cc088' }, { a: '#fbe7ef', s: '#d99bb4' }, { a: '#eef4ff', s: '#9fb2d8' },
+];
+const ANEMONAS = [
+  { a: '#f8b4cf', s: '#d0648f' }, { a: '#e8d6f8', s: '#a483d1' }, { a: '#ffe1b8', s: '#e0a458' }, { a: '#ffffff', s: '#c9b6d4' },
+];
+const TULIPANES = [
+  { a: '#f7a1a8', s: '#d0505c' }, { a: '#ffe08a', s: '#e0a82a' }, { a: '#f8b8d3', s: '#d96a98' }, { a: '#c8b0f0', s: '#8a68c8' },
+  { a: '#ffbf85', s: '#e08540' }, { a: '#fdf6ee', s: '#cdbfae' }, { a: '#ff9c9c', s: '#d85858' }, { a: '#f5a0d6', s: '#cc58a4' },
+  { a: '#e6d4f8', s: '#a888d4' }, { a: '#ffd3e0', s: '#e08aa8' },
 ];
 const NARCISOS = [
-  { p: '#ffe066', pb: '#e6b800', copa: '#f4a300', dentro: '#c97a00' },
-  { p: '#f8f4e6', pb: '#e4dcbc', copa: '#f4a300', dentro: '#d4620a' },
-  { p: '#f8f4e6', pb: '#e4dcbc', copa: '#ffe066', dentro: '#e0a400' },
-  { p: '#ffd24d', pb: '#dea800', copa: '#ff9a1f', dentro: '#c25a00' },
+  { p: '#fff2a8', s: '#e0c04a', copa: '#ffc94d', dentro: '#e89a1a' },
+  { p: '#fffaf0', s: '#d8cdb0', copa: '#ffc94d', dentro: '#e89a1a' },
+  { p: '#fffaf0', s: '#d8cdb0', copa: '#ffb08a', dentro: '#e0704a' },
 ];
-const JACINTOS = ['#7f5fc4', '#5079d6', '#c862ac', '#e7e0f5', '#a678d8', '#4d5fb8'];
+const JACINTOS = ['#a48ae0', '#7fa2e8', '#e88ac4', '#f3edfb', '#c4a6ee'];
 const MARGARITAS = [
-  { p: '#ffffff', c: '#f6c21c' }, { p: '#f7c4d9', c: '#f4b400' }, { p: '#ffe680', c: '#c97c10' }, { p: '#e6d4f6', c: '#f0b800' },
+  { p: '#ffffff', c: '#ffd35c' }, { p: '#fbd0e0', c: '#ffcf50' }, { p: '#fff2a8', c: '#f0a030' }, { p: '#e8d8fa', c: '#ffd35c' },
 ];
-const LAVANDAS = ['#8a6cc4', '#6f7fd6', '#b58ad6', '#d8c8ee'];
+const LAVANDAS = ['#a58ae0', '#8ea2ec', '#c8a2ea', '#e2d4f6'];
 
 // ---------- flores ----------
-function svgTulipan(spec) {
-  const [luz, base, osc] = spec.c;
-  const g = 'g' + (++gid);
-  const h = 'h' + gid;
-  const t = 't' + gid;
-  const b = 'b' + gid;
-  const borde = spec.borde
-    ? `<linearGradient id="${b}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${spec.borde}" stop-opacity="0"/><stop offset=".55" stop-color="${spec.borde}" stop-opacity=".15"/><stop offset="1" stop-color="${spec.borde}" stop-opacity=".9"/></linearGradient>`
-    : '';
-  const frente = 'M14 30 C15 48 21 60 25 60 C29 60 35 48 36 30 C32 35 28 26 25 20 C22 26 18 35 14 30Z';
-  return `<svg viewBox="0 0 50 120" aria-hidden="true">
-  <defs>
-    <linearGradient id="${g}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${luz}"/><stop offset=".5" stop-color="${base}"/><stop offset="1" stop-color="${osc}"/></linearGradient>
-    <linearGradient id="${g}s" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="${osc}"/><stop offset=".5" stop-color="${base}"/><stop offset="1" stop-color="${osc}"/></linearGradient>
-    ${DEF_HOJA(h)}${DEF_TALLO(t)}${borde}
-  </defs>
-  <path d="M25 118 C24 92 26 72 25 54" fill="none" stroke="url(#${t})" stroke-width="3.2" stroke-linecap="round"/>
-  <path d="M25 112 C8 100 5 77 11 62 C21 77 24 96 25 112Z" fill="url(#${h})"/>
-  <path d="M25 112 C14 98 12 80 12 66" fill="none" stroke="rgba(255,255,255,.35)" stroke-width=".7"/>
-  <path d="M25 104 C41 94 45 75 40 60 C31 73 27 90 25 104Z" fill="url(#${h})"/>
-  <path d="M25 104 C36 92 39 76 39 63" fill="none" stroke="rgba(255,255,255,.35)" stroke-width=".7"/>
-  <path d="M25 58 C23 64 24 70 25 76" fill="none" stroke="#3a7d3a" stroke-width="4.2" stroke-linecap="round" opacity=".55"/>
-  <path d="M11 28 C9 46 17 60 25 60 C33 60 41 46 39 28 C35 33 30 22 25 17 C20 22 15 33 11 28Z" fill="url(#${g}s)"/>
-  <path d="M25 17 C27 30 30 44 25 60 C33 60 41 46 39 28 C35 33 30 22 25 17Z" fill="${osc}" opacity=".28"/>
-  <path d="${frente}" fill="url(#${g})"/>
-  ${spec.borde ? `<path d="${frente}" fill="url(#${b})"/>` : ''}
-  <path d="M25 21 C24 34 24 48 25 59 M19 32 C20 44 23 54 25 59 M31 32 C30 44 27 54 25 59" fill="none" stroke="rgba(0,0,0,.13)" stroke-width=".7"/>
-  <path d="M19 30 C18 40 20 48 22 54" fill="none" stroke="rgba(255,255,255,.55)" stroke-width="1.1" stroke-linecap="round"/>
-  <ellipse cx="25" cy="19.5" rx="4.5" ry="1.6" fill="${osc}" opacity=".55"/>
+function svgRosa(v) {
+  const cx = 45;
+  const cy = 44;
+  const g = 'r' + (++gid);
+  let p = '';
+  for (let i = 0; i < 6; i++) p += petalo(cx, cy, i * 60 + 8, 14, 24, v.a, g);
+  for (let i = 0; i < 5; i++) p += petalo(cx, cy, i * 72 + 30, 11.5, 18, mezclar(v.a, '#ffffff', 0.16), g);
+  for (let i = 0; i < 4; i++) p += petalo(cx, cy, i * 90 + 12, 8.5, 12, mezclar(v.a, '#ffffff', 0.3), g);
+  const centro = v.abierta
+    ? centroFlor(cx, cy, 4.4)
+    : `<path d="M${cx} ${cy + 1} C${cx - 4} ${cy - 2} ${cx - 2} ${cy - 6} ${cx + 1} ${cy - 5} C${cx + 5} ${cy - 4} ${cx + 4} ${cy + 2} ${cx} ${cy + 2}" fill="none" stroke="${trazo(v.a, 0.5)}" stroke-width=".9" stroke-linecap="round"/>`;
+  return `<svg viewBox="0 0 90 130" aria-hidden="true">
+  <defs>${defSombra(g, v.s)}</defs>
+  ${tallo('M45 128 C44 106 46 88 45 68', 3.2)}
+  ${hoja(45, 120, 30, 9, -52)}${hoja(45, 108, 26, 8, 58)}
+  ${p}${centro}
 </svg>`;
 }
 
-function svgPeonia(pal) {
+function svgCamelia(v) {
   const cx = 45;
-  const cy = 42;
-  const id = 'p' + (++gid);
-  const h = 'h' + gid;
-  const t = 't' + gid;
+  const cy = 44;
+  const g = 'c' + (++gid);
   let p = '';
-  const capa = (n, r, rx, ry, k, rot, jit) => {
-    for (let i = 0; i < n; i++) {
-      const a = (360 / n) * i + rot + (Math.random() - 0.5) * jit;
-      const rr = r + (Math.random() - 0.5) * 2.2;
-      p += `<g transform="rotate(${a.toFixed(1)} ${cx} ${cy})"><ellipse cx="${cx}" cy="${(cy - rr).toFixed(1)}" rx="${rx}" ry="${ry}" fill="url(#${id}${k})" stroke="rgba(110,25,60,.2)" stroke-width=".7"/><path d="M${cx} ${cy - rr + ry * 0.75} C${cx - 3} ${cy - rr} ${cx - 2} ${cy - rr - ry * 0.5} ${cx} ${cy - rr - ry * 0.85} M${cx + 4} ${cy - rr + ry * 0.5} C${cx + 5} ${cy - rr} ${cx + 4} ${cy - rr - ry * 0.4} ${cx + 3} ${cy - rr - ry * 0.7}" fill="none" stroke="rgba(120,30,70,.14)" stroke-width=".6"/></g>`;
-    }
-  };
-  capa(9, 21, 15, 19, 'a', 0, 10);
-  capa(8, 15, 13, 16, 'b', 18, 12);
-  capa(7, 9.5, 11, 13, 'c', 8, 14);
-  capa(5, 4.5, 8, 9.5, 'c', 30, 18);
-  const grad = (k, [dentro, fuera]) => `<radialGradient id="${id}${k}" cx="50%" cy="85%" r="85%"><stop offset="0" stop-color="${dentro}"/><stop offset="1" stop-color="${fuera}"/></radialGradient>`;
-  let est = '';
-  for (let i = 0; i < 16; i++) {
-    const a = (i / 16) * Math.PI * 2;
-    est += `<path d="M${cx} ${cy} L${(cx + Math.cos(a) * 7).toFixed(1)} ${(cy + Math.sin(a) * 7).toFixed(1)}" stroke="#d9a520" stroke-width=".8"/><circle cx="${(cx + Math.cos(a) * 7.4).toFixed(1)}" cy="${(cy + Math.sin(a) * 7.4).toFixed(1)}" r="1" fill="#f3c93e"/>`;
-  }
+  for (let i = 0; i < 7; i++) p += petalo(cx, cy, i * 51.4 + 4, 15.5, 24, v.a, g);
+  for (let i = 0; i < 6; i++) p += petalo(cx, cy, i * 60 + 24, 12, 17, mezclar(v.a, '#ffffff', 0.25), g);
+  for (let i = 0; i < 5; i++) p += petalo(cx, cy, i * 72, 8.5, 11, mezclar(v.a, '#ffffff', 0.4), g);
   return `<svg viewBox="0 0 90 130" aria-hidden="true">
-  <defs>${grad('a', pal.a)}${grad('b', pal.b)}${grad('c', pal.c)}${DEF_HOJA(h)}${DEF_TALLO(t)}</defs>
-  <path d="M45 128 C44 106 46 84 45 66" fill="none" stroke="url(#${t})" stroke-width="3.6" stroke-linecap="round"/>
-  <path d="M45 118 C22 108 14 90 21 75 C34 87 42 102 45 118Z" fill="url(#${h})"/>
-  <path d="M45 118 C31 106 25 92 24 80" fill="none" stroke="rgba(255,255,255,.3)" stroke-width=".8"/>
-  <path d="M45 108 C68 100 76 82 69 69 C56 79 48 94 45 108Z" fill="url(#${h})"/>
-  <path d="M45 108 C57 98 64 86 66 74" fill="none" stroke="rgba(255,255,255,.3)" stroke-width=".8"/>
-  <ellipse cx="${cx}" cy="${cy + 26}" rx="13" ry="4" fill="rgba(0,0,0,.12)"/>
-  ${p}
-  <circle cx="${cx}" cy="${cy}" r="5.5" fill="#e6b229"/>
-  ${est}
+  <defs>${defSombra(g, v.s)}</defs>
+  ${tallo('M45 128 C44 108 46 90 45 68', 3.2)}
+  ${hoja(45, 118, 30, 9, -48)}${hoja(45, 106, 26, 8, 54)}
+  ${p}${centroFlor(cx, cy, 5.2)}
+</svg>`;
+}
+
+function svgAnemona(v) {
+  const cx = 50;
+  const cy = 44;
+  const g = 'a' + (++gid);
+  let p = '';
+  for (let i = 0; i < 5; i++) p += petalo(cx, cy, i * 72 + 10, 15, 26, v.a, g);
+  return `<svg viewBox="0 0 100 130" aria-hidden="true">
+  <defs>${defSombra(g, v.s)}</defs>
+  ${tallo('M50 128 C49 108 51 92 50 70', 3)}
+  ${hoja(50, 118, 26, 8, -55)}${hoja(50, 108, 22, 7, 58)}
+  ${p}${centroFlor(cx, cy, 5)}
+</svg>`;
+}
+
+function svgCapullo(v) {
+  const g = 'k' + (++gid);
+  const c2 = mezclar(v.a, '#ffffff', 0.28);
+  return `<svg viewBox="0 0 60 110" aria-hidden="true">
+  <defs>${defSombra(g, v.s)}</defs>
+  ${tallo('M30 108 C29 90 32 76 30 56', 2.8)}
+  ${hoja(30, 100, 22, 7, 56)}
+  <path d="M30 12 C46 22 48 46 30 58 C12 46 14 22 30 12Z" fill="${v.a}" stroke="${trazo(v.a)}" stroke-width=".9" stroke-linejoin="round"/>
+  <path d="M30 12 C40 26 40 44 30 58 C22 46 22 24 30 12Z" fill="${c2}" stroke="${trazo(v.a)}" stroke-width=".7"/>
+  <path d="M30 12 C46 22 48 46 30 58 C12 46 14 22 30 12Z" fill="url(#${g})"/>
+  <path d="M24 26 C22 34 23 42 27 50" fill="none" stroke="rgba(255,255,255,.7)" stroke-width="1.1" stroke-linecap="round"/>
+  <path d="M30 58 C22 56 18 50 16 44 C22 52 26 54 30 54 C34 54 38 52 44 44 C42 50 38 56 30 58Z" fill="${VERDE.hoja}" stroke="${VERDE.linea}" stroke-width=".8" stroke-linejoin="round"/>
+</svg>`;
+}
+
+function svgTulipan(v) {
+  const g = 't' + (++gid);
+  const c2 = mezclar(v.a, '#ffffff', 0.25);
+  const s = trazo(v.a);
+  return `<svg viewBox="0 0 50 120" aria-hidden="true">
+  <defs>${defSombra(g, v.s)}</defs>
+  ${tallo('M25 118 C24 92 26 74 25 56', 3)}
+  ${hoja(25, 114, 50, 10, -14)}${hoja(25, 108, 44, 9, 16)}
+  <path d="M11 26 C9 46 17 60 25 60 C33 60 41 46 39 26 C35 32 30 22 25 16 C20 22 15 32 11 26Z" fill="${v.s}" stroke="${s}" stroke-width=".9" stroke-linejoin="round" opacity=".85"/>
+  <path d="M14 28 C15 48 21 60 25 60 C29 60 35 48 36 28 C32 34 28 25 25 19 C22 25 18 34 14 28Z" fill="${v.a}" stroke="${s}" stroke-width=".9" stroke-linejoin="round"/>
+  <path d="M25 19 C31 30 35 46 25 60 C21 54 19 44 21 32 C22 27 23 23 25 19Z" fill="${c2}" opacity=".55"/>
+  <path d="M14 28 C15 48 21 60 25 60 C29 60 35 48 36 28 C32 34 28 25 25 19 C22 25 18 34 14 28Z" fill="url(#${g})"/>
+  <path d="M19 30 C18 40 20 48 23 54" fill="none" stroke="rgba(255,255,255,.75)" stroke-width="1.2" stroke-linecap="round"/>
+  <path d="M25 22 C24 34 24 46 25 58" fill="none" stroke="${s}" stroke-width=".5" opacity=".6"/>
 </svg>`;
 }
 
 function svgNarciso(v) {
-  const h = 'h' + (++gid);
-  const t = 't' + gid;
-  const k = 'n' + gid;
+  const g = 'n' + (++gid);
   let p = '';
-  for (let i = 0; i < 6; i++) {
-    p += `<g transform="rotate(${i * 60} 30 32)"><ellipse cx="30" cy="16" rx="8.4" ry="15.5" fill="url(#${k})" stroke="${v.pb}" stroke-width=".7"/><path d="M30 30 C28.5 22 28.5 14 30 5 M27 28 C25.5 21 26 15 27.5 9 M33 28 C34.5 21 34 15 32.5 9" fill="none" stroke="rgba(0,0,0,.09)" stroke-width=".6"/></g>`;
-  }
+  for (let i = 0; i < 6; i++) p += petalo(30, 32, i * 60, 8.6, 17, v.p, g);
   return `<svg viewBox="0 0 60 110" aria-hidden="true">
-  <defs>${DEF_HOJA(h)}${DEF_TALLO(t)}<radialGradient id="${k}" cx="50%" cy="90%" r="90%"><stop offset="0" stop-color="${mezclar(v.p, '#000000', 0.12)}"/><stop offset="1" stop-color="${v.p}"/></radialGradient>
-  <linearGradient id="${k}c" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${mezclar(v.copa, '#ffffff', 0.25)}"/><stop offset="1" stop-color="${v.copa}"/></linearGradient></defs>
-  <path d="M30 108 C29 84 31 60 30 40" fill="none" stroke="url(#${t})" stroke-width="3.2" stroke-linecap="round"/>
-  <path d="M30 104 C13 92 9 69 15 55 C24 70 28 88 30 104Z" fill="url(#${h})"/>
-  <path d="M30 100 C42 90 46 74 43 62 C36 73 32 88 30 100Z" fill="url(#${h})"/>
+  <defs>${defSombra(g, v.s)}</defs>
+  ${tallo('M30 108 C29 86 31 62 30 42', 2.8)}
+  ${hoja(30, 104, 44, 8, -16)}${hoja(30, 100, 38, 7, 14)}
   ${p}
-  <ellipse cx="30" cy="32" rx="9" ry="6.6" fill="url(#${k}c)"/>
-  <path d="M21.5 31 C22 28 24 28.5 25 27.5 C26 29 27.5 27 28.5 27.6 C29.5 28.8 31 27 32 27.6 C33 28.4 34.5 27.2 35.5 27.8 C36.5 28.6 38 28.6 38.5 31" fill="none" stroke="${v.dentro}" stroke-width="1"/>
-  <ellipse cx="30" cy="31" rx="6" ry="3.8" fill="${v.dentro}"/>
-  <g fill="#f3d36a"><circle cx="28" cy="30.6" r=".9"/><circle cx="32" cy="30.4" r=".9"/><circle cx="30" cy="32" r=".9"/></g>
+  <ellipse cx="30" cy="32" rx="9" ry="7" fill="${v.copa}" stroke="${trazo(v.copa)}" stroke-width=".8"/>
+  <path d="M21.5 31 C22 28 24 28.5 25 27.5 C26 29 27.5 27 28.5 27.6 C29.5 28.8 31 27 32 27.6 C33 28.4 34.5 27.2 35.5 27.8 C36.5 28.6 38 28.6 38.5 31" fill="none" stroke="${trazo(v.copa)}" stroke-width=".8"/>
+  <ellipse cx="30" cy="31.2" rx="5.8" ry="3.8" fill="${v.dentro}" stroke="${trazo(v.dentro)}" stroke-width=".6"/>
+  <ellipse cx="27" cy="28.6" rx="2.2" ry="1" fill="rgba(255,255,255,.6)"/>
 </svg>`;
 }
 
 function svgJacinto(color) {
-  const h = 'h' + (++gid);
-  const t = 't' + gid;
   let f = '';
-  for (let i = 0; i < 22; i++) {
-    const y = 60 - i * 2.4;
-    const w = 11 - i * 0.38;
-    const r = 3.9 - i * 0.1;
+  for (let i = 0; i < 20; i++) {
+    const y = 60 - i * 2.6;
+    const w = 11 - i * 0.4;
+    const r = 4.2 - i * 0.11;
     [[-1, 0], [1, -1.6], [0, -0.8]].forEach(([lado, dy], j) => {
       const x = 25 + lado * w * 0.5;
-      const col = mezclar(color, j === 0 ? '#ffffff' : '#000000', j === 0 ? 0.18 : j === 1 ? 0.12 : 0.02);
-      f += `<circle cx="${x.toFixed(1)}" cy="${(y + dy).toFixed(1)}" r="${r.toFixed(1)}" fill="${col}"/><circle cx="${(x - r * 0.25).toFixed(1)}" cy="${(y + dy - r * 0.3).toFixed(1)}" r="${(r * 0.32).toFixed(1)}" fill="rgba(255,255,255,.45)"/>`;
+      const col = mezclar(color, j === 0 ? '#ffffff' : '#000000', j === 0 ? 0.22 : j === 1 ? 0.06 : 0);
+      f += `<circle cx="${x.toFixed(1)}" cy="${(y + dy).toFixed(1)}" r="${r.toFixed(1)}" fill="${col}" stroke="${trazo(color)}" stroke-width=".55"/><circle cx="${(x - r * 0.28).toFixed(1)}" cy="${(y + dy - r * 0.3).toFixed(1)}" r="${(r * 0.28).toFixed(1)}" fill="rgba(255,255,255,.8)"/>`;
     });
   }
   return `<svg viewBox="0 0 50 120" aria-hidden="true">
-  <defs>${DEF_HOJA(h)}${DEF_TALLO(t)}</defs>
-  <path d="M25 118 C24 96 26 80 25 56" fill="none" stroke="url(#${t})" stroke-width="3.2" stroke-linecap="round"/>
-  <path d="M25 116 C7 104 5 84 11 69 C20 84 24 100 25 116Z" fill="url(#${h})"/>
-  <path d="M25 116 C43 104 45 84 39 69 C30 84 26 100 25 116Z" fill="url(#${h})"/>
+  ${tallo('M25 118 C24 96 26 80 25 58', 3)}
+  ${hoja(25, 116, 46, 9, -22)}${hoja(25, 114, 46, 9, 22)}
   ${f}
 </svg>`;
 }
 
 function svgMargarita(v) {
-  const h = 'h' + (++gid);
-  const t = 't' + gid;
+  const g = 'm' + (++gid);
   let p = '';
-  for (let i = 0; i < 16; i++) {
-    p += `<g transform="rotate(${i * 22.5} 30 30)"><ellipse cx="30" cy="15" rx="3.4" ry="12" fill="${v.p}" stroke="rgba(0,0,0,.14)" stroke-width=".5"/><path d="M30 24 L30 6" stroke="rgba(0,0,0,.08)" stroke-width=".5"/></g>`;
+  for (let i = 0; i < 14; i++) {
+    p += `<g transform="rotate(${i * (360 / 14)} 30 30)"><ellipse cx="30" cy="14.5" rx="3.6" ry="12" fill="${v.p}" stroke="${trazo(v.p, 0.45)}" stroke-width=".7"/><path d="M29 22 C28.4 16 28.6 11 29.4 7" fill="none" stroke="rgba(255,255,255,.7)" stroke-width=".8" stroke-linecap="round"/></g>`;
   }
   return `<svg viewBox="0 0 60 100" aria-hidden="true">
-  <defs>${DEF_HOJA(h)}${DEF_TALLO(t)}<radialGradient id="c${gid}" cx="40%" cy="35%" r="70%"><stop offset="0" stop-color="${mezclar(v.c, '#ffffff', .35)}"/><stop offset="1" stop-color="${mezclar(v.c, '#000000', .25)}"/></radialGradient></defs>
-  <path d="M30 98 C29 76 31 58 30 42" fill="none" stroke="url(#${t})" stroke-width="2.6" stroke-linecap="round"/>
-  <path d="M30 88 C18 82 13 70 15 62 C23 68 28 78 30 88Z" fill="url(#${h})"/>
-  <path d="M30 80 C42 74 46 63 44 56 C37 61 32 70 30 80Z" fill="url(#${h})"/>
+  <defs>${defSombra(g, '#8a6fa0')}</defs>
+  ${tallo('M30 98 C29 76 31 58 30 42', 2.6)}
+  ${hoja(30, 90, 26, 6.5, -50)}${hoja(30, 80, 24, 6, 52)}
   ${p}
-  <circle cx="30" cy="30" r="6.4" fill="url(#c${gid})" stroke="rgba(0,0,0,.15)" stroke-width=".5"/>
-  <g fill="rgba(0,0,0,.22)"><circle cx="28" cy="28" r=".6"/><circle cx="32" cy="29" r=".6"/><circle cx="30" cy="32" r=".6"/><circle cx="27" cy="31" r=".6"/><circle cx="33" cy="32" r=".6"/></g>
+  <circle cx="30" cy="30" r="6.6" fill="${v.c}" stroke="${trazo(v.c, 0.5)}" stroke-width=".8"/>
+  <path d="M26 27 C28 24 33 24 35 27" fill="none" stroke="rgba(255,255,255,.75)" stroke-width="1.1" stroke-linecap="round"/>
+  <g fill="rgba(160,90,20,.5)"><circle cx="28" cy="30" r=".7"/><circle cx="32" cy="31" r=".7"/><circle cx="30" cy="33" r=".7"/><circle cx="31" cy="28.6" r=".6"/></g>
 </svg>`;
 }
 
 function svgLavanda(color) {
-  const h = 'h' + (++gid);
   let s = '';
   const tallos = [[-16, 0.86], [-7, 1], [3, 0.94], [12, 0.82], [20, 0.7]];
   tallos.forEach(([dx, esc]) => {
     const x0 = 30;
     const yTop = 104 - 66 * esc;
-    s += `<path d="M${x0} 106 C${x0 + dx * 0.2} 88 ${x0 + dx * 0.7} 70 ${x0 + dx} ${yTop}" fill="none" stroke="#5f8f5a" stroke-width="1.4" stroke-linecap="round"/>`;
-    for (let i = 0; i < 13; i++) {
-      const tt = i / 12;
-      const x = x0 + dx * (0.55 + 0.45 * tt) + (i % 2 ? 1.6 : -1.6);
+    s += `<path d="M${x0} 106 C${x0 + dx * 0.2} 88 ${x0 + dx * 0.7} 70 ${x0 + dx} ${yTop}" fill="none" stroke="${VERDE.linea}" stroke-width="2.4" stroke-linecap="round"/><path d="M${x0} 106 C${x0 + dx * 0.2} 88 ${x0 + dx * 0.7} 70 ${x0 + dx} ${yTop}" fill="none" stroke="${VERDE.tallo}" stroke-width="1.2" stroke-linecap="round"/>`;
+    for (let i = 0; i < 12; i++) {
+      const tt = i / 11;
+      const x = x0 + dx * (0.55 + 0.45 * tt) + (i % 2 ? 1.8 : -1.8);
       const y = yTop + 22 * (1 - tt) - 4 + (i % 3);
-      s += `<ellipse cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" rx="2.1" ry="3.1" fill="${mezclar(color, i % 2 ? '#ffffff' : '#000000', 0.12)}" transform="rotate(${(dx / 3).toFixed(0)} ${x.toFixed(1)} ${y.toFixed(1)})"/>`;
+      s += `<ellipse cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" rx="2.3" ry="3.4" fill="${mezclar(color, i % 2 ? '#ffffff' : '#7a5ab8', 0.18)}" stroke="${trazo(color)}" stroke-width=".5" transform="rotate(${(dx / 3).toFixed(0)} ${x.toFixed(1)} ${y.toFixed(1)})"/>`;
     }
   });
   return `<svg viewBox="0 0 60 110" aria-hidden="true">
-  <defs>${DEF_HOJA(h)}</defs>
-  <path d="M30 108 C14 100 8 86 10 76 M30 108 C46 100 52 86 50 76 M30 108 C24 96 22 84 24 74" fill="none" stroke="#7fa38a" stroke-width="2.4" stroke-linecap="round"/>
+  ${hoja(30, 108, 34, 5, -38)}${hoja(30, 108, 34, 5, 38)}${hoja(30, 108, 28, 4.5, -12)}
   ${s}
 </svg>`;
 }
 
 function svgBulbo() {
-  const h = 'h' + (++gid);
-  const t = 't' + gid;
-  const flor = elige(['#e98aa8', '#f2c94c', '#8a6cc4', '#f4f1ea']);
+  const g = 'b' + (++gid);
+  const flor = elige([{ a: '#f8b4cf', s: '#d0648f' }, { a: '#ffe08a', s: '#e0a82a' }, { a: '#c8b0f0', s: '#8a68c8' }, { a: '#fdf6ee', s: '#cdbfae' }]);
   return `<svg viewBox="0 0 50 64" aria-hidden="true">
-  <defs>${DEF_HOJA(h)}${DEF_TALLO(t)}<radialGradient id="bu${gid}" cx="40%" cy="30%" r="80%"><stop offset="0" stop-color="#e2c08a"/><stop offset="1" stop-color="#a97e46"/></radialGradient></defs>
-  <path d="M25 44 C22 30 23 20 25 12" fill="none" stroke="url(#${t})" stroke-width="2.6" stroke-linecap="round"/>
-  <path d="M25 40 C12 36 8 25 11 17 C19 23 23 32 25 40Z" fill="url(#${h})"/>
-  <path d="M25 36 C38 32 42 21 39 13 C31 19 27 28 25 36Z" fill="url(#${h})"/>
-  <path d="M25 12 C20 10 20 4 25 1 C30 4 30 10 25 12Z" fill="${flor}" stroke="rgba(0,0,0,.15)" stroke-width=".5"/>
-  <path d="M25 62 C13 62 9 52 14 46 C18 42 22 42 25 40 C28 42 32 42 36 46 C41 52 37 62 25 62Z" fill="url(#bu${gid})"/>
-  <path d="M25 40 C21 48 21 56 25 62 M25 40 C29 48 29 56 25 62 M25 42 C18 47 17 55 20 60 M25 42 C32 47 33 55 30 60" fill="none" stroke="#8c6a3c" stroke-width=".8" opacity=".8"/>
-  <path d="M21 62 l-3 3 M23 62 l-1 4 M25 62 v4 M27 62 l1 4 M29 62 l3 3" stroke="#8c6a3c" stroke-width="1" stroke-linecap="round"/>
+  <defs>${defSombra(g, flor.s)}${'<radialGradient id="bu' + gid + '" cx="40%" cy="30%" r="80%"><stop offset="0" stop-color="#f1d6a4"/><stop offset="1" stop-color="#d3a468"/></radialGradient>'}</defs>
+  ${tallo('M25 44 C22 30 23 20 25 12', 2.4)}
+  ${hoja(25, 42, 26, 7, -46)}${hoja(25, 40, 24, 6.5, 46)}
+  <path d="M25 13 C19 11 19 4 25 1 C31 4 31 11 25 13Z" fill="${flor.a}" stroke="${trazo(flor.a)}" stroke-width=".8" stroke-linejoin="round"/>
+  <path d="M25 13 C19 11 19 4 25 1 C31 4 31 11 25 13Z" fill="url(#${g})"/>
+  <path d="M25 62 C13 62 9 52 14 46 C18 42 22 42 25 40 C28 42 32 42 36 46 C41 52 37 62 25 62Z" fill="url(#bu${gid})" stroke="#a97a3e" stroke-width=".9" stroke-linejoin="round"/>
+  <path d="M25 40 C21 48 21 56 25 62 M25 40 C29 48 29 56 25 62 M25 42 C18 47 17 55 20 60 M25 42 C32 47 33 55 30 60" fill="none" stroke="#a97a3e" stroke-width=".6" opacity=".7"/>
+  <path d="M21 62 l-3 3 M23 62 l-1 4 M25 62 v4 M27 62 l1 4 M29 62 l3 3" stroke="#a97a3e" stroke-width=".9" stroke-linecap="round"/>
 </svg>`;
 }
 
 function svgBugambilia() {
-  const paletas = [['#c2185b', '#e0527d', '#a3164e'], ['#7b2a94', '#a54fbf', '#5b1f70'], ['#e8623a', '#f28a5a', '#c04a26'], ['#d81b7a', '#f05aa0', '#a8135c'], ['#f4f1ea', '#e6ddd0', '#c8bba8']];
-  const h = 'h' + (++gid);
+  const paletas = [['#e0527d', '#f27fa0'], ['#a54fbf', '#c785dc'], ['#f28a5a', '#f7b088'], ['#f05aa0', '#f88cbf']];
   let s = '';
   const pts = [];
   for (let i = 0; i < 16; i++) {
     const t = i / 15;
     pts.push([8 + t * 124, 64 - Math.sin(t * Math.PI) * 36 + (i % 2 ? 6 : -6) + Math.random() * 4]);
   }
+  pts.forEach(([x, y], i) => { s += hoja(x, y, 15, 5, i % 2 ? 110 : -110); });
   pts.forEach(([x, y], i) => {
-    s += `<path d="M${x} ${y} C${x + 6} ${y + 2} ${x + 9} ${y + 8} ${x + 5} ${y + 12} C${x} ${y + 10} ${x - 3} ${y + 5} ${x} ${y}Z" fill="url(#${h})" stroke="rgba(0,0,0,.15)" stroke-width=".4" transform="rotate(${i % 2 ? 24 : -20} ${x} ${y})"/>`;
-  });
-  pts.forEach(([x, y], i) => {
-    const pal = paletas[Math.floor(i / 4) % 3 === 0 ? (i % 2 ? 0 : 3) : Math.floor(i / 4) % 3 === 1 ? 0 : 2];
+    const pal = paletas[Math.floor(i / 4) % paletas.length];
     for (let k = 0; k < 3; k++) {
       const a = k * 120 + (i * 23) % 60;
-      s += `<g transform="rotate(${a} ${x} ${y})"><ellipse cx="${x}" cy="${y - 6}" rx="5.4" ry="7.4" fill="${pal[k % 2]}" stroke="${pal[2]}" stroke-width=".5"/><path d="M${x} ${y - 1} L${x} ${y - 11} M${x - 2} ${y - 3} L${x - 3} ${y - 9} M${x + 2} ${y - 3} L${x + 3} ${y - 9}" stroke="rgba(0,0,0,.14)" stroke-width=".4"/></g>`;
+      s += `<g transform="rotate(${a} ${x} ${y})"><ellipse cx="${x}" cy="${y - 6}" rx="5.4" ry="7.4" fill="${pal[k % 2]}" stroke="${trazo(pal[0])}" stroke-width=".6"/><path d="M${x - 1.6} ${y - 4} C${x - 2.6} ${y - 7} ${x - 2.2} ${y - 10} ${x - 1} ${y - 11.4}" fill="none" stroke="rgba(255,255,255,.7)" stroke-width=".7" stroke-linecap="round"/></g>`;
     }
-    s += `<circle cx="${x}" cy="${y}" r="1.7" fill="#f6efd0"/><circle cx="${x}" cy="${y}" r=".7" fill="#e0c87a"/>`;
+    s += `<circle cx="${x}" cy="${y}" r="1.8" fill="#fff6d6" stroke="#d8b860" stroke-width=".4"/>`;
   });
   return `<svg viewBox="0 0 140 100" aria-hidden="true">
-  <defs>${DEF_HOJA(h)}</defs>
-  <path d="M4 72 Q40 6 72 42 T138 48" fill="none" stroke="#5f4126" stroke-width="3.6" stroke-linecap="round"/>
-  <path d="M30 30 Q34 20 44 16 M92 34 Q100 24 112 24" fill="none" stroke="#6b4a2b" stroke-width="1.8" stroke-linecap="round"/>
+  <path d="M4 72 Q40 6 72 42 T138 48" fill="none" stroke="#5f4126" stroke-width="4.2" stroke-linecap="round"/>
+  <path d="M4 72 Q40 6 72 42 T138 48" fill="none" stroke="#8a6440" stroke-width="2" stroke-linecap="round"/>
   ${s}
 </svg>`;
 }
@@ -2449,96 +2473,78 @@ function svgHierba() {
   return `<svg viewBox="0 0 40 40" aria-hidden="true">${b}</svg>`;
 }
 
-// ---------- lirios ----------
+// ---------- lirios estilo anime ----------
 const LIRIOS = [
-  { base: '#c8367a', borde: '#fbe3ee', punto: '#7a1244', antera: '#8a4a1a' },   // oriental rosa
-  { base: '#dfe9c4', borde: '#ffffff', punto: null, antera: '#e08a1a' },         // blanco
-  { base: '#e2540b', borde: '#f8a23c', punto: '#3f1706', antera: '#5a2a0a' },   // naranja tigre
-  { base: '#e6ad00', borde: '#fff1a8', punto: '#6b4200', antera: '#7a3f10' },   // amarillo
-  { base: '#b03a8f', borde: '#f3d2e6', punto: '#5e1044', antera: '#7a4a1a' },   // fucsia
+  { a: '#f7a6c8', b: '#c8367a', punto: '#a5286a', antera: '#b0703a' },   // rosa
+  { a: '#fbfff0', b: '#d9e8b8', punto: null, antera: '#f0a030' },          // blanco
+  { a: '#ffb27a', b: '#e2540b', punto: '#7a2e0c', antera: '#8a4a1a' },    // naranja
+  { a: '#fff0a8', b: '#e6ad00', punto: '#9a6a00', antera: '#9a5a1a' },    // amarillo
+  { a: '#f0b0da', b: '#b03a8f', punto: '#7a1e63', antera: '#8a5a2a' },    // fucsia
 ];
 
 function svgLirio(v) {
   const id = 'l' + (++gid);
-  const h = 'h' + gid;
-  const t = 't' + gid;
   const cx = 50;
   const cy = 46;
+  const sh = trazo(v.b, 0.4);
   let tepalos = '';
-  const tepalo = (ang, largo, ancho, ondulado) => {
-    const L = largo;
-    const A = ancho;
-    const borde = ondulado
-      ? `C${-A * 0.9} ${-L * 0.3} ${-A * 1.05} ${-L * 0.7} ${-A * 0.2} ${-L * 0.97} C${-A * 0.05} ${-L * 1.03} ${A * 0.05} ${-L * 1.03} ${A * 0.2} ${-L * 0.97} C${A * 1.05} ${-L * 0.7} ${A * 0.9} ${-L * 0.3} 0 0Z`
-      : `C${-A} ${-L * 0.28} ${-A * 1.0} ${-L * 0.72} ${-A * 0.1} ${-L} C${-A * 0.02} ${-L * 1.02} ${A * 0.02} ${-L * 1.02} ${A * 0.1} ${-L} C${A} ${-L * 0.72} ${A} ${-L * 0.28} 0 0Z`;
+  const tepalo = (ang, L, A, ondulado) => {
+    const d = ondulado
+      ? `M0 0 C${-A * 0.9} ${-L * 0.3} ${-A * 1.05} ${-L * 0.7} ${-A * 0.2} ${-L * 0.97} C${-A * 0.05} ${-L * 1.03} ${A * 0.05} ${-L * 1.03} ${A * 0.2} ${-L * 0.97} C${A * 1.05} ${-L * 0.7} ${A * 0.9} ${-L * 0.3} 0 0Z`
+      : `M0 0 C${-A} ${-L * 0.28} ${-A} ${-L * 0.72} ${-A * 0.1} ${-L} C${-A * 0.02} ${-L * 1.02} ${A * 0.02} ${-L * 1.02} ${A * 0.1} ${-L} C${A} ${-L * 0.72} ${A} ${-L * 0.28} 0 0Z`;
     let manchas = '';
     if (v.punto) {
-      for (let i = 0; i < 8; i++) {
-        const x = (Math.random() - 0.5) * A * 0.85;
-        const y = -(5 + Math.random() * L * 0.55);
-        manchas += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${(0.7 + Math.random() * 0.9).toFixed(1)}" fill="${v.punto}" opacity=".85"/>`;
+      for (let i = 0; i < 7; i++) {
+        manchas += `<circle cx="${((Math.random() - 0.5) * A * 0.8).toFixed(1)}" cy="${(-(5 + Math.random() * L * 0.5)).toFixed(1)}" r="${(0.7 + Math.random() * 0.8).toFixed(1)}" fill="${v.punto}"/>`;
       }
     }
     tepalos += `<g transform="translate(${cx} ${cy}) rotate(${ang}) scale(1 .8)">
-      <path d="M0 0 ${borde}" fill="url(#${id})" stroke="rgba(90,20,60,.28)" stroke-width=".7"/>
-      <path d="M0 0 C0 ${-L * 0.3} 0 ${-L * 0.65} 0 ${-L * 0.95}" fill="none" stroke="rgba(255,255,255,.55)" stroke-width="1"/>
-      <path d="M0 -2 C${-A * 0.4} ${-L * 0.3} ${-A * 0.5} ${-L * 0.6} ${-A * 0.3} ${-L * 0.85} M0 -2 C${A * 0.4} ${-L * 0.3} ${A * 0.5} ${-L * 0.6} ${A * 0.3} ${-L * 0.85}" fill="none" stroke="rgba(120,30,80,.16)" stroke-width=".6"/>
+      <path d="${d}" fill="url(#${id})" stroke="${sh}" stroke-width=".9" stroke-linejoin="round"/>
+      <path d="M0 -2 C0 ${-L * 0.3} 0 ${-L * 0.65} 0 ${-L * 0.95}" fill="none" stroke="rgba(255,255,255,.75)" stroke-width="1.1" stroke-linecap="round"/>
+      <path d="M0 -2 C${-A * 0.4} ${-L * 0.3} ${-A * 0.5} ${-L * 0.6} ${-A * 0.3} ${-L * 0.85} M0 -2 C${A * 0.4} ${-L * 0.3} ${A * 0.5} ${-L * 0.6} ${A * 0.3} ${-L * 0.85}" fill="none" stroke="${sh}" stroke-width=".45" opacity=".5"/>
       ${manchas}
     </g>`;
   };
-  [0, 120, 240].forEach((a) => tepalo(a + 2, 36, 12.5, false));
-  [60, 180, 300].forEach((a) => tepalo(a, 34, 11.5, true));
+  [0, 120, 240].forEach((a) => tepalo(a + 2, 34, 12, false));
+  [60, 180, 300].forEach((a) => tepalo(a, 32, 11, true));
 
   let estambres = '';
   for (let i = 0; i < 6; i++) {
     const a = (i / 6) * Math.PI * 2 + 0.3;
-    const x2 = cx + Math.cos(a) * 15;
-    const y2 = cy + Math.sin(a) * 9 - 6;
-    estambres += `<path d="M${cx} ${cy} Q${(cx + x2) / 2} ${cy - 10} ${x2.toFixed(1)} ${y2.toFixed(1)}" fill="none" stroke="#e8e2b8" stroke-width=".9"/><ellipse cx="${x2.toFixed(1)}" cy="${y2.toFixed(1)}" rx="3" ry="1.2" fill="${v.antera}" transform="rotate(${(a * 57.3).toFixed(0)} ${x2.toFixed(1)} ${y2.toFixed(1)})"/>`;
+    const x2 = cx + Math.cos(a) * 14;
+    const y2 = cy + Math.sin(a) * 8.5 - 6;
+    estambres += `<path d="M${cx} ${cy} Q${(cx + x2) / 2} ${cy - 10} ${x2.toFixed(1)} ${y2.toFixed(1)}" fill="none" stroke="#f2ecc4" stroke-width="1"/><ellipse cx="${x2.toFixed(1)}" cy="${y2.toFixed(1)}" rx="3" ry="1.3" fill="${v.antera}" stroke="#4a2a10" stroke-width=".4" transform="rotate(${(a * 57.3).toFixed(0)} ${x2.toFixed(1)} ${y2.toFixed(1)})"/>`;
   }
-  const hojas = [[104, -1, 26], [92, 1, 24], [80, -1, 22], [70, 1, 20]].map(([y, s, l]) =>
-    `<path d="M50 ${y + 8} C${50 + s * l} ${y - 2} ${50 + s * l * 1.1} ${y - 14} ${50 + s * l * 0.8} ${y - 22} C${50 + s * 6} ${y - 12} 50 ${y - 2} 50 ${y + 8}Z" fill="url(#${h})"/><path d="M50 ${y + 6} C${50 + s * l * 0.5} ${y - 4} ${50 + s * l * 0.7} ${y - 14} ${50 + s * l * 0.8} ${y - 22}" fill="none" stroke="rgba(255,255,255,.3)" stroke-width=".6"/>`).join('');
-  const capullo = (x, y, r, esc) => `<path d="M${x} ${y} C${x + esc * 6} ${y - 4} ${x + esc * 5} ${y - 16} ${x} ${y - 24} C${x - esc * 5} ${y - 16} ${x - esc * 6} ${y - 4} ${x} ${y}Z" fill="${v.base}" opacity=".95" transform="rotate(${r} ${x} ${y})"/><path d="M${x} ${y} C${x + esc * 3} ${y - 6} ${x + esc * 3} ${y - 16} ${x} ${y - 24}" fill="none" stroke="rgba(255,255,255,.4)" stroke-width=".6" transform="rotate(${r} ${x} ${y})"/>`;
+  const capullo = (x, y, r, esc) => `<g transform="rotate(${r} ${x} ${y})"><path d="M${x} ${y} C${x + esc * 6} ${y - 4} ${x + esc * 5} ${y - 16} ${x} ${y - 24} C${x - esc * 5} ${y - 16} ${x - esc * 6} ${y - 4} ${x} ${y}Z" fill="${v.a}" stroke="${sh}" stroke-width=".8" stroke-linejoin="round"/><path d="M${x - 1.5} ${y - 4} C${x - 1.5} ${y - 10} ${x - 1} ${y - 16} ${x} ${y - 21}" fill="none" stroke="rgba(255,255,255,.7)" stroke-width=".8" stroke-linecap="round"/><path d="M${x} ${y} C${x - 4} ${y - 1} ${x - 5} ${y - 4} ${x - 4} ${y - 6} M${x} ${y} C${x + 4} ${y - 1} ${x + 5} ${y - 4} ${x + 4} ${y - 6}" fill="none" stroke="${VERDE.linea}" stroke-width=".9"/></g>`;
   return `<svg viewBox="0 0 100 140" aria-hidden="true">
-  <defs>
-    <radialGradient id="${id}" cx="50%" cy="100%" r="105%"><stop offset="0" stop-color="${v.base}"/><stop offset="1" stop-color="${v.borde}"/></radialGradient>
-    ${DEF_HOJA(h)}${DEF_TALLO(t)}
-  </defs>
-  <path d="M50 138 C49 116 51 90 50 60" fill="none" stroke="url(#${t})" stroke-width="3.6" stroke-linecap="round"/>
-  ${hojas}
-  ${capullo(46, 66, -22, 1)}${capullo(56, 60, 24, 0.85)}
+  <defs><radialGradient id="${id}" cx="50%" cy="100%" r="105%"><stop offset="0" stop-color="${v.b}"/><stop offset=".55" stop-color="${mezclar(v.b, v.a, 0.6)}"/><stop offset="1" stop-color="${v.a}"/></radialGradient></defs>
+  ${tallo('M50 138 C49 116 51 90 50 60', 3.4)}
+  ${hoja(50, 118, 30, 7, -66)}${hoja(50, 104, 28, 6.5, 64)}${hoja(50, 92, 26, 6, -60)}${hoja(50, 80, 24, 5.5, 58)}
+  ${capullo(46, 68, -22, 1)}${capullo(56, 62, 24, 0.85)}
   ${tepalos}
   ${estambres}
-  <path d="M${cx} ${cy} Q${cx + 4} ${cy - 12} ${cx + 12} ${cy - 15}" fill="none" stroke="#6f9a3c" stroke-width="1.3"/><circle cx="${cx + 12.5}" cy="${cy - 15.5}" r="1.9" fill="#8bb04a"/>
+  <path d="M${cx} ${cy} Q${cx + 4} ${cy - 12} ${cx + 12} ${cy - 15}" fill="none" stroke="#7fae44" stroke-width="1.4" stroke-linecap="round"/><circle cx="${cx + 12.5}" cy="${cy - 15.5}" r="2" fill="#9cc65a" stroke="#4f7a24" stroke-width=".5"/>
 </svg>`;
 }
 
 function svgCala(color) {
-  const id = 'c' + (++gid);
-  const h = 'h' + gid;
-  const t = 't' + gid;
+  const g = 'c' + (++gid);
   const [luz, base, sombra, espadice] = {
-    blanca: ['#ffffff', '#f4f2ea', '#c9c6b6', '#f2c418'],
-    amarilla: ['#fff4a8', '#f6d23a', '#c99c10', '#8a5a10'],
-    rosa: ['#f6c4dc', '#d95c95', '#93245c', '#f2c418'],
+    blanca: ['#ffffff', '#f7f4ec', '#cfc9b6', '#ffd23f'],
+    amarilla: ['#fff6b0', '#f8d848', '#d0a012', '#a86a14'],
+    rosa: ['#f9d0e3', '#e8749f', '#a83a68', '#ffd23f'],
   }[color];
+  const s = trazo(sombra, 0.5);
   return `<svg viewBox="0 0 70 130" aria-hidden="true">
-  <defs>
-    <linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${luz}"/><stop offset=".55" stop-color="${base}"/><stop offset="1" stop-color="${sombra}"/></linearGradient>
-    <linearGradient id="${id}i" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${sombra}" stop-opacity=".55"/><stop offset="1" stop-color="${base}" stop-opacity="0"/></linearGradient>
-    ${DEF_HOJA(h)}${DEF_TALLO(t)}
-  </defs>
-  <path d="M35 128 C34 104 37 80 35 56" fill="none" stroke="url(#${t})" stroke-width="3.2" stroke-linecap="round"/>
-  <path d="M35 122 C14 112 6 96 10 80 C22 88 32 104 35 122Z" fill="url(#${h})"/>
-  <path d="M35 118 C56 108 64 92 60 76 C48 84 38 100 35 118Z" fill="url(#${h})"/>
-  <path d="M35 120 C22 108 16 96 14 84 M35 116 C48 106 54 94 56 82" fill="none" stroke="rgba(255,255,255,.3)" stroke-width=".7"/>
-  <path d="M35 10 C56 14 62 42 46 60 C40 66 32 66 27 58 C14 42 14 18 35 10Z" fill="url(#${id})" stroke="rgba(0,0,0,.14)" stroke-width=".6"/>
-  <path d="M35 10 C46 20 44 44 46 60 C40 66 32 66 27 58 C24 40 26 22 35 10Z" fill="url(#${id}i)"/>
-  <path d="M35 12 C30 30 30 46 33 62 M40 14 C44 30 44 46 42 60" fill="none" stroke="rgba(0,0,0,.09)" stroke-width=".6"/>
-  <path d="M30 16 C25 30 26 46 31 56" fill="none" stroke="rgba(255,255,255,.65)" stroke-width="1.2" stroke-linecap="round"/>
-  <ellipse cx="37" cy="40" rx="3.6" ry="14" fill="${espadice}" transform="rotate(8 37 40)"/>
-  <ellipse cx="36" cy="34" rx="1.6" ry="9" fill="rgba(255,255,255,.35)" transform="rotate(8 37 40)"/>
-  <g fill="rgba(120,80,0,.4)"><circle cx="37" cy="30" r=".6"/><circle cx="38.4" cy="36" r=".6"/><circle cx="37" cy="42" r=".6"/><circle cx="39" cy="47" r=".6"/></g>
+  <defs><linearGradient id="${g}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${luz}"/><stop offset=".6" stop-color="${base}"/><stop offset="1" stop-color="${sombra}"/></linearGradient></defs>
+  ${tallo('M35 128 C34 104 37 80 35 56', 3)}
+  ${hoja(35, 124, 44, 15, -42)}${hoja(35, 120, 42, 15, 42)}
+  <path d="M35 10 C56 14 62 42 46 60 C40 66 32 66 27 58 C14 42 14 18 35 10Z" fill="url(#${g})" stroke="${s}" stroke-width=".9" stroke-linejoin="round"/>
+  <path d="M35 10 C46 20 44 44 46 60 C40 66 32 66 27 58 C24 40 26 22 35 10Z" fill="${sombra}" opacity=".22"/>
+  <path d="M35 12 C30 30 30 46 33 62 M40 14 C44 30 44 46 42 60" fill="none" stroke="${s}" stroke-width=".45" opacity=".5"/>
+  <path d="M29 16 C24 30 25 46 30 56" fill="none" stroke="rgba(255,255,255,.85)" stroke-width="1.3" stroke-linecap="round"/>
+  <ellipse cx="37" cy="40" rx="3.6" ry="14" fill="${espadice}" stroke="#a06a10" stroke-width=".7" transform="rotate(8 37 40)"/>
+  <ellipse cx="36" cy="34" rx="1.4" ry="8" fill="rgba(255,255,255,.5)" transform="rotate(8 37 40)"/>
 </svg>`;
 }
 
@@ -2679,12 +2685,15 @@ function tamanoJardin() {
 function plantar(x, y, tipo, animar) {
   const { H } = tamanoJardin();
   const prof = limitar((y - H * 0.6) / (H * 0.4), 0, 1);
-  const esc = 0.7 + prof * 0.6;
-  const elegido = tipo || elige(['tulipan', 'tulipan', 'tulipan', 'peonia', 'peonia', 'narciso', 'jacinto', 'margarita', 'margarita', 'lavanda', 'lirio', 'lirio', 'lirio', 'cala', 'bulbo']);
-  const base = { tulipan: 44, peonia: 84, narciso: 54, jacinto: 44, bulbo: 40, margarita: 46, lavanda: 52, lirio: 74, cala: 46 }[elegido];
+  const esc = 0.6 + prof * 0.5;
+  const elegido = tipo || elige(['rosa', 'rosa', 'camelia', 'anemona', 'anemona', 'capullo', 'capullo', 'tulipan', 'tulipan', 'narciso', 'jacinto', 'margarita', 'lavanda', 'lirio', 'lirio', 'cala', 'bulbo']);
+  const base = { rosa: 58, camelia: 60, anemona: 52, capullo: 30, tulipan: 32, narciso: 40, jacinto: 32, bulbo: 30, margarita: 34, lavanda: 38, lirio: 54, cala: 34 }[elegido];
   const svg = {
+    rosa: () => svgRosa(elige(ROSAS)),
+    camelia: () => svgCamelia(elige(CAMELIAS)),
+    anemona: () => svgAnemona(elige(ANEMONAS)),
+    capullo: () => svgCapullo(elige([{ a: '#f8b4cf', s: '#d0648f' }, { a: '#ffe08a', s: '#e0a82a' }, { a: '#f6d3a0', s: '#d99a58' }, { a: '#e8d6f8', s: '#a483d1' }])),
     tulipan: () => svgTulipan(elige(TULIPANES)),
-    peonia: () => svgPeonia(elige(PEONIAS)),
     narciso: () => svgNarciso(elige(NARCISOS)),
     jacinto: () => svgJacinto(elige(JACINTOS)),
     margarita: () => svgMargarita(elige(MARGARITAS)),
