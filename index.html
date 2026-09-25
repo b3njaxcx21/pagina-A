@@ -271,25 +271,26 @@
             <button type="button" class="tema-op" data-tema="aurora"><i class="tema-mini" style="background:linear-gradient(135deg,#3df2b0,#1b6f9c 60%,#03131a)"></i><b>Auroras boreales</b><small>Cielo del norte 🌌</small></button>
           </div>
         </div>
-        <div class="tarjeta">
-          <h2>Privacidad y datos</h2>
-          <p class="sub" style="text-align:left;margin-top:0">Solo guardamos lo necesario. Puedes descargar tus datos, cambiar tus permisos o pedir que se borren.</p>
-          <label class="chk"><input type="checkbox" id="pref-anim"> <span>Reducir animaciones</span></label>
-          <div class="fila-botones">
-            <button type="button" class="btn btn-sec" id="btn-descargar">Descargar mis datos</button>
-            <button type="button" class="btn btn-sec" data-accion="cookies">Preferencias de cookies</button>
-          </div>
-          <p id="datos-msg" class="msg" role="status"></p>
-        </div>
         <button class="btn btn-sec" data-accion="salir">Cerrar sesión</button>
-        <nav class="legal-links pie" aria-label="Información legal">
-      <a href="legal/privacidad.html">Privacidad</a>
-      <a href="legal/terminos.html">Términos</a>
-      <a href="legal/cookies.html">Cookies</a>
-      <a href="legal/reembolsos.html">Reembolsos</a>
-      <a href="legal/creditos.html">Créditos</a>
-      <button type="button" class="link-chico" data-accion="cookies">Preferencias de cookies</button>
-    </nav>
+        <details class="datos-pie" id="datos-pie">
+          <summary>Privacidad y datos</summary>
+          <div class="datos-cuerpo">
+            <p>Solo guardamos lo necesario. Puedes descargar tus datos, cambiar tus permisos o pedir que se borren.</p>
+            <label class="chk chico"><input type="checkbox" id="pref-anim"> <span>Reducir animaciones</span></label>
+            <p class="datos-acciones">
+              <button type="button" class="link-chico" id="btn-descargar">Descargar mis datos</button> ·
+              <button type="button" class="link-chico" data-accion="cookies">Preferencias de cookies</button>
+            </p>
+            <p id="datos-msg" class="msg" role="status"></p>
+            <nav class="legal-links" aria-label="Información legal">
+              <a href="legal/privacidad.html">Privacidad</a>
+              <a href="legal/terminos.html">Términos</a>
+              <a href="legal/cookies.html">Cookies</a>
+              <a href="legal/reembolsos.html">Reembolsos</a>
+              <a href="legal/creditos.html">Créditos</a>
+            </nav>
+          </div>
+        </details>
 
       </div>
     </main>

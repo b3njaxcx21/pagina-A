@@ -612,3 +612,20 @@ html.sin-anim .revela { opacity: 1; translate: 0 0; }
 .cookies .chk input { width: 16px; height: 16px; }
 .cookies-botones { gap: 6px; margin-top: 8px; }
 .cookies-botones .btn { padding: 8px 6px; font-size: 12px; min-width: 0; border-radius: 10px; }
+
+/* Botones sueltos dentro de la vista: siempre en bloque y centrados (antes se pegaban a la izquierda en PC) */
+.vista > .btn { display: block; }
+
+/* Privacidad y datos: una línea chiquita abajo del todo; al tocarla se despliega solo texto */
+.datos-pie { max-width: 600px; margin: 22px auto 10px; text-align: center; font-size: 11px; color: var(--gris); }
+.datos-pie summary { display: inline-block; list-style: none; cursor: pointer; padding: 4px 8px; color: var(--gris); text-decoration: underline; }
+.datos-pie summary::-webkit-details-marker { display: none; }
+.datos-pie summary::after { content: ' ▾'; }
+.datos-pie[open] summary::after { content: ' ▴'; }
+.datos-cuerpo { margin-top: 4px; line-height: 1.5; }
+.datos-cuerpo p { font-size: 11px; margin: 4px 0; }
+.chk.chico { justify-content: center; align-items: center; font-size: 11px; margin: 6px 0; }
+.chk.chico input { width: 14px; height: 14px; margin: 0; }
+.datos-acciones .link-chico { font-size: 11px; }
+.datos-cuerpo .legal-links { margin: 6px 0 0; font-size: 11px; }
+.datos-cuerpo .msg { min-height: 0; }
