@@ -603,3 +603,12 @@ html.sin-anim .revela { opacity: 1; translate: 0 0; }
 .pantalla.centro > .legal-links.pie { position: fixed; left: 0; right: 0; bottom: 8px; margin: 0; padding: 0 12px; }
 #auth-terminos-fila { font-size: 12px; margin: 4px 0 10px; }
 #auth-terminos-fila input { width: 18px; height: 18px; }
+
+/* Aviso de cookies compacto */
+.cookies { max-width: 400px; padding: 10px 12px; border-radius: 14px; bottom: 8px; box-shadow: 0 6px 24px rgba(0,0,0,.28); }
+.cookies h2 { font-size: 14px; margin-bottom: 2px; }
+.cookies p { font-size: 12px; line-height: 1.4; }
+.cookies .chk { font-size: 12px; margin: 4px 0; }
+.cookies .chk input { width: 16px; height: 16px; }
+.cookies-botones { gap: 6px; margin-top: 8px; }
+.cookies-botones .btn { padding: 8px 6px; font-size: 12px; min-width: 0; border-radius: 10px; }
