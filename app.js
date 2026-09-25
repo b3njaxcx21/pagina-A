@@ -1069,27 +1069,196 @@ if ('serviceWorker' in navigator) {
 const CORAZON = '❤️';
 
 const FRASES = [
-  'Contigo, hasta lo simple se vuelve especial.',
-  'Eres mi lugar favorito.',
-  'Si tuviera que elegir otra vez, te elegiría a ti.',
-  'Me gustas en todas tus versiones.',
-  'Cada día a tu lado es mi día favorito.',
-  'Contigo el tiempo pasa volando, pero cada segundo vale.',
-  'Eres mi casualidad más bonita.',
-  'Lo mejor de mi día eres tú.',
-  'Tú y yo, siempre equipo.',
-  'Te quiero hoy más que ayer, pero menos que mañana.',
-  'Gracias por hacer de lo normal algo increíble.',
-  'Mi persona favorita para no hacer nada.',
-  'Tu risa es mi canción favorita.',
-  'Contigo aprendí que el amor también es paz.',
-  'Donde estés tú, ahí quiero estar.',
-  'Eres mi hoy y todos mis mañanas.',
-  'Somos la mejor historia que me ha pasado.',
-  'A tu lado todo tiene sentido.',
-  'No sé qué hice bien, pero te tengo a ti.',
-  'Mi abrazo favorito tiene tu nombre.',
+  'Contigo, hasta lo más sencillo se vuelve un recuerdo bonito.',
+  'Amar es elegirte hoy, mañana y todos los días que vengan.',
+  'Juntos podemos con todo lo que la vida nos ponga enfrente.',
+  'Eres mi lugar seguro y mi aventura favorita.',
+  'Cada día a tu lado es un motivo más para seguir creciendo.',
+  'Si el camino se pone difícil, recuerda que no lo recorres solo: me tienes a mí.',
+  'Tu sonrisa es mi mejor comienzo de día.',
+  'El amor no se busca perfecto, se construye con paciencia, risas y abrazos.',
+  'Creo en ti, en lo que sueñas y en todo lo que vas a lograr.',
+  'Eres el mejor capítulo de mi historia.',
+  'Contigo aprendí que la calma también se siente como amor.',
+  'No hay meta que no se vea más cerca cuando la caminamos de la mano.',
+  'Que hoy te llegue todo el cariño que mereces.',
+  'Tú y yo, un poquito más fuertes cada día.',
+  'Gracias por quedarte incluso en los días grises.',
+  'Lo mejor de mi día siempre tiene tu nombre.',
+  'Estoy orgulloso de la persona en la que te estás convirtiendo, y feliz de verlo de cerca.',
+  'Si te caes, te levanto; si vuelas, aplaudo; si dudas, te recuerdo lo valiosa que eres.',
+  'El amor bonito es el que te da paz y ganas de ser mejor.',
+  'Ninguna distancia es grande cuando dos corazones se piensan.',
+  'Hoy es un buen día para decirte que te quiero, otra vez.',
+  'Eres mi razón favorita para sonreír sin motivo.',
+  'Lo nuestro se cuida con detalles pequeños y palabras sinceras.',
+  'Respira hondo: lo estás haciendo mejor de lo que crees.',
+  'Que nunca nos falten las ganas de sorprendernos.',
+  'A tu lado, hasta el silencio es un lugar bonito.',
+  'Tus sueños también son míos, y yo te ayudo a cuidarlos.',
+  'Somos dos personas eligiéndonos cada mañana, y eso es lo más valiente que hay.',
+  'Todo lo bonito que tengo, empieza contigo.',
+  'Un día a la vez, siempre juntos.',
+  'Eres luz incluso cuando no te das cuenta.',
+  'No tenemos que ser perfectos, solo estar el uno para el otro.',
+  'Que el amor sea siempre nuestro hogar.',
+  'Cada abrazo tuyo arregla un pedacito del mundo.',
+  'Puedes con esto, y con mucho más. Yo te acompaño.',
+  'Me gustas en tus días buenos y también en los difíciles.',
+  'El futuro me emociona porque te veo en él.',
+  'Prometo seguir aprendiéndote toda la vida.',
+  'Un beso, un café y tu risa: la receta de un día perfecto.',
+  'Las mejores historias empiezan con un “hola” y siguen con un “quédate”.',
+  'Tú eres mi calma cuando todo se agita.',
+  'Que hoy encuentres un motivo para creer en ti tanto como yo lo hago.',
+  'La vida es más ligera cuando se comparte contigo.',
+  'Aunque el día sea largo, al final siempre hay un “nosotros”.',
+  'Tu ternura es mi cosa favorita en el mundo.',
+  'Cada meta, cada susto, cada alegría: todo mejor si es contigo.',
+  'Gracias por ser mi persona favorita para no hacer nada.',
+  'Hoy te elijo otra vez, con más ganas que ayer.',
+  'Vamos despacio, pero vamos juntos, y eso es lo que importa.',
+  'Tu corazón es el lugar más bonito donde he estado.',
+  'Sigue adelante: lo que empiezas con ganas termina floreciendo.',
+  'Contigo el tiempo no pasa: se convierte en recuerdos.',
+  'Que no se apague nunca esta forma tan bonita de querernos.',
+  'Mereces una vida tan linda como la que me haces sentir.',
+  'Eres el «sí» que mi corazón estaba esperando.',
+  'Las flores más bonitas crecen despacio, igual que nosotros.',
+  'Confío en ti con los ojos cerrados y el corazón abierto.',
+  'Si hoy no fue tu mejor día, mañana estaré aquí para abrazarte igual.',
+  'Nuestro amor es la prueba de que las cosas buenas sí llegan.',
+  'Eres poesía, aunque no lo sepas.',
+  'Mientras me sonrías así, todo va a estar bien.',
+  'Lo que sentimos no cabe en palabras, pero lo intento cada día.',
+  'Que cada mañana nos encuentre más enamorados que la anterior.',
+  'Tú me enseñaste que querer también es cuidar, escuchar y quedarse.',
+  'Un pasito más, un abrazo más, un día más: así se construye lo bonito.',
+  'Tu felicidad es de mis cosas favoritas para cuidar.',
+  'Con amor y paciencia, todo se acomoda.',
+  'Eres mi casualidad más bonita y mi decisión más segura.',
+  'Que la vida nos regale muchos años de mañanas juntos.',
+  'Hoy, mañana y siempre: tú y yo.',
 ];
+
+const IDEAS = [
+  'Preparen una cena con velas, aunque sea sencilla.',
+  'Vean el atardecer sin celulares.',
+  'Escriban tres cosas que aman del otro.',
+  'Hagan un picnic, aunque sea en la sala.',
+  'Bailen una canción lenta en la cocina.',
+  'Salgan a caminar y tomen una foto de algo que les guste.',
+  'Cocinen una receta nueva entre los dos.',
+  'Maratón de su serie favorita con palomitas.',
+  'Cuéntense su recuerdo favorito de este mes.',
+  'Armen una playlist de canciones que les recuerden al otro.',
+  'Compren un helado y cómanlo en una banca del parque.',
+  'Escriban una carta para abrirla dentro de un año.',
+  'Miren las estrellas y pidan un deseo.',
+  'Jueguen un juego de mesa o de cartas.',
+  'Armen un álbum con sus fotos favoritas.',
+  'Preparen desayuno en la cama.',
+  'Aprendan juntos algo nuevo, aunque sea un truco de magia.',
+  'Planeen una escapada de fin de semana.',
+  'Hagan una noche de spa en casa.',
+  'Visiten un lugar donde nunca hayan estado.',
+  'Digan en voz alta tres cosas por las que están agradecidos.',
+  'Tomen un café y platiquen de sus sueños.',
+  'Dibujen o pinten juntos, sin juzgar.',
+  'Regálense un abrazo de un minuto entero.',
+  'Repitan su primera cita.',
+  'Graben un video corto para su yo del futuro.',
+  'Escondan una notita de cariño para el otro.',
+  'Vayan a un mercado y elijan flores.',
+  'Tengan una noche sin pantallas.',
+  'Hagan una lista de metas para este año.',
+  'Vean fotos viejas y ríanse un rato.',
+  'Preparen chocolate caliente y platiquen sin prisa.',
+  'Aprendan a decir “te quiero” en otro idioma.',
+  'Escojan una película de su infancia.',
+  'Planten algo juntos, aunque sea una semilla.',
+  'Compartan una canción que los haga sentir bien.',
+  'Dense un masaje de manos.',
+  'Salgan a buscar la luna.',
+];
+
+const CINCO_H = 5 * 3600 * 1000;
+let fraseIdx = -1;
+let extrasMinuto = -1;
+
+const msLocal = () => Date.now() - new Date().getTimezoneOffset() * 60000;
+
+// La frase cambia cada 5 horas y es la misma para los dos
+function pintarFrase() {
+  const k = Math.floor(msLocal() / CINCO_H);
+  const idx = k % FRASES.length;
+  const nodo = $('frase-dia');
+  if (idx !== fraseIdx) {
+    fraseIdx = idx;
+    nodo.classList.remove('cambia');
+    void nodo.offsetWidth;
+    nodo.textContent = `“${FRASES[idx]}”`;
+    nodo.classList.add('cambia');
+  }
+  const falta = (k + 1) * CINCO_H - msLocal();
+  const h = Math.floor(falta / 3600000);
+  const m = Math.floor((falta % 3600000) / 60000);
+  $('frase-nueva').textContent = `Nueva frase en ${h ? h + ' h ' : ''}${m} min`;
+}
+
+// ---------- historia en números ----------
+function pintarNumeros() {
+  if (!pareja || !pareja.fecha_inicio) return;
+  const ms = Math.max(0, Date.now() - fechaLocal(pareja.fecha_inicio).getTime());
+  const dias = Math.floor(ms / 864e5);
+  const min = Math.floor(ms / 6e4);
+  const latidos = min * 70;
+  $('n-amaneceres').textContent = fmt(dias);
+  $('n-semanas').textContent = fmt(Math.floor(dias / 7));
+  $('n-lunas').textContent = fmt(Math.floor(dias / 29.53));
+  $('n-horas').textContent = fmt(Math.floor(ms / 36e5));
+  $('n-minutos').textContent = fmt(min);
+  $('n-latidos').textContent = latidos >= 1e6 ? (latidos / 1e6).toFixed(1).replace('.0', '') + ' M' : fmt(latidos);
+}
+
+// ---------- la luna de hoy ----------
+function faseLunar(fecha) {
+  const sinodico = 29.530588853;
+  const ref = Date.UTC(2000, 0, 6, 18, 14);
+  const ciclo = ((((fecha.getTime() - ref) / 864e5) % sinodico) + sinodico) % sinodico;
+  const fases = [
+    [1.85, '🌑', 'Luna nueva'], [5.54, '🌒', 'Luna creciente'], [9.23, '🌓', 'Cuarto creciente'], [12.92, '🌔', 'Gibosa creciente'],
+    [16.61, '🌕', 'Luna llena'], [20.3, '🌖', 'Gibosa menguante'], [23.99, '🌗', 'Cuarto menguante'], [27.68, '🌘', 'Luna menguante'],
+  ];
+  const f = fases.find(([lim]) => ciclo < lim) || [0, '🌑', 'Luna nueva'];
+  const alLlena = (sinodico / 2 - ciclo + sinodico) % sinodico;
+  const alNueva = (sinodico - ciclo) % sinodico;
+  const dias = (n) => `${Math.max(1, Math.round(n))} ${Math.round(n) === 1 ? 'día' : 'días'}`;
+  const texto = f[2] === 'Luna llena' ? '¡Hoy hay luna llena!' : alLlena < alNueva ? `Luna llena en ${dias(alLlena)}` : `Luna nueva en ${dias(alNueva)}`;
+  return { emoji: f[1], nombre: f[2], texto };
+}
+
+function pintarLuna() {
+  const l = faseLunar(new Date());
+  $('luna-emoji').textContent = l.emoji;
+  $('luna-nombre').textContent = l.nombre;
+  $('luna-texto').textContent = l.texto;
+}
+
+function pintarIdea() {
+  $('idea-hoy').textContent = IDEAS[Math.floor(msLocal() / 864e5) % IDEAS.length];
+}
+
+function pintarExtras(forzar) {
+  const minuto = Math.floor(Date.now() / 60000);
+  if (!forzar && minuto === extrasMinuto) return;
+  extrasMinuto = minuto;
+  pintarFrase();
+  pintarNumeros();
+  pintarLuna();
+  pintarIdea();
+}
+
 
 function fechaLocal(iso) {
   const [a, m, d] = iso.split('-').map(Number);
@@ -1129,11 +1298,8 @@ function pintarInicio() {
   const saludo = h < 12 ? 'Buenos días' : h < 19 ? 'Buenas tardes' : 'Buenas noches';
   $('saludo').textContent = `${saludo}, ${perfiles[usuario.id] || ''} ${h < 19 ? '☀️' : '🌙'}`;
 
-  const hoy = new Date();
-  const idx = Math.floor(soloDia(hoy) / 86400000) % FRASES.length;
-  $('frase-dia').textContent = `“${FRASES[idx]}”`;
-
   pintarContador();
+  pintarExtras(true);
   pintarCumples();
   if (reloj) clearInterval(reloj);
   reloj = setInterval(tickVivo, 1000);
@@ -1261,6 +1427,7 @@ function pintarCumples() {
 }
 
 function tickVivo() {
+  pintarExtras(false);
   if (new Date().toDateString() !== cumplesDia && $('cumples')) pintarCumples();
   if (!pareja || !pareja.fecha_inicio) return;
   const ms = Date.now() - fechaLocal(pareja.fecha_inicio).getTime();
@@ -1784,7 +1951,7 @@ requestAnimationFrame(mvBucle);
 // =============================================
 //  TEMÁTICAS: rosa (predeterminada), Coraline, auroras boreales
 // =============================================
-const COLOR_TEMA = { rosa: '#e8537a', coraline: '#14262e', aurora: '#03131a' };
+const COLOR_TEMA = { rosa: '#f3e9d7', coraline: '#14262e', aurora: '#03131a' };
 const fondoTema = $('fondo-tema');
 let temaTimers = [];
 

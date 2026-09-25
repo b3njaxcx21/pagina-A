@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Nosotros</title>
-  <meta name="theme-color" content="#e8537a">
+  <meta name="theme-color" content="#f3e9d7">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -163,6 +163,19 @@
           </div>
         </div>
 
+        <!-- Nuestra historia en números -->
+        <div class="tarjeta numeros" id="numeros">
+          <h2>Nuestra historia en números</h2>
+          <div class="numeros-grid">
+            <div><i>🌅</i><b id="n-amaneceres">0</b><span>amaneceres juntos</span></div>
+            <div><i>📅</i><b id="n-semanas">0</b><span>semanas</span></div>
+            <div><i>🌙</i><b id="n-lunas">0</b><span>lunas nuevas</span></div>
+            <div><i>⏳</i><b id="n-horas">0</b><span>horas</span></div>
+            <div><i>✨</i><b id="n-minutos">0</b><span>minutos</span></div>
+            <div><i>💓</i><b id="n-latidos">0</b><span>latidos de amor</span></div>
+          </div>
+        </div>
+
         <!-- Botón de amor -->
         <button id="btn-corazon" class="btn-corazon">
           <span>❤️</span> Mandar un corazón
@@ -186,10 +199,25 @@
         <!-- Cumpleaños -->
         <div class="tarjeta cumples" id="cumples"></div>
 
+        <!-- La luna y una idea para hoy -->
+        <div class="grid-2" id="extras">
+          <div class="tarjeta mini">
+            <div class="mini-icono" id="luna-emoji">🌙</div>
+            <div class="mini-num" id="luna-nombre">–</div>
+            <div class="mini-txt" id="luna-texto"></div>
+          </div>
+          <div class="tarjeta mini">
+            <div class="mini-icono">💡</div>
+            <div class="mini-txt" style="font-weight:600">Idea para hoy</div>
+            <div class="idea-txt" id="idea-hoy"></div>
+          </div>
+        </div>
+
         <!-- Frase del día -->
         <div class="tarjeta frase">
-          <p class="frase-titulo">💌 Frase del día</p>
+          <p class="frase-titulo">Frase del día</p>
           <p id="frase-dia"></p>
+          <p class="frase-nueva" id="frase-nueva"></p>
         </div>
       </div>
 
@@ -280,7 +308,7 @@
           <h2>Temática</h2>
           <p class="sub" style="text-align:left;margin-top:0">Cambia cómo se ve la app. Se guarda en este dispositivo.</p>
           <div class="temas" id="lista-temas">
-            <button type="button" class="tema-op activa" data-tema="rosa"><i class="tema-mini" style="background:linear-gradient(135deg,#ff7b9c,#e8537a)"></i><b>Rosa</b><small>Predeterminada 💞</small></button>
+            <button type="button" class="tema-op activa" data-tema="rosa"><i class="tema-mini" style="background:linear-gradient(135deg,#e2b9ac,#9c4356)"></i><b>Rosa vintage</b><small>Predeterminada 💞</small></button>
             <button type="button" class="tema-op" data-tema="coraline"><i class="tema-mini" style="background:linear-gradient(135deg,#5b3fb5,#182a72 60%,#090e2c)"></i><b>Mundo de botones</b><small>Noche estrellada 🗝️</small></button>
             <button type="button" class="tema-op" data-tema="aurora"><i class="tema-mini" style="background:linear-gradient(135deg,#3df2b0,#1b6f9c 60%,#03131a)"></i><b>Auroras boreales</b><small>Cielo del norte 🌌</small></button>
           </div>
