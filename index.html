@@ -12,12 +12,12 @@
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="icon-192.png">
   <link rel="apple-touch-icon" href="icon-192.png">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Mystery+Quest&display=swap" rel="stylesheet">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="referrer" content="no-referrer">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://kupwqulxzsgupyowpsnd.supabase.co; media-src 'self' blob: https://kupwqulxzsgupyowpsnd.supabase.co; connect-src 'self' https://kupwqulxzsgupyowpsnd.supabase.co wss://kupwqulxzsgupyowpsnd.supabase.co; frame-src https://open.spotify.com; font-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
   <link rel="stylesheet" href="styles.css">
-  <script>try{var t=localStorage.getItem("tema");if(t)document.documentElement.dataset.tema=t}catch(e){}</script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="tema-temprano.js"></script>
+  <script src="vendor/supabase.js"></script>
 </head>
 <body>
   <div id="fondo-tema" class="fondo-tema" aria-hidden="true"></div>
@@ -34,10 +34,18 @@
       <h1>Nosotros</h1>
       <p class="sub">Escribe el código para entrar</p>
       <form id="form-codigo">
-        <input id="input-acceso" type="password" inputmode="numeric" placeholder="Código de acceso" autocomplete="off" required>
+        <input aria-label="Código de acceso" id="input-acceso" type="password" inputmode="numeric" placeholder="Código de acceso" autocomplete="off" required>
         <button type="submit" class="btn">Continuar</button>
       </form>
-      <p id="codigo-msg" class="msg"></p>
+      <p id="codigo-msg" class="msg" role="alert"></p>
+      <nav class="legal-links" aria-label="Información legal">
+        <a href="legal/privacidad.html">Privacidad</a>
+        <a href="legal/terminos.html">Términos</a>
+        <a href="legal/cookies.html">Cookies</a>
+        <a href="legal/reembolsos.html">Reembolsos</a>
+        <a href="legal/creditos.html">Créditos</a>
+        <button type="button" class="link-chico" data-accion="cookies">Preferencias de cookies</button>
+      </nav>
     </div>
   </section>
 
@@ -48,11 +56,24 @@
       <h1>Nosotros</h1>
       <p class="sub">¿Quién eres?</p>
       <form id="form-auth">
-        <input id="auth-usuario" type="text" placeholder="Tu nombre" autocomplete="off" autocapitalize="words" required>
-        <input id="auth-pass" type="password" placeholder="Contraseña" autocomplete="current-password" required>
+        <input aria-label="Tu nombre" id="auth-usuario" type="text" placeholder="Tu nombre" autocomplete="off" autocapitalize="words" required>
+        <input aria-label="Contraseña" id="auth-pass" type="password" placeholder="Contraseña" autocomplete="current-password" required>
+        <label class="chk" id="auth-terminos-fila">
+          <input type="checkbox" id="auth-terminos" required>
+          <span>He leído y acepto los <a href="legal/terminos.html">Términos y condiciones</a> y el <a href="legal/privacidad.html">Aviso de privacidad</a>.</span>
+        </label>
         <button type="submit" class="btn" id="btn-auth">Entrar</button>
       </form>
-      <p id="auth-msg" class="msg"></p>
+      <p class="sub" style="margin:10px 0 0;font-size:12px">Solo pedimos los datos necesarios: tu nombre y tu contraseña.</p>
+      <p id="auth-msg" class="msg" role="alert"></p>
+      <nav class="legal-links" aria-label="Información legal">
+        <a href="legal/privacidad.html">Privacidad</a>
+        <a href="legal/terminos.html">Términos</a>
+        <a href="legal/cookies.html">Cookies</a>
+        <a href="legal/reembolsos.html">Reembolsos</a>
+        <a href="legal/creditos.html">Créditos</a>
+        <button type="button" class="link-chico" data-accion="cookies">Preferencias de cookies</button>
+      </nav>
     </div>
   </section>
 
@@ -69,21 +90,22 @@
       <div class="separador"><span>o</span></div>
 
       <form id="form-unirse">
-        <input id="input-codigo" type="text" placeholder="Escribe el código" maxlength="6" autocapitalize="characters" required>
+        <input aria-label="Escribe el código" id="input-codigo" type="text" placeholder="Escribe el código" maxlength="6" autocapitalize="characters" required>
         <button type="submit" class="btn btn-sec">Unirme</button>
       </form>
-      <p id="vincular-msg" class="msg"></p>
+      <p id="vincular-msg" class="msg" role="alert"></p>
       <button class="link" data-accion="salir">Cerrar sesión</button>
     </div>
   </section>
 
   <!-- APP PRINCIPAL -->
   <section id="pantalla-app" class="pantalla">
+    <a class="saltar" href="#contenido">Saltar al contenido</a>
     <header class="barra">
       <h1>💞 <span id="titulo-pareja">Nosotros</span></h1>
     </header>
 
-    <main>
+    <main id="contenido" tabindex="-1">
       <!-- INICIO -->
       <div id="vista-inicio" class="vista activa">
         <div class="corazones-fondo" aria-hidden="true">
@@ -149,6 +171,7 @@
         <!-- Estado de ánimo -->
         <div class="tarjeta animo" id="animo">
           <h2>¿Cómo te sientes hoy?</h2>
+          <p class="sub" style="margin:0 0 4px">Es opcional y solo lo ve tu pareja.</p>
           <div class="animo-opciones" id="animo-opciones"></div>
           <p class="animo-otro" id="animo-otro"></p>
         </div>
@@ -173,12 +196,13 @@
       <!-- MURO -->
       <div id="vista-muro" class="vista">
         <form id="form-publicar" class="tarjeta publicar">
-          <textarea id="pub-texto" placeholder="Escribe un recuerdo..." rows="2"></textarea>
+          <textarea aria-label="Escribe un recuerdo..." id="pub-texto" placeholder="Escribe un recuerdo..." rows="2"></textarea>
           <div id="pub-preview" class="preview oculto"></div>
+          <p class="sub" style="text-align:left;margin:0 0 8px;font-size:12px">Sube solo contenido tuyo o con permiso de quienes aparecen. <a href="legal/terminos.html">Términos</a></p>
           <div class="fila">
-            <label class="btn-icono" title="Foto o video">
+            <label class="btn-icono" title="Adjuntar foto o video">
               📷
-              <input id="pub-archivo" type="file" accept="image/*,video/*" hidden>
+              <input id="pub-archivo" type="file" accept="image/*,video/*" class="sr-solo" aria-label="Adjuntar foto o video">
             </label>
             <span id="pub-estado" class="estado"></span>
             <button type="submit" class="btn btn-chico" id="btn-publicar">Publicar</button>
@@ -188,7 +212,7 @@
         <div class="tarjeta recuerdo-azar">
           <div class="fila entre">
             <h2>✨ Un recuerdo</h2>
-            <button id="btn-otro-recuerdo" class="btn-icono" title="Otro recuerdo">🔀</button>
+            <button id="btn-otro-recuerdo" class="btn-icono" title="Otro recuerdo" aria-label="Ver otro recuerdo">🔀</button>
           </div>
           <div id="recuerdo-azar"></div>
         </div>
@@ -207,7 +231,7 @@
           <button type="button" class="pestana" data-tab="cumplidos">Cumplidos ✓</button>
         </div>
         <form id="form-plan" class="tarjeta publicar">
-          <input id="plan-texto" type="text" placeholder="Ej: Viajar a la playa juntos…" maxlength="120" autocomplete="off">
+          <input aria-label="Ej: Viajar a la playa juntos…" id="plan-texto" type="text" placeholder="Ej: Viajar a la playa juntos…" maxlength="120" autocomplete="off">
           <button type="submit" class="btn btn-chico" id="btn-plan">Agregar</button>
         </form>
         <div id="lista-planes"></div>
@@ -221,13 +245,13 @@
             <div class="avatar enorme" id="perfil-avatar" data-uid=""></div>
             <label class="btn btn-chico btn-sec">
               Cambiar foto
-              <input id="perfil-foto" type="file" accept="image/*" hidden>
+              <input id="perfil-foto" type="file" accept="image/*" class="sr-solo" aria-label="Elegir foto de perfil">
             </label>
             <span id="perfil-foto-estado" class="estado"></span>
           </div>
-          <label>Tu nombre</label>
+          <label for="perfil-nombre">Tu nombre</label>
           <div class="fila">
-            <input id="perfil-nombre" type="text">
+            <input id="perfil-nombre" type="text" aria-label="Tu nombre" autocomplete="name">
             <button id="btn-guardar-nombre" class="btn btn-chico">Guardar</button>
           </div>
           <p class="sub" id="perfil-email"></p>
@@ -242,9 +266,27 @@
           <p class="sub" style="text-align:left;margin-top:0">Cambia cómo se ve la app. Se guarda en este dispositivo.</p>
           <div class="temas" id="lista-temas">
             <button type="button" class="tema-op activa" data-tema="rosa"><i class="tema-mini" style="background:linear-gradient(135deg,#ff7b9c,#e8537a)"></i><b>Rosa</b><small>Predeterminada 💞</small></button>
-            <button type="button" class="tema-op" data-tema="coraline"><i class="tema-mini" style="background:linear-gradient(135deg,#5b3fb5,#182a72 60%,#090e2c)"></i><b>Coraline</b><small>Botones y estrellas 🗝️</small></button>
+            <button type="button" class="tema-op" data-tema="coraline"><i class="tema-mini" style="background:linear-gradient(135deg,#5b3fb5,#182a72 60%,#090e2c)"></i><b>Mundo de botones</b><small>Noche estrellada 🗝️</small></button>
             <button type="button" class="tema-op" data-tema="aurora"><i class="tema-mini" style="background:linear-gradient(135deg,#3df2b0,#1b6f9c 60%,#03131a)"></i><b>Auroras boreales</b><small>Cielo del norte 🌌</small></button>
           </div>
+        </div>
+        <div class="tarjeta">
+          <h2>Privacidad y datos</h2>
+          <p class="sub" style="text-align:left;margin-top:0">Solo guardamos lo necesario. Puedes descargar tus datos, cambiar tus permisos o pedir que se borren.</p>
+          <label class="chk"><input type="checkbox" id="pref-anim"> <span>Reducir animaciones</span></label>
+          <div class="fila-botones">
+            <button type="button" class="btn btn-sec" id="btn-descargar">Descargar mis datos</button>
+            <button type="button" class="btn btn-sec" data-accion="cookies">Preferencias de cookies</button>
+          </div>
+          <p id="datos-msg" class="msg" role="status"></p>
+          <nav class="legal-links" aria-label="Información legal">
+        <a href="legal/privacidad.html">Privacidad</a>
+        <a href="legal/terminos.html">Términos</a>
+        <a href="legal/cookies.html">Cookies</a>
+        <a href="legal/reembolsos.html">Reembolsos</a>
+        <a href="legal/creditos.html">Créditos</a>
+        <button type="button" class="link-chico" data-accion="cookies">Preferencias de cookies</button>
+      </nav>
         </div>
         <button class="btn btn-sec" data-accion="salir">Cerrar sesión</button>
       </div>
@@ -292,7 +334,7 @@
       <div id="musica-player"></div>
       <a id="musica-abrir" class="musica-abrir oculto" target="_blank" rel="noopener">Abrir en la app de Spotify ↗</a>
       <form id="musica-form" class="fila">
-        <input id="musica-url" type="url" placeholder="Enlace de Spotify (canción o playlist)">
+        <input aria-label="Enlace de Spotify (canción o playlist)" id="musica-url" type="url" placeholder="Enlace de Spotify (canción o playlist)">
         <button class="btn btn-chico" type="submit">Guardar</button>
       </form>
       <p id="musica-msg" class="msg"></p>
@@ -307,11 +349,27 @@
   </section>
 
   <!-- VISOR DE FOTOS -->
-  <div id="visor" class="visor oculto"></div>
+  <div id="visor" class="visor oculto" role="dialog" aria-modal="true" aria-label="Foto ampliada. Toca o presiona Escape para cerrar" tabindex="-1"></div>
 
   <!-- AVISOS Y ANIMACIONES -->
-  <div id="toast" class="toast oculto"></div>
+  <div id="toast" class="toast oculto" role="status" aria-live="polite"></div>
   <div id="lluvia" class="lluvia" aria-hidden="true"></div>
+
+  <!-- CONSENTIMIENTO DE COOKIES Y ALMACENAMIENTO -->
+  <div id="cookies" class="cookies oculto" role="dialog" aria-labelledby="ck-titulo" aria-describedby="ck-texto">
+    <h2 id="ck-titulo">Tu privacidad</h2>
+    <p id="ck-texto">Usamos solo el almacenamiento necesario para que la app funcione (tu sesión). Con tu permiso, también guardamos tus preferencias (temática y animaciones) y cargamos el reproductor de Spotify, que puede usar sus propias cookies. No usamos publicidad ni analíticas. <a href="legal/cookies.html">Política de cookies</a> · <a href="legal/privacidad.html">Aviso de privacidad</a></p>
+    <div id="ck-prefs" class="ck-prefs oculto">
+      <label class="chk"><input type="checkbox" checked disabled> <span><b>Necesarias</b>: sesión y tus decisiones. Siempre activas.</span></label>
+      <label class="chk"><input type="checkbox" id="ck-pref"> <span><b>Preferencias</b>: recordar temática y animaciones.</span></label>
+      <label class="chk"><input type="checkbox" id="ck-terc"> <span><b>Contenido de terceros</b>: reproductor de Spotify.</span></label>
+    </div>
+    <div class="cookies-botones">
+      <button type="button" class="btn" id="ck-rechazar">Solo necesarias</button>
+      <button type="button" class="btn" id="ck-aceptar">Aceptar todo</button>
+      <button type="button" class="btn btn-sec" id="ck-personalizar">Personalizar</button>
+    </div>
+  </div>
 
   <script type="module" src="app.js"></script>
 </body>

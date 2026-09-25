@@ -12,6 +12,85 @@ const MAX_MB = 50;
 
 const $ = (id) => document.getElementById(id);
 
+// =============================================
+//  CONSENTIMIENTO DE COOKIES Y ALMACENAMIENTO
+// =============================================
+const CONSENT_KEY = 'consentimiento_v1';
+const CONSENT_MESES = 12;
+const TERMINOS_V = '2026-09-24';
+
+function leerConsent() {
+  try {
+    const c = JSON.parse(localStorage.getItem(CONSENT_KEY));
+    if (!c || !c.fecha) return null;
+    const meses = (Date.now() - new Date(c.fecha).getTime()) / (30 * 864e5);
+    return meses > CONSENT_MESES ? null : c;
+  } catch (_) { return null; }
+}
+let consent = leerConsent();
+
+const puedePreferencias = () => !!(consent && consent.prefs);
+const puedeTerceros = () => !!(consent && consent.terceros);
+
+function guardarPref(clave, valor) {
+  if (!puedePreferencias()) return;
+  try { localStorage.setItem(clave, valor); } catch (_) { /* sin almacenamiento */ }
+}
+function borrarPrefs() {
+  try { localStorage.removeItem('tema'); localStorage.removeItem('anim'); } catch (_) { /* sin almacenamiento */ }
+}
+
+function guardarConsent(c) {
+  consent = { prefs: !!c.prefs, terceros: !!c.terceros, fecha: new Date().toISOString(), v: 1 };
+  try { localStorage.setItem(CONSENT_KEY, JSON.stringify(consent)); } catch (_) { /* sin almacenamiento */ }
+  if (consent.prefs) {
+    guardarPref('tema', document.documentElement.dataset.tema || 'rosa');
+    guardarPref('anim', document.documentElement.classList.contains('sin-anim') ? '1' : '0');
+  } else {
+    borrarPrefs();
+  }
+  $('cookies').classList.add('oculto');
+  try { if (musicaCargada) pintarMusica(urlCancion()); } catch (_) { /* aún no se carga */ }
+}
+
+function mostrarCookies(personalizar) {
+  $('ck-pref').checked = puedePreferencias();
+  $('ck-terc').checked = puedeTerceros();
+  $('ck-prefs').classList.toggle('oculto', !personalizar);
+  $('ck-personalizar').textContent = personalizar ? 'Guardar mi elección' : 'Personalizar';
+  $('cookies').classList.remove('oculto');
+  $('ck-titulo').focus?.();
+}
+
+$('ck-aceptar').addEventListener('click', () => guardarConsent({ prefs: true, terceros: true }));
+$('ck-rechazar').addEventListener('click', () => guardarConsent({ prefs: false, terceros: false }));
+$('ck-personalizar').addEventListener('click', () => {
+  if ($('ck-prefs').classList.contains('oculto')) mostrarCookies(true);
+  else guardarConsent({ prefs: $('ck-pref').checked, terceros: $('ck-terc').checked });
+});
+document.querySelectorAll('[data-accion="cookies"]').forEach((b) => {
+  b.addEventListener('click', () => mostrarCookies(true));
+});
+if (!consent) mostrarCookies(false);
+
+// ---------- Aceptación de términos ----------
+function terminosAceptados() {
+  try { return localStorage.getItem('terminos_aceptados') === TERMINOS_V; } catch (_) { return false; }
+}
+function prepararTerminos() {
+  const ya = terminosAceptados();
+  $('auth-terminos-fila').classList.toggle('oculto', ya);
+  $('auth-terminos').required = !ya;
+}
+prepararTerminos();
+
+// ---------- Menos animaciones ----------
+$('pref-anim').checked = document.documentElement.classList.contains('sin-anim');
+$('pref-anim').addEventListener('change', (e) => {
+  document.documentElement.classList.toggle('sin-anim', e.target.checked);
+  guardarPref('anim', e.target.checked ? '1' : '0');
+});
+
 // ---------- Estado ----------
 let usuario = null;
 let perfil = null;
@@ -66,8 +145,8 @@ function dia(iso) {
 
 // Cada quien tiene su color: Benjamin verde, Alondra morado
 const COLOR_PERSONA = {
-  benjamin: { hex: '#2fbf71', corazon: '💚' },
-  alondra: { hex: '#9b6bd6', corazon: '💜' },
+  benjamin: { hex: '#18844a', claro: '#2fbf71', corazon: '💚' },
+  alondra: { hex: '#7c4dc4', claro: '#ad86e6', corazon: '💜' },
 };
 
 function colorDe(id) {
@@ -112,6 +191,13 @@ $('form-codigo').addEventListener('submit', async (e) => {
 
 $('form-auth').addEventListener('submit', async (e) => {
   e.preventDefault();
+  if (!terminosAceptados()) {
+    if (!$('auth-terminos').checked) {
+      $('auth-msg').textContent = 'Para entrar debes aceptar los Términos y el Aviso de privacidad.';
+      return;
+    }
+    try { localStorage.setItem('terminos_aceptados', TERMINOS_V); } catch (_) { /* sin almacenamiento */ }
+  }
   const clave = $('auth-usuario').value.trim().toLowerCase();
   const u = USUARIOS[clave];
   if (!u) {
@@ -308,7 +394,7 @@ ANIMOS.forEach((a) => {
   b.dataset.animo = a.k;
   const im = document.createElement('img');
   im.src = a.img;
-  im.alt = a.nombre;
+  im.alt = '';
   im.loading = 'lazy';
   b.append(im, el('span', '', a.nombre));
   b.addEventListener('click', () => ponerAnimo(a.k));
@@ -339,7 +425,7 @@ function pintarAnimos() {
     if (!a) { b.replaceChildren(); return; }
     const im = document.createElement('img');
     im.src = animoDe(a.animo).img;
-    im.alt = animoDe(a.animo).nombre;
+    im.alt = 'Ánimo: ' + animoDe(a.animo).nombre;
     b.replaceChildren(im);
   };
   poner('hero-animo-yo', mio);
@@ -388,10 +474,11 @@ function pintarAvatar(nodo) {
   const url = fotos[id];
   const color = colorDe(id);
   nodo.style.background = color ? color.hex : '';
+  nodo.style.color = color ? '#fff' : '';
   if (url) {
     const img = document.createElement('img');
     img.src = url;
-    img.alt = '';
+    img.alt = 'Foto de perfil de ' + (perfiles[id] || 'tu pareja');
     nodo.replaceChildren(img);
   } else {
     nodo.textContent = id && perfiles[id] ? perfiles[id].charAt(0).toUpperCase() : '?';
@@ -537,6 +624,7 @@ function crearPost(p, url) {
     const media = el('div', 'post-media');
     if (p.tipo === 'video') {
       const v = document.createElement('video');
+      v.setAttribute('aria-label', `Video compartido por ${nombre}`);
       v.src = url;
       v.controls = true;
       v.playsInline = true;
@@ -546,8 +634,8 @@ function crearPost(p, url) {
       const img = document.createElement('img');
       img.src = url;
       img.loading = 'lazy';
-      img.alt = 'Foto';
-      img.addEventListener('click', () => abrirVisor(url));
+      img.alt = p.texto ? `Foto: ${p.texto.slice(0, 100)}` : `Foto compartida por ${nombre}`;
+      hacerAmpliable(img, url);
       media.append(img);
     }
     post.append(media);
@@ -600,6 +688,8 @@ $('pub-archivo').addEventListener('change', (e) => {
   const url = URL.createObjectURL(f);
   const media = f.type.startsWith('video/') ? document.createElement('video') : document.createElement('img');
   media.src = url;
+  if (media.tagName === 'IMG') media.alt = 'Vista previa de la foto que vas a publicar';
+  else media.setAttribute('aria-label', 'Vista previa del video que vas a publicar');
   if (media.tagName === 'VIDEO') { media.muted = true; media.playsInline = true; }
   const quitar = el('button', '', '✕');
   quitar.type = 'button';
@@ -682,13 +772,36 @@ $('form-publicar').addEventListener('submit', async (e) => {
 });
 
 // ---------- Visor de fotos ----------
+let visorOrigen = null;
 function abrirVisor(url) {
   const img = document.createElement('img');
   img.src = url;
+  img.alt = 'Foto ampliada';
+  visorOrigen = document.activeElement;
   $('visor').replaceChildren(img);
   $('visor').classList.remove('oculto');
+  $('visor').focus();
 }
-$('visor').addEventListener('click', () => $('visor').classList.add('oculto'));
+function cerrarVisor() {
+  $('visor').classList.add('oculto');
+  if (visorOrigen && visorOrigen.focus) visorOrigen.focus();
+  visorOrigen = null;
+}
+// Las fotos se pueden abrir con teclado (Enter o Espacio)
+function hacerAmpliable(img, url) {
+  img.tabIndex = 0;
+  img.setAttribute('role', 'button');
+  img.addEventListener('click', () => abrirVisor(url));
+  img.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); abrirVisor(url); }
+  });
+}
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape') return;
+  if (!$('visor').classList.contains('oculto')) cerrarVisor();
+  else if ($('musica-panel').classList.contains('abierta')) $('musica-panel').classList.remove('abierta');
+});
+$('visor').addEventListener('click', cerrarVisor);
 
 // =============================================
 //  CORAZONES (usan la tabla de mensajes; el chat ya no existe)
@@ -1047,8 +1160,8 @@ function pintarContador() {
 
 // ---------- Cumpleaños ----------
 const CUMPLES = [
-  { nombre: 'Benjamin', fecha: '2004-08-21', color: '#2fbf71', corazon: '💚' },
-  { nombre: 'Alondra', fecha: '2005-04-12', color: '#9b6bd6', corazon: '💜' },
+  { nombre: 'Benjamin', fecha: '2004-08-21', color: '#18844a', claro: '#2fbf71', corazon: '💚' },
+  { nombre: 'Alondra', fecha: '2005-04-12', color: '#7c4dc4', claro: '#ad86e6', corazon: '💜' },
 ];
 let cumplesDia = null;
 let cumplesFiesta = false;
@@ -1072,6 +1185,7 @@ function pintarCumples() {
 
     const fila = el('div', 'cumple' + (esHoy ? ' hoy' : ''));
     fila.style.setProperty('--c', c.color);
+    fila.style.setProperty('--ct', c.claro);
     fila.append(el('div', 'cumple-ico', esHoy ? '🎂' : c.corazon));
 
     const cuerpo = el('div', 'cumple-cuerpo');
@@ -1162,12 +1276,14 @@ function mostrarRecuerdoAzar() {
   if (p.url) {
     if (p.tipo === 'video') {
       const v = document.createElement('video');
+      v.setAttribute('aria-label', `Video compartido por ${nombreDe(p.autor_id)}`);
       v.src = p.url; v.controls = true; v.playsInline = true; v.preload = 'metadata';
       cont.append(v);
     } else {
       const img = document.createElement('img');
-      img.src = p.url; img.alt = 'Recuerdo';
-      img.addEventListener('click', () => abrirVisor(p.url));
+      img.src = p.url;
+      img.alt = p.texto ? `Recuerdo: ${p.texto.slice(0, 100)}` : `Recuerdo compartido por ${nombreDe(p.autor_id)}`;
+      hacerAmpliable(img, p.url);
       cont.append(img);
     }
   }
@@ -1249,6 +1365,11 @@ function mvBucle(t) {
   const dt = Math.min(0.1, (t - (mvUltimo || t)) / 1000);
   mvUltimo = t;
   if (oculta) return;
+  if (document.documentElement.classList.contains('sin-anim')) {
+    mavis.classList.remove('camina');
+    return;
+  }
+  mavis.classList.toggle('camina', mvModo === 'camina');
 
   if (mvModo === 'camina') {
     mvX += mvDir * 42 * dt;
@@ -1626,7 +1747,7 @@ function aplicarTema(tema) {
   if (!COLOR_TEMA[tema]) tema = 'rosa';
   limpiarTema();
   document.documentElement.dataset.tema = tema;
-  try { localStorage.setItem('tema', tema); } catch (_) { /* sin almacenamiento */ }
+  guardarPref('tema', tema);
   const meta = document.querySelector('meta[name="theme-color"]');
   if (meta) meta.content = COLOR_TEMA[tema];
   document.querySelectorAll('.tema-op').forEach((b) => b.classList.toggle('activa', b.dataset.tema === tema));
@@ -1661,6 +1782,7 @@ let particulasVivas = 0;
 
 document.addEventListener('pointerdown', (e) => {
   if (e.target.closest('input, textarea, iframe')) return;
+  if (document.documentElement.classList.contains('sin-anim')) return;
   const set = PARTICULAS[document.documentElement.dataset.tema] || PARTICULAS.rosa;
   for (let i = 0; i < 6 && particulasVivas < 60; i++) {
     const cae = Math.random() < 0.3;
@@ -1701,6 +1823,18 @@ function pintarMusica(url) {
     return;
   }
   const [, tipo, id] = m;
+  abrir.href = `https://open.spotify.com/${tipo}/${id}`;
+  abrir.classList.remove('oculto');
+  if (!puedeTerceros()) {
+    const aviso = el('div', 'musica-aviso');
+    aviso.append(el('p', 'sub', 'Para reproducir «Nuestra canción» se carga el reproductor de Spotify, que puede usar sus propias cookies. Solo se carga si lo aceptas.'));
+    const b = el('button', 'btn btn-sec', 'Cargar reproductor de Spotify');
+    b.type = 'button';
+    b.addEventListener('click', () => guardarConsent({ prefs: puedePreferencias(), terceros: true }));
+    aviso.append(b);
+    cont.replaceChildren(aviso);
+    return;
+  }
   const f = document.createElement('iframe');
   f.src = `https://open.spotify.com/embed/${tipo}/${id}?utm_source=generator`;
   f.width = '100%';
@@ -1711,8 +1845,6 @@ function pintarMusica(url) {
   f.style.border = '0';
   f.style.borderRadius = '12px';
   cont.replaceChildren(f);
-  abrir.href = `https://open.spotify.com/${tipo}/${id}`;
-  abrir.classList.remove('oculto');
 }
 
 $('musica-btn').addEventListener('click', async () => {
@@ -1787,7 +1919,12 @@ const observador = 'IntersectionObserver' in window
   }, { threshold: 0.08, rootMargin: '0px 0px -30px 0px' })
   : null;
 
+function etiquetarBotones() {
+  document.querySelectorAll('.post-borrar:not([aria-label])').forEach((b) => b.setAttribute('aria-label', b.title || 'Borrar'));
+}
+
 function prepararRevelado() {
+  etiquetarBotones();
   document.querySelectorAll(REVELAR).forEach((nodo) => {
     if (nodo.dataset.rev) return;
     nodo.dataset.rev = '1';
@@ -1803,3 +1940,39 @@ new MutationObserver(() => {
   revTimer = setTimeout(prepararRevelado, 40);
 }).observe(document.querySelector('main'), { childList: true, subtree: true });
 prepararRevelado();
+
+// =============================================
+//  DESCARGAR MIS DATOS (derecho de acceso y portabilidad)
+// =============================================
+$('btn-descargar').addEventListener('click', async () => {
+  const msg = $('datos-msg');
+  msg.textContent = 'Preparando tus datos…';
+  try {
+    const [perfilR, posts, plns, msgs] = await Promise.all([
+      sb.from('perfiles').select('id, nombre, animo, animo_en, avatar_path, creado_en').eq('id', usuario.id).single(),
+      sb.from('publicaciones').select('*').eq('autor_id', usuario.id),
+      sb.from('planes').select('*').eq('autor_id', usuario.id),
+      sb.from('mensajes').select('*').eq('autor_id', usuario.id),
+    ]);
+    const datos = {
+      exportado_en: new Date().toISOString(),
+      cuenta: { id: usuario.id, correo_interno: usuario.email },
+      perfil: perfilR.data,
+      publicaciones: posts.data,
+      planes: plns.data,
+      corazones_y_mensajes: msgs.data,
+      nota: 'Las fotos y videos se guardan como archivos; aquí aparece su ruta (archivo_path).',
+    };
+    const url = URL.createObjectURL(new Blob([JSON.stringify(datos, null, 2)], { type: 'application/json' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'nosotros-mis-datos.json';
+    document.body.append(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+    msg.textContent = '✓ Listo: se descargó nosotros-mis-datos.json';
+  } catch (err) {
+    msg.textContent = 'No se pudo preparar la descarga: ' + traducir(err);
+  }
+});
