@@ -629,3 +629,73 @@ html.sin-anim .revela { opacity: 1; translate: 0 0; }
 .datos-acciones .link-chico { font-size: 11px; }
 .datos-cuerpo .legal-links { margin: 6px 0 0; font-size: 11px; }
 .datos-cuerpo .msg { min-height: 0; }
+
+/* =============================================
+   JARDÍN
+   ============================================= */
+#vista-jardin { padding: 0; overflow: hidden; position: relative; }
+#vista-jardin > .jardin { max-width: none; margin: 0; }
+.jardin { position: relative; width: 100%; height: 100%; overflow: hidden; background: linear-gradient(180deg, #bfe6ff 0%, #ffe7f1 52%, #eaf7d6 70%); user-select: none; touch-action: manipulation; }
+.j-sol { position: absolute; top: 6%; right: 9%; width: 70px; height: 70px; border-radius: 50%; background: radial-gradient(circle, #fff7b0 20%, #ffe066 55%, rgba(255,224,102,0) 72%); box-shadow: 0 0 60px 20px rgba(255,236,150,.55); animation: j-sol 8s ease-in-out infinite alternate; }
+@keyframes j-sol { from { transform: scale(1); } to { transform: scale(1.08); } }
+.j-nube { position: absolute; height: 26px; width: 90px; border-radius: 40px; background: rgba(255,255,255,.85); box-shadow: 22px -10px 0 4px rgba(255,255,255,.85), 48px 2px 0 0 rgba(255,255,255,.85); animation: j-nube linear infinite; }
+.j-nube.n1 { top: 12%; left: -20%; animation-duration: 90s; }
+.j-nube.n2 { top: 24%; left: -30%; animation-duration: 130s; animation-delay: -50s; transform: scale(.7); opacity: .8; }
+.j-nube.n3 { top: 8%; left: -25%; animation-duration: 160s; animation-delay: -100s; transform: scale(.55); opacity: .7; }
+@keyframes j-nube { from { margin-left: 0; } to { margin-left: 150vw; } }
+.j-colina { position: absolute; left: -10%; width: 120%; border-radius: 50% 50% 0 0; }
+.j-colina.c1 { bottom: 26%; height: 22%; background: linear-gradient(180deg, #a5d98a, #8fcf78); }
+.j-colina.c2 { bottom: 20%; height: 22%; left: -30%; width: 100%; background: linear-gradient(180deg, #8ccf72, #74c064); }
+.j-suelo { position: absolute; left: 0; right: 0; bottom: 0; height: 34%; background: linear-gradient(180deg, #6fbf5f 0%, #58a84c 60%, #4a9640 100%); }
+.j-suelo::before { content: ''; position: absolute; inset: 0; background: repeating-linear-gradient(90deg, rgba(255,255,255,.05) 0 3px, transparent 3px 11px); }
+.j-capa, .j-aire { position: absolute; inset: 0; pointer-events: none; }
+.j-capa > *, .volador { pointer-events: auto; }
+.j-aire { z-index: 5000; }
+
+.flor { position: absolute; transform-origin: 50% 100%; cursor: pointer; }
+.flor-i { transform-origin: 50% 100%; }
+.flor svg { display: block; width: 100%; height: auto; overflow: visible; transform-origin: 50% 100%; animation: flor-mece var(--dur, 4s) ease-in-out var(--del, 0s) infinite alternate; }
+.flor.nace .flor-i { animation: flor-nace 1s cubic-bezier(.2,1.5,.4,1) both; }
+.flor.se-va { transition: opacity .6s, transform .6s; opacity: 0; transform: scale(.6); }
+.flor.olfateada svg { animation: flor-roza .9s ease-in-out; }
+@keyframes flor-mece { from { transform: rotate(-2.6deg); } to { transform: rotate(2.6deg); } }
+@keyframes flor-nace { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+@keyframes flor-roza { 0%,100% { transform: rotate(0) scale(1); } 20% { transform: rotate(-9deg) scale(1.06); } 50% { transform: rotate(8deg) scale(1.08); } 80% { transform: rotate(-4deg); } }
+
+.bugambilia { position: absolute; width: 190px; bottom: 30%; z-index: 1; pointer-events: none; }
+.bugambilia.izq { left: -18px; }
+.bugambilia.der { right: -18px; transform: scaleX(-1); }
+.bugambilia svg { display: block; width: 100%; height: auto; animation: flor-mece 6s ease-in-out infinite alternate; transform-origin: 50% 100%; }
+
+.volador { position: absolute; left: 0; top: 0; cursor: pointer; will-change: transform; filter: drop-shadow(0 3px 3px rgba(0,0,0,.18)); }
+.volador svg { display: block; width: 100%; height: auto; overflow: visible; }
+.mariposa .alas { transform-origin: 50% 50%; animation: aleteo .2s ease-in-out infinite alternate; }
+.mariposa.posada .alas { animation-duration: .9s; }
+.libelula .ala { transform-origin: 50% 100%; animation: aleteo .07s ease-in-out infinite alternate; }
+.libelula .ala.b { animation-delay: -.035s; }
+@keyframes aleteo { from { transform: scaleX(1); } to { transform: scaleX(.3); } }
+.libelula .ala { animation-name: aletea-v; }
+@keyframes aletea-v { from { transform: scaleY(1); } to { transform: scaleY(.35); } }
+
+.petalo-j, .petalo-caida { position: absolute; width: 9px; height: 12px; border-radius: 60% 40% 60% 40%; pointer-events: none; opacity: 0; }
+.petalo-j { animation: petalo-j 2.2s ease-out forwards; }
+@keyframes petalo-j { 0% { opacity: 1; transform: translate(0, 0) rotate(0); } 100% { opacity: 0; transform: translate(var(--dx), var(--dy)) rotate(280deg); } }
+.petalo-caida { top: -14px; animation: petalo-cae 9s linear forwards; }
+@keyframes petalo-cae { 0% { opacity: 0; transform: translate(0, 0) rotate(0); } 8% { opacity: .9; } 92% { opacity: .9; } 100% { opacity: 0; transform: translate(var(--dx), 110vh) rotate(540deg); } }
+
+.j-pista { position: absolute; top: 10px; left: 0; right: 0; text-align: center; font-size: 12px; color: #3d5a3a; text-shadow: 0 1px 2px rgba(255,255,255,.8); padding: 0 16px; pointer-events: none; transition: opacity .6s; z-index: 6000; }
+
+/* Mavis olfatea las flores */
+.mavis.olfatea .mv-cabeza { animation: mv-olfatea .5s ease-in-out 3; }
+@keyframes mv-olfatea { 0%,100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(9px) rotate(4deg); } }
+
+/* Jardín de noche en las temáticas oscuras */
+html[data-tema="coraline"] .jardin { background: linear-gradient(180deg, #0a1030 0%, #1f2a72 48%, #2e2f7a 66%); }
+html[data-tema="aurora"] .jardin { background: linear-gradient(180deg, #03131a 0%, #0b3a45 50%, #0f4f52 68%); }
+html[data-tema="coraline"] .j-suelo, html[data-tema="aurora"] .j-suelo { background: linear-gradient(180deg, #2c7a4b 0%, #1f6a40 60%, #175733 100%); }
+html[data-tema="coraline"] .j-colina.c1, html[data-tema="aurora"] .j-colina.c1 { background: linear-gradient(180deg, #2f8a56, #277a4a); }
+html[data-tema="coraline"] .j-colina.c2, html[data-tema="aurora"] .j-colina.c2 { background: linear-gradient(180deg, #277a4a, #1f6a40); }
+html[data-tema="coraline"] .j-sol, html[data-tema="aurora"] .j-sol { background: radial-gradient(circle, #f6f6ff 22%, #cfd6ff 55%, rgba(207,214,255,0) 72%); box-shadow: 0 0 50px 14px rgba(200,210,255,.35); }
+html[data-tema="coraline"] .j-nube, html[data-tema="aurora"] .j-nube { background: rgba(190,200,255,.25); box-shadow: 22px -10px 0 4px rgba(190,200,255,.25), 48px 2px 0 0 rgba(190,200,255,.25); }
+html[data-tema="coraline"] .j-pista, html[data-tema="aurora"] .j-pista { color: #dfe6ff; text-shadow: 0 1px 2px rgba(0,0,0,.6); }
+html.sin-anim .j-nube, html.sin-anim .petalo-caida { display: none; }

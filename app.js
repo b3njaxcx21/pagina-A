@@ -459,7 +459,6 @@ async function ponerAnimo(k) {
   const antes = animos[usuario.id];
   animos[usuario.id] = { animo: k, animo_en: ahora };
   pintarAnimos();
-  lluviaCorazones(8, [animoDe(k).emoji]);
   const { error } = await sb.from('perfiles').update({ animo: k, animo_en: ahora }).eq('id', usuario.id);
   if (error) {
     animos[usuario.id] = antes;
@@ -580,6 +579,7 @@ function cambiarVista(vista) {
   vistaActual = vista;
   document.querySelectorAll('.nav-btn').forEach((b) => b.classList.toggle('activa', b.dataset.vista === vista));
   document.querySelectorAll('.vista').forEach((v) => v.classList.toggle('activa', v.id === 'vista-' + vista));
+  if (vista === 'jardin') requestAnimationFrame(() => entrarAlJardin());
 }
 
 // =============================================
@@ -1695,7 +1695,7 @@ let particulasVivas = 0;
 
 document.addEventListener('pointerdown', (e) => {
   if (e.target.closest('input, textarea, iframe')) return;
-  if (document.documentElement.classList.contains('sin-anim')) return;
+  if (document.documentElement.classList.contains('sin-anim') || vistaActual === 'jardin') return;
   const set = PARTICULAS[document.documentElement.dataset.tema] || PARTICULAS.rosa;
   for (let i = 0; i < 6 && particulasVivas < 60; i++) {
     const cae = Math.random() < 0.3;
@@ -1917,3 +1917,419 @@ setInterval(revisarInactividad, 20000);
 document.addEventListener('visibilitychange', () => { if (!document.hidden) revisarInactividad(); });
 window.addEventListener('focus', revisarInactividad);
 window.addEventListener('pageshow', revisarInactividad);
+
+// =============================================
+//  JARDÍN: flores, mariposas, libélulas y Mavis
+// =============================================
+const jardin = $('jardin');
+const capaFlores = $('j-capa');
+const capaAire = $('j-aire');
+let jardinListo = false;
+let jardinAncho0 = 0;
+const flores = [];        // { el, frio }
+const voladores = [];     // mariposas y libélulas
+let atraer = null;        // { x, y, hasta, id }
+let atraerId = 0;
+let jardinUlt = 0;
+let jardinSniff = 0;
+let saltoFrio = 0;
+
+const TULIPANES = [
+  ['#e63946', '#b5202d'], ['#ffd166', '#e0a800'], ['#ff8fab', '#e0587c'], ['#9b5de5', '#6d38b5'],
+  ['#ff9f1c', '#d97706'], ['#ffffff', '#d3d3e6'], ['#f15bb5', '#c2298a'],
+];
+const ALAS = [['#ff9f1c', '#ffd166'], ['#4cc9f0', '#a0e7ff'], ['#f15bb5', '#ffb3d9'], ['#ffd60a', '#fff3a0'], ['#9b5de5', '#d4b8ff'], ['#ffffff', '#cfe8ff']];
+
+const HOJA = '#4fa64a';
+const TALLO = '#3f8f3f';
+
+function svgTulipan([c, oscuro]) {
+  return `<svg viewBox="0 0 50 120" aria-hidden="true">
+  <path d="M25 118 C24 92 26 72 25 54" fill="none" stroke="${TALLO}" stroke-width="3" stroke-linecap="round"/>
+  <path d="M25 112 C9 100 6 78 12 64 C21 78 24 96 25 112Z" fill="${HOJA}"/>
+  <path d="M25 104 C40 94 44 76 39 62 C31 74 27 90 25 104Z" fill="#5cb85c"/>
+  <path d="M11 28 C9 46 17 60 25 60 C33 60 41 46 39 28 C35 33 30 22 25 17 C20 22 15 33 11 28Z" fill="${oscuro}"/>
+  <path d="M14 30 C15 48 21 60 25 60 C29 60 35 48 36 30 C32 35 28 26 25 20 C22 26 18 35 14 30Z" fill="${c}"/>
+  <ellipse cx="20" cy="38" rx="2.4" ry="8" fill="#fff" opacity=".28" transform="rotate(8 20 38)"/>
+</svg>`;
+}
+
+function svgPeonia() {
+  const cx = 45, cy = 42;
+  let p = '';
+  const capa = (n, r, rx, ry, color, rot) => {
+    for (let i = 0; i < n; i++) {
+      p += `<ellipse cx="${cx}" cy="${cy - r}" rx="${rx}" ry="${ry}" fill="${color}" stroke="rgba(255,255,255,.35)" stroke-width=".8" transform="rotate(${(360 / n) * i + rot} ${cx} ${cy})"/>`;
+    }
+  };
+  capa(8, 20, 15, 19, '#f8b4cf', 0);
+  capa(7, 13, 12, 15, '#f18cb4', 20);
+  capa(5, 6, 9, 11, '#e86a9d', 10);
+  return `<svg viewBox="0 0 90 130" aria-hidden="true">
+  <path d="M45 128 C44 106 46 84 45 66" fill="none" stroke="${TALLO}" stroke-width="3.5" stroke-linecap="round"/>
+  <path d="M45 118 C24 108 16 90 22 76 C34 88 42 102 45 118Z" fill="${HOJA}"/>
+  <path d="M45 108 C66 100 74 82 68 70 C56 80 48 94 45 108Z" fill="#5cb85c"/>
+  ${p}
+  <circle cx="${cx}" cy="${cy}" r="5.5" fill="#ffd166"/>
+  <g fill="#e09f00"><circle cx="43" cy="40" r="1"/><circle cx="47" cy="41" r="1"/><circle cx="45" cy="45" r="1"/></g>
+</svg>`;
+}
+
+function svgNarciso() {
+  let p = '';
+  for (let i = 0; i < 6; i++) {
+    p += `<ellipse cx="30" cy="16" rx="8" ry="15" fill="#fff7c2" stroke="#f3e08a" stroke-width=".8" transform="rotate(${i * 60} 30 32)"/>`;
+  }
+  return `<svg viewBox="0 0 60 110" aria-hidden="true">
+  <path d="M30 108 C29 84 31 60 30 40" fill="none" stroke="${TALLO}" stroke-width="3" stroke-linecap="round"/>
+  <path d="M30 104 C14 92 10 70 16 56 C24 70 28 88 30 104Z" fill="${HOJA}"/>
+  ${p}
+  <ellipse cx="30" cy="32" rx="8" ry="6" fill="#ffb703"/>
+  <ellipse cx="30" cy="30" rx="5.5" ry="3.6" fill="#e07a00"/>
+</svg>`;
+}
+
+function svgJacinto(color = '#8e6bd8') {
+  let f = '';
+  for (let i = 0; i < 15; i++) {
+    const y = 58 - i * 3.4;
+    const w = 11 - i * 0.55;
+    f += `<circle cx="${25 - w * 0.45}" cy="${y}" r="${4.6 - i * .15}" fill="${color}"/><circle cx="${25 + w * 0.45}" cy="${y - 1.6}" r="${4.6 - i * .15}" fill="${color}"/>`;
+  }
+  return `<svg viewBox="0 0 50 120" aria-hidden="true">
+  <path d="M25 118 C24 96 26 80 25 56" fill="none" stroke="${TALLO}" stroke-width="3" stroke-linecap="round"/>
+  <path d="M25 116 C8 104 6 84 12 70 C20 84 24 100 25 116Z" fill="${HOJA}"/>
+  <path d="M25 116 C42 104 44 84 38 70 C30 84 26 100 25 116Z" fill="#5cb85c"/>
+  ${f}
+</svg>`;
+}
+
+function svgBulbo() {
+  return `<svg viewBox="0 0 50 64" aria-hidden="true">
+  <path d="M25 44 C22 30 23 20 25 12" fill="none" stroke="${TALLO}" stroke-width="2.6" stroke-linecap="round"/>
+  <path d="M25 40 C13 36 9 26 12 18 C19 24 23 32 25 40Z" fill="${HOJA}"/>
+  <path d="M25 36 C37 32 41 22 38 14 C31 20 27 28 25 36Z" fill="#5cb85c"/>
+  <ellipse cx="25" cy="9" rx="4.5" ry="6" fill="#ff8fab"/>
+  <path d="M25 62 C13 62 9 52 14 46 C18 42 22 42 25 40 C28 42 32 42 36 46 C41 52 37 62 25 62Z" fill="#d9b382"/>
+  <path d="M25 40 C21 48 21 56 25 62 M25 40 C29 48 29 56 25 62" fill="none" stroke="#b98d5c" stroke-width="1"/>
+  <path d="M21 62 l-3 3 M25 62 v4 M29 62 l3 3" stroke="#a37845" stroke-width="1.2" stroke-linecap="round"/>
+</svg>`;
+}
+
+function svgBugambilia() {
+  const cols = ['#d81b60', '#ff5c8a', '#8e24aa', '#ff7043', '#e91e8c'];
+  let s = '';
+  const pts = [];
+  for (let i = 0; i < 12; i++) {
+    const t = i / 11;
+    pts.push([10 + t * 120, 64 - Math.sin(t * Math.PI) * 36 + (i % 2 ? 5 : -5)]);
+  }
+  pts.forEach(([x, y], i) => {
+    s += `<ellipse cx="${x + 3}" cy="${y + 8}" rx="4.5" ry="9" fill="${HOJA}" transform="rotate(${(i % 2 ? 30 : -30)} ${x + 3} ${y + 8})"/>`;
+  });
+  pts.forEach(([x, y], i) => {
+    const col = cols[i % cols.length];
+    for (let k = 0; k < 3; k++) {
+      s += `<ellipse cx="${x}" cy="${y - 6}" rx="5.4" ry="7.4" fill="${col}" stroke="rgba(255,255,255,.3)" stroke-width=".6" transform="rotate(${k * 120 + (i * 23) % 60} ${x} ${y})"/>`;
+    }
+    s += `<circle cx="${x}" cy="${y}" r="1.7" fill="#fff8dc"/>`;
+  });
+  return `<svg viewBox="0 0 140 100" aria-hidden="true">
+  <path d="M4 72 Q40 6 72 42 T138 48" fill="none" stroke="#7a5230" stroke-width="3.4" stroke-linecap="round"/>
+  ${s}
+</svg>`;
+}
+
+function svgMariposa([a, b]) {
+  return `<svg viewBox="0 0 40 34" aria-hidden="true">
+  <g class="alas">
+    <path d="M20 17 C8 1 0 6 3 16 C5 23 12 24 20 17Z" fill="${a}"/>
+    <path d="M20 18 C10 22 6 30 12 31 C17 32 20 25 20 18Z" fill="${b}"/>
+    <path d="M20 17 C32 1 40 6 37 16 C35 23 28 24 20 17Z" fill="${a}"/>
+    <path d="M20 18 C30 22 34 30 28 31 C23 32 20 25 20 18Z" fill="${b}"/>
+    <circle cx="9" cy="13" r="2" fill="#fff" opacity=".7"/><circle cx="31" cy="13" r="2" fill="#fff" opacity=".7"/>
+  </g>
+  <ellipse cx="20" cy="18" rx="1.7" ry="8" fill="#3a2a2a"/>
+  <path d="M19 10 C17 6 15 4 13 4 M21 10 C23 6 25 4 27 4" fill="none" stroke="#3a2a2a" stroke-width=".9" stroke-linecap="round"/>
+</svg>`;
+}
+
+function svgLibelulaJ() {
+  return `<svg viewBox="0 0 90 60" aria-hidden="true">
+  <g class="ala"><ellipse cx="34" cy="21" rx="24" ry="8" fill="#bfe9ff" fill-opacity=".7" stroke="#6bb6d6" stroke-width="1" transform="rotate(-20 34 21)"/></g>
+  <g class="ala b"><ellipse cx="38" cy="38" rx="24" ry="7" fill="#bfe9ff" fill-opacity=".65" stroke="#6bb6d6" stroke-width="1" transform="rotate(18 38 38)"/></g>
+  <path d="M42 30 Q14 32 4 44" fill="none" stroke="#1fa6b8" stroke-width="3.2" stroke-linecap="round"/>
+  <g fill="#0e7c8c"><circle cx="16" cy="38" r="1.8"/><circle cx="26" cy="34" r="1.8"/><circle cx="34" cy="32" r="1.8"/></g>
+  <ellipse cx="47" cy="30" rx="8" ry="5.5" fill="#1fa6b8"/>
+  <circle cx="56" cy="28" r="3.2" fill="#ff6b6b"/><circle cx="56" cy="34" r="3.2" fill="#ff6b6b"/>
+</svg>`;
+}
+
+// ---------- construir el jardín ----------
+function tamanoJardin() {
+  const r = jardin.getBoundingClientRect();
+  return { r, W: r.width, H: r.height };
+}
+
+function plantar(x, y, tipo, animar) {
+  const { W, H } = tamanoJardin();
+  const prof = Math.min(1, Math.max(0, (y - H * 0.6) / (H * 0.4)));   // 0 = lejos, 1 = cerca
+  const esc = 0.7 + prof * 0.6;
+  const elegido = tipo || ['tulipan', 'tulipan', 'tulipan', 'peonia', 'narciso', 'jacinto', 'bulbo'][Math.floor(Math.random() * 7)];
+  const base = { tulipan: 44, peonia: 84, narciso: 54, jacinto: 44, bulbo: 40 }[elegido];
+  const svg = {
+    tulipan: () => svgTulipan(TULIPANES[Math.floor(Math.random() * TULIPANES.length)]),
+    peonia: svgPeonia,
+    narciso: svgNarciso,
+    jacinto: () => svgJacinto(['#8e6bd8', '#5b8def', '#e070c0'][Math.floor(Math.random() * 3)]),
+    bulbo: svgBulbo,
+  }[elegido]();
+  const w = base * esc;
+  const f = el('div', 'flor' + (animar ? ' nace' : ''));
+  f.style.width = w + 'px';
+  f.style.left = x - w / 2 + 'px';
+  f.style.bottom = Math.max(0, H - y) + 'px';
+  f.style.zIndex = String(Math.round(y));
+  f.style.setProperty('--dur', azar(3, 5.5) + 's');
+  f.style.setProperty('--del', -azar(0, 4) + 's');
+  const dentro = el('div', 'flor-i');
+  dentro.innerHTML = svg;
+  f.append(dentro);
+  capaFlores.append(f);
+  flores.push({ el: f, frio: 0 });
+  if (flores.length > 44) {
+    const vieja = flores.shift();
+    vieja.el.classList.add('se-va');
+    setTimeout(() => vieja.el.remove(), 700);
+  }
+  return f;
+}
+
+function nuevoDestino(v, W, H) {
+  v.tx = azar(W * 0.06, W * 0.94);
+  v.ty = azar(H * 0.08, v.tipo === 'libelula' ? H * 0.5 : H * 0.62);
+}
+
+function petalos(x, y, n) {
+  for (let i = 0; i < n; i++) {
+    const p = el('span', 'petalo-j');
+    p.style.left = x + azar(-14, 14) + 'px';
+    p.style.top = y + 'px';
+    p.style.setProperty('--dx', azar(-40, 40) + 'px');
+    p.style.setProperty('--dy', azar(50, 110) + 'px');
+    p.style.background = ['#ffb3d9', '#ffffff', '#ffd6e8', '#ffe066'][Math.floor(Math.random() * 4)];
+    capaAire.append(p);
+    setTimeout(() => p.remove(), 2400);
+  }
+}
+
+function construirJardin() {
+  const { W, H } = tamanoJardin();
+  if (W < 50 || H < 50) return false;
+  jardinAncho0 = W;
+  capaFlores.replaceChildren();
+  capaAire.replaceChildren();
+  flores.length = 0;
+  voladores.length = 0;
+
+  // arbustos de bugambilia sobre las colinas
+  [['izq', 0.0], ['der', 1.0]].forEach(([lado]) => {
+    const b = el('div', 'bugambilia ' + lado);
+    b.innerHTML = svgBugambilia();
+    capaFlores.append(b);
+  });
+
+  // flores iniciales repartidas por el pasto
+  const n = Math.max(9, Math.min(22, Math.round(W / 55)));
+  for (let i = 0; i < n; i++) {
+    plantar(azar(W * 0.03, W * 0.97), azar(H * 0.66, H * 0.97), null, false);
+  }
+
+  // mariposas y libélulas
+  for (let i = 0; i < 6; i++) crearVolador('mariposa', W, H);
+  for (let i = 0; i < 2; i++) crearVolador('libelula', W, H);
+  jardinListo = true;
+  return true;
+}
+
+function crearVolador(tipo, W, H) {
+  const nodo = el('div', 'volador ' + tipo);
+  nodo.innerHTML = tipo === 'mariposa' ? svgMariposa(ALAS[Math.floor(Math.random() * ALAS.length)]) : svgLibelulaJ();
+  const v = {
+    el: nodo, tipo, x: azar(0, W), y: azar(H * 0.1, H * 0.5), tx: 0, ty: 0, dir: 1,
+    vel: tipo === 'mariposa' ? azar(38, 62) : azar(90, 130), fase: azar(0, 6.28),
+    estado: 'vuela', hasta: 0, turbo: 0, atr: 0,
+  };
+  nuevoDestino(v, W, H);
+  nodo.style.width = (tipo === 'mariposa' ? azar(26, 36) : azar(54, 66)) + 'px';
+  nodo.addEventListener('pointerdown', (e) => {
+    e.stopPropagation();
+    const { W: w2, H: h2 } = tamanoJardin();
+    v.estado = 'vuela';
+    nodo.classList.remove('posada');
+    v.turbo = performance.now() / 1000 + 2;
+    v.tx = v.x < w2 / 2 ? azar(w2 * 0.6, w2 * 0.95) : azar(w2 * 0.05, w2 * 0.4);
+    v.ty = azar(h2 * 0.06, h2 * 0.4);
+  });
+  capaAire.append(nodo);
+  voladores.push(v);
+}
+
+// ---------- movimiento ----------
+function moverVolador(v, dt, ts, r) {
+  const W = r.width;
+  const H = r.height;
+  if (v.estado === 'posada') {
+    if (ts > v.hasta) {
+      v.estado = 'vuela';
+      v.el.classList.remove('posada');
+      nuevoDestino(v, W, H);
+    } else {
+      v.el.style.transform = `translate(${v.x}px, ${v.y}px) scaleX(${v.dir})`;
+      return;
+    }
+  }
+  if (atraer && ts < atraer.hasta && v.atr !== atraer.id) {
+    v.atr = atraer.id;
+    v.tx = atraer.x + azar(-50, 50);
+    v.ty = atraer.y + azar(-40, 30);
+  }
+  const dx = v.tx - v.x;
+  const dy = v.ty - v.y;
+  const d = Math.hypot(dx, dy);
+  if (d < 12) {
+    const suerte = Math.random();
+    if (v.tipo === 'mariposa' && suerte < 0.32 && flores.length) {
+      // se posa en una flor
+      const f = flores[Math.floor(Math.random() * flores.length)];
+      const fr = f.el.getBoundingClientRect();
+      v.x = fr.left - r.left + fr.width / 2 - v.el.offsetWidth / 2;
+      v.y = fr.top - r.top - v.el.offsetHeight * 0.4;
+      v.estado = 'posada';
+      v.hasta = ts + azar(2.5, 5);
+      v.el.classList.add('posada');
+    } else if (v.tipo === 'libelula' && suerte < 0.4) {
+      v.estado = 'posada';
+      v.hasta = ts + azar(1, 2.2);
+    } else {
+      nuevoDestino(v, W, H);
+    }
+    return;
+  }
+  const vel = v.vel * (ts < v.turbo ? 1.9 : 1);
+  v.x += (dx / d) * vel * dt;
+  v.y += (dy / d) * vel * dt;
+  if (Math.abs(dx) > 6) v.dir = dx >= 0 ? 1 : -1;
+  const bob = Math.sin(ts * (v.tipo === 'libelula' ? 9 : 6) + v.fase) * (v.tipo === 'libelula' ? 2 : 7);
+  v.el.style.transform = `translate(${v.x}px, ${v.y + bob}px) scaleX(${v.dir})`;
+}
+
+// Mavis olfatea las flores y persigue (y asusta) a las mariposas bajas
+function mavisEnJardin(r) {
+  if (mavis.classList.contains('oculta')) return;
+  const ahora = performance.now();
+  const cx = mvX + mvAncho / 2;
+
+  if (mvModo === 'camina') {
+    for (const f of flores) {
+      if (ahora < f.frio) continue;
+      const fr = f.el.getBoundingClientRect();
+      const fcx = fr.left + fr.width / 2;
+      if (Math.abs(fcx - cx) < Math.max(28, fr.width * 0.4) && fr.bottom > r.top + r.height * 0.6) {
+        f.frio = ahora + 12000;
+        mvCambiarModo('interaccion', 1500);
+        mavis.classList.add('olfatea');
+        setTimeout(() => mavis.classList.remove('olfatea'), 1400);
+        f.el.classList.add('olfateada');
+        setTimeout(() => f.el.classList.remove('olfateada'), 1500);
+        petalos(fcx - r.left, fr.top - r.top + 8, 4);
+        return;
+      }
+    }
+  }
+
+  let cerca = null;
+  let dmin = 9999;
+  let dxc = 0;
+  voladores.forEach((v) => {
+    if (v.tipo !== 'mariposa' || v.y < r.height * 0.4) return;
+    const dx = v.x + r.left + v.el.offsetWidth / 2 - cx;
+    if (Math.abs(dx) < dmin) { dmin = Math.abs(dx); cerca = v; dxc = dx; }
+  });
+  if (cerca && dmin < 260) {
+    if (mvModo === 'pausa') mvCambiarModo('camina', 3000);
+    if (mvModo === 'camina') mvDir = dxc >= 0 ? 1 : -1;
+    if (dmin < 70 && ahora > saltoFrio) {
+      saltoFrio = ahora + 7000;
+      mvEstado('feliz', 800);
+      cerca.turbo = ahora / 1000 + 1.6;
+      cerca.estado = 'vuela';
+      cerca.el.classList.remove('posada');
+      cerca.tx = cerca.x < r.width / 2 ? azar(r.width * 0.6, r.width * 0.95) : azar(r.width * 0.05, r.width * 0.4);
+      cerca.ty = azar(r.height * 0.06, r.height * 0.35);
+    }
+  }
+}
+
+function jardinBucle(t) {
+  requestAnimationFrame(jardinBucle);
+  if (vistaActual !== 'jardin' || !jardinListo || document.documentElement.classList.contains('sin-anim')) {
+    jardinUlt = t;
+    return;
+  }
+  const dt = Math.min(0.05, (t - (jardinUlt || t)) / 1000);
+  jardinUlt = t;
+  const r = jardin.getBoundingClientRect();
+  voladores.forEach((v) => moverVolador(v, dt, t / 1000, r));
+  if (t - jardinSniff > 350) {
+    jardinSniff = t;
+    mavisEnJardin(r);
+  }
+}
+
+// ---------- interacción ----------
+jardin.addEventListener('pointerdown', (e) => {
+  $('j-pista').classList.add('oculto');
+  const flor = e.target.closest('.flor');
+  const { r, H } = tamanoJardin();
+  const x = e.clientX - r.left;
+  const y = e.clientY - r.top;
+  if (flor) {
+    flor.classList.remove('olfateada');
+    void flor.offsetWidth;
+    flor.classList.add('olfateada');
+    setTimeout(() => flor.classList.remove('olfateada'), 1500);
+    petalos(x, y, 5);
+    if (navigator.vibrate) navigator.vibrate(15);
+    return;
+  }
+  if (y > H * 0.6) {
+    plantar(x, y, null, true);
+    petalos(x, y - 20, 4);
+    if (navigator.vibrate) navigator.vibrate(15);
+  } else {
+    atraer = { x, y, hasta: performance.now() / 1000 + 4, id: ++atraerId };
+    petalos(x, y, 3);
+  }
+});
+
+function entrarAlJardin() {
+  const { W } = tamanoJardin();
+  if (!jardinListo || Math.abs(W - jardinAncho0) > 80) construirJardin();
+  setTimeout(() => $('j-pista').classList.add('oculto'), 9000);
+}
+
+// pétalos que caen suavemente de vez en cuando
+setInterval(() => {
+  if (vistaActual !== 'jardin' || !jardinListo || document.hidden || document.documentElement.classList.contains('sin-anim')) return;
+  if (capaAire.querySelectorAll('.petalo-caida').length > 8) return;
+  const { W } = tamanoJardin();
+  const p = el('span', 'petalo-caida');
+  p.style.left = azar(0, W) + 'px';
+  p.style.setProperty('--dx', azar(-60, 60) + 'px');
+  p.style.background = ['#ffb3d9', '#ffffff', '#ffd6e8', '#ffe066', '#e6b3ff'][Math.floor(Math.random() * 5)];
+  capaAire.append(p);
+  setTimeout(() => p.remove(), 9000);
+}, 2200);
+
+requestAnimationFrame(jardinBucle);
