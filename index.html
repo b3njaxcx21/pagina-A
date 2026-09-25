@@ -229,7 +229,7 @@
           <div class="j-arboles" id="j-arboles"></div>
           <div class="j-capa" id="j-capa"></div>
           <div class="j-aire" id="j-aire"></div>
-          <p class="j-pista" id="j-pista">Toca el pasto para plantar una flor · toca el cielo para llamar a las mariposas</p>
+          <p class="j-pista" id="j-pista">Toca el pasto para plantar · toca el cielo para llamar a las mariposas · mantén presionada una flor 5 segundos para quitarla</p>
         </div>
       </div>
 
@@ -313,29 +313,79 @@
     <div class="mavis" id="mavis" aria-hidden="true">
       <div class="mv-salto">
         <svg class="mavis-svg" id="mavis-svg" viewBox="0 0 130 92">
-          <ellipse cx="66" cy="88" rx="40" ry="3.5" fill="rgba(0,0,0,.14)"/>
-          <path class="mv-cola" d="M31 54 C5 54 4 24 20 20" fill="none" stroke="#1c1c24" stroke-width="9" stroke-linecap="round"/>
-          <rect class="mv-pata p2" x="47" y="62" width="9" height="24" rx="4.5" fill="#2e2e3b"/>
-          <rect class="mv-pata p4" x="83" y="62" width="9" height="24" rx="4.5" fill="#2e2e3b"/>
-          <ellipse class="mv-cuerpo" cx="62" cy="58" rx="35" ry="19" fill="#1c1c24"/>
-          <rect class="mv-pata p1" x="34" y="62" width="10" height="24" rx="5" fill="#1c1c24"/>
-          <rect class="mv-pata p3" x="70" y="62" width="10" height="24" rx="5" fill="#1c1c24"/>
+          <defs>
+            <linearGradient id="mvPiel" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3a3a47"/><stop offset=".3" stop-color="#1e1e26"/><stop offset="1" stop-color="#0b0b10"/></linearGradient>
+            <linearGradient id="mvLejos" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#22222b"/><stop offset="1" stop-color="#09090d"/></linearGradient>
+            <radialGradient id="mvCara" cx="58%" cy="38%" r="72%"><stop offset="0" stop-color="#33333f"/><stop offset=".55" stop-color="#1c1c24"/><stop offset="1" stop-color="#0d0d12"/></radialGradient>
+            <radialGradient id="mvIris" cx="38%" cy="32%" r="75%"><stop offset="0" stop-color="#f6f08a"/><stop offset=".55" stop-color="#b9cc3c"/><stop offset="1" stop-color="#5b781d"/></radialGradient>
+          </defs>
+          <ellipse cx="66" cy="88" rx="42" ry="3.6" fill="rgba(0,0,0,.2)"/>
+          <path class="mv-cola" d="M36 50 C18 55 3 45 7 28 C8 21 13 16 17.5 17.5 C20 19 19 22.5 17 26 C14 33 18 40 28 43 C33 45 37 46 39 47 Z" fill="url(#mvLejos)"/>
+          <path d="M9 30 C9 24 12 19 16 18.5 M14 40 C20 45 28 46 36 47" fill="none" stroke="#4b4b5c" stroke-width=".9" opacity=".55" stroke-linecap="round"/>
+          <g class="mv-pata p2">
+            <path d="M47 61 C45.6 69 48.4 76 50.4 80 L49.6 84.6 C49.2 87.4 51 88 53.6 87.8 L56 87.6 C57.2 87.4 57.6 86 56.2 85 L55.4 81 C56.6 74 57.4 68 57 61 Z" fill="url(#mvLejos)"/>
+            <ellipse cx="50.8" cy="86.6" rx="5.6" ry="2.5" fill="#1c1c25"/>
+            <path d="M48.6 87.6 v-2 M50.8 88 v-2 M53 87.6 v-2" stroke="#000" stroke-width=".6" opacity=".6"/>
+          </g>
+          <g class="mv-pata p4">
+            <path d="M83 61 C83.4 69 84.4 76 84.8 81 L84.4 85 C84.2 87.6 86 88 88.4 88 L90.6 87.8 C92 87.6 92.2 86.2 91.2 85 L90.8 81 C91.2 75 92 68 93 61 Z" fill="url(#mvLejos)"/>
+            <ellipse cx="86.8" cy="86.6" rx="5.6" ry="2.5" fill="#1c1c25"/>
+            <path d="M84.6 87.6 v-2 M86.8 88 v-2 M89 87.6 v-2" stroke="#000" stroke-width=".6" opacity=".6"/>
+          </g>
+          <g class="mv-cuerpo">
+            <path d="M27 57 C26 42 41 36 62 36 C83 36 98 42 98 55 C98 68 83 77 62 77 C41 77 27 71 27 57 Z" fill="url(#mvPiel)"/>
+            <path d="M31 47 C42 38 56 36 70 36.5 C84 37 94 41 97 50" fill="none" stroke="#5a5a6e" stroke-width="1.4" opacity=".55" stroke-linecap="round"/>
+            <ellipse cx="44" cy="60" rx="14" ry="15.5" fill="#2a2a34" opacity=".55"/>
+            <ellipse cx="83" cy="59" rx="12" ry="14" fill="#2a2a34" opacity=".45"/>
+            <path d="M38 44 q4 -2 8 0 M50 41 q4 -2 8 0 M62 40 q4 -2 8 0 M74 41 q4 -2 8 0 M44 50 q4 -2 8 0 M58 48 q4 -2 8 0 M72 49 q4 -2 8 0 M36 58 q4 -2 8 0 M50 56 q4 -2 8 0 M64 57 q4 -2 8 0 M78 57 q4 -2 8 0 M44 66 q4 -2 8 0 M60 66 q4 -2 8 0" fill="none" stroke="#5d5d70" stroke-width=".8" opacity=".5" stroke-linecap="round"/>
+            <path d="M88 44 C96 44 100 52 96 62 C93 70 86 75 80 76 C88 68 90 56 88 44Z" fill="#242430" opacity=".6"/>
+            <path d="M32 66 C44 74 62 76 82 74" fill="none" stroke="#000" stroke-width="1.6" opacity=".4" stroke-linecap="round"/>
+          </g>
+          <g class="mv-pata p1">
+            <path d="M34 61 C32.6 69 35.4 76 37.4 80 L36.6 84.6 C36.2 87.4 38 88 40.6 87.8 L43 87.6 C44.2 87.4 44.6 86 43.2 85 L42.4 81 C43.6 74 44.4 68 44 61 Z" fill="url(#mvPiel)"/>
+            <ellipse cx="38.6" cy="86.8" rx="6.2" ry="2.7" fill="#2a2a35"/>
+            <path d="M36.2 87.8 v-2.2 M38.6 88.2 v-2.2 M41 87.8 v-2.2" stroke="#000" stroke-width=".6" opacity=".6"/>
+            <path d="M35 64 C34.4 72 34.6 80 35.4 84" fill="none" stroke="#5a5a6c" stroke-width=".8" opacity=".5"/>
+          </g>
+          <g class="mv-pata p3">
+            <path d="M70 61 C70.4 69 71.4 76 71.8 81 L71.4 85 C71.2 87.6 73 88 75.4 88 L77.6 87.8 C79 87.6 79.2 86.2 78.2 85 L77.8 81 C78.2 75 79 68 80 61 Z" fill="url(#mvPiel)"/>
+            <ellipse cx="74.6" cy="86.8" rx="6.2" ry="2.7" fill="#2a2a35"/>
+            <path d="M72.2 87.8 v-2.2 M74.6 88.2 v-2.2 M77 87.8 v-2.2" stroke="#000" stroke-width=".6" opacity=".6"/>
+            <path d="M71 64 C70.4 72 70.6 80 71.4 84" fill="none" stroke="#5a5a6c" stroke-width=".8" opacity=".5"/>
+          </g>
           <g class="mv-cabeza">
-            <path d="M85 31 L86 10 L100 24 Z" fill="#1c1c24"/>
-            <path d="M89 27 L89.5 16 L96 24 Z" fill="#f49ab5"/>
-            <path d="M101 24 L113 10 L114 32 Z" fill="#1c1c24"/>
-            <path d="M106 25 L112 17 L112.5 29 Z" fill="#f49ab5"/>
-            <circle cx="99" cy="40" r="18" fill="#1c1c24"/>
+            <path d="M83 32 L83.5 8.5 L98 22 Z" fill="#0f0f14"/>
+            <path d="M86.6 27 L87 14.5 L94 22 Z" fill="#4a3541"/>
+            <path d="M84.6 12 L84.4 19 M86 12.6 L86 18" stroke="#3a3a48" stroke-width=".6" opacity=".7"/>
+            <path d="M101 22.5 L113.4 7.5 L116.2 32 Z" fill="url(#mvCara)"/>
+            <path d="M105.6 24.5 L112.4 14.5 L113.6 29.5 Z" fill="#5a3f4b"/>
+            <path d="M109 17 L109.6 26 M111 16 L111.6 26" stroke="#c9a8b4" stroke-width=".5" opacity=".55"/>
+            <path d="M113 9 L112 16" stroke="#3d3d4e" stroke-width=".7"/>
+            <path d="M82 42 C81 29 89 21 100 21 C112 21 119.4 30 119.4 41 C119.4 47 117.6 52 113.6 56 C109.6 60.4 102 62.4 96 61.4 C88 60 83 52 82 42Z" fill="url(#mvCara)"/>
+            <path d="M84 50 C86 58 92 62 99 62 C92 63 85 59 83 52Z" fill="#101016" opacity=".7"/>
+            <path d="M88 25.5 C92 21.4 99 20.2 106 21.4 C111 22.4 115 25 117 29" fill="none" stroke="#5c5c72" stroke-width="1.1" opacity=".55" stroke-linecap="round"/>
+            <path d="M99 24 q1.4 6 -0.8 11 M104 24.5 q0.8 5 -0.6 9" fill="none" stroke="#5c5c72" stroke-width=".7" opacity=".4"/>
+            <ellipse cx="113.4" cy="47.6" rx="8" ry="6.4" fill="#262631"/>
+            <path d="M105.6 50 C108 55 114 56 118.4 51.6" fill="none" stroke="#000" stroke-width=".8" opacity=".35"/>
             <g class="mv-ojo">
-              <ellipse cx="106" cy="38" rx="4.4" ry="5.2" fill="#ffe066"/>
-              <ellipse cx="107" cy="38.5" rx="1.7" ry="3.8" fill="#111"/>
-              <circle cx="104.8" cy="36" r="1.2" fill="#fff"/>
+              <path d="M102.4 37.6 C103.8 33.2 110.2 32.6 114 36.4 C111.4 41.4 105 41.8 102.4 37.6Z" fill="#08080c"/>
+              <ellipse class="iris" cx="108.2" cy="37.2" rx="4.7" ry="3.9" fill="url(#mvIris)"/>
+              <ellipse cx="108.4" cy="37.2" rx="1.3" ry="3.6" fill="#040407"/>
+              <circle cx="106.6" cy="35.7" r="1.15" fill="#fff" opacity=".92"/>
+              <circle cx="110" cy="38.8" r=".5" fill="#fff" opacity=".6"/>
+              <path d="M102.4 37.6 C103.8 33.2 110.2 32.6 114 36.4" fill="none" stroke="#000" stroke-width="1.1" opacity=".7"/>
+              <path d="M89.4 36.8 C90.8 33.4 96.4 33 99 36 C96.8 40.2 91.4 40.4 89.4 36.8Z" fill="#08080c"/>
+              <ellipse class="iris" cx="94.3" cy="36.5" rx="3.9" ry="3.3" fill="url(#mvIris)"/>
+              <ellipse cx="94.5" cy="36.5" rx="1.1" ry="3.1" fill="#040407"/>
+              <circle cx="93" cy="35.2" r=".95" fill="#fff" opacity=".9"/>
+              <path d="M89.4 36.8 C90.8 33.4 96.4 33 99 36" fill="none" stroke="#000" stroke-width="1" opacity=".7"/>
             </g>
-            <path class="mv-ojo-feliz" d="M101 39 Q106 33 111 39" fill="none" stroke="#ffe066" stroke-width="2.6" stroke-linecap="round"/>
-            <circle cx="114.5" cy="44" r="2.2" fill="#f49ab5"/>
-            <path d="M114.5 46 Q112 50 108 48.5" fill="none" stroke="#f49ab5" stroke-width="1.4" stroke-linecap="round"/>
-            <circle cx="100" cy="48" r="4.5" fill="#f49ab5" opacity=".35"/>
-            <path d="M113 44 L127 40 M113 46 L127 47" stroke="#8a8a9a" stroke-width="1.2" stroke-linecap="round"/>
+            <path class="mv-ojo-feliz" d="M103 38.4 Q108.4 33.4 113.6 38.4 M90 37.4 Q94.4 33.2 98.6 37.4" fill="none" stroke="#cbc548" stroke-width="2" stroke-linecap="round"/>
+            <path d="M116 43.6 h5.2 l-2.6 3.4 z" fill="#b56b7b"/>
+            <path d="M117.2 44.2 h1.8" stroke="#e8b9c4" stroke-width=".7" stroke-linecap="round"/>
+            <path d="M118.6 47 v2.2 M118.6 49.2 q-3.2 3.2 -7 1.8 M118.6 49.2 q2 2.6 4.6 1.6" fill="none" stroke="#4d3a45" stroke-width=".9" stroke-linecap="round"/>
+            <g fill="#3d3d4e" opacity=".8"><circle cx="112" cy="46" r=".45"/><circle cx="114" cy="48" r=".45"/><circle cx="111" cy="49" r=".45"/><circle cx="115" cy="50" r=".45"/></g>
+            <path d="M114 46.4 C119 44 124 42.2 129.6 41 M114.4 47.8 C120 47 125 47.4 130 48.6 M114 49.4 C119 51.4 124 53.8 128.6 55.4 M112 44.4 C115 40.6 119 38.4 123 37.6" fill="none" stroke="#e6e6f0" stroke-width=".6" opacity=".75" stroke-linecap="round"/>
           </g>
         </svg>
       </div>

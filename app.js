@@ -1933,7 +1933,7 @@ window.addEventListener('focus', revisarInactividad);
 window.addEventListener('pageshow', revisarInactividad);
 
 // =============================================
-//  JARDÍN: flores, árboles, hamaca, mariposas, libélulas y Mavis
+//  JARDÍN: flores, árboles, hamaca, mariposas monarca, libélulas y Mavis
 // =============================================
 const jardin = $('jardin');
 const capaArboles = $('j-arboles');
@@ -1944,8 +1944,8 @@ let jardinAncho0 = 0;
 let jardinW = 0;
 let jardinH = 0;
 let jardinLeft = 0;
-const flores = [];        // { el, frio, x, y }
-const voladores = [];     // mariposas y libélulas
+const flores = [];        // { el, frio, roce, x, y }
+const voladores = [];     // monarcas y libélulas
 let atraer = null;        // { x, y, hasta, id }
 let atraerId = 0;
 let jardinUlt = 0;
@@ -1956,15 +1956,11 @@ let hamaca = null;        // { el, bal, slot, cx, pieY }
 let irAHamaca = false;
 let proximaSiesta = 0;
 let descansoHasta = 0;
+let mantener = null;      // { f, timer, ring, x, y }
 
 const azarEntre = (a, b) => a + Math.random() * (b - a);
 const limitar = (v, a, b) => Math.min(b, Math.max(a, v));
-
-const TULIPANES = [
-  ['#d62839', '#8f1523'], ['#f4c542', '#c79512'], ['#ef7fa1', '#c14a72'], ['#8a4fc4', '#5a2d8e'],
-  ['#f28c1e', '#b85f08'], ['#f6f1e7', '#c9c2b0'], ['#d94a9a', '#96235f'],
-];
-const ALAS = [['#e8891c', '#f5c96a'], ['#5aa9d6', '#b7dcf0'], ['#d67aa5', '#f0c1d6'], ['#e8c62c', '#f6e8a0'], ['#8a6cc4', '#cfc0ec'], ['#f4f1ea', '#d6dde6']];
+const elige = (lista) => lista[Math.floor(Math.random() * lista.length)];
 
 // ---------- color ----------
 function mezclar(hex, con, f) {
@@ -1974,154 +1970,303 @@ function mezclar(hex, con, f) {
   return '#' + [0, 2, 4].map((i) => c(i).toString(16).padStart(2, '0')).join('');
 }
 
-const DEF_HOJA = (id) => `<linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6db66a"/><stop offset="1" stop-color="#2f7a38"/></linearGradient>`;
+const DEF_HOJA = (id) => `<linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7cc078"/><stop offset=".55" stop-color="#4a9a4a"/><stop offset="1" stop-color="#2a6c33"/></linearGradient>`;
+const DEF_TALLO = (id) => `<linearGradient id="${id}" x1="0" x2="1"><stop offset="0" stop-color="#2f7034"/><stop offset=".5" stop-color="#58a251"/><stop offset="1" stop-color="#2a6a30"/></linearGradient>`;
+
+// paletas: [claro, base, oscuro]
+const TULIPANES = [
+  { c: ['#f0606b', '#d62839', '#8f1523'] },                                   // rojo
+  { c: ['#ffe98a', '#f4c430', '#b88a0a'] },                                   // amarillo
+  { c: ['#f9b6cd', '#ee7ba2', '#b23a66'] },                                   // rosa
+  { c: ['#c5a1ec', '#8a4fc4', '#57298c'] },                                   // morado
+  { c: ['#ffc37a', '#f28c1e', '#b4560a'] },                                   // naranja
+  { c: ['#ffffff', '#f1ebdf', '#c8bfa8'] },                                   // blanco
+  { c: ['#ffab98', '#f2634e', '#b03323'] },                                   // coral
+  { c: ['#f78ccb', '#d63a95', '#8c1660'] },                                   // fucsia
+  { c: ['#c8546f', '#8f1f3d', '#4a0a1c'] },                                   // vino
+  { c: ['#e6d6f8', '#bb9ce2', '#8460b8'] },                                   // lavanda
+  { c: ['#ffffff', '#f1ebdf', '#c8bfa8'], borde: '#d62839' },                 // blanco con borde rojo
+  { c: ['#ffe98a', '#f4c430', '#b88a0a'], borde: '#d62839' },                 // amarillo con llamas rojas
+  { c: ['#ffffff', '#f4eaf2', '#cdb6cb'], borde: '#d94a9a' },                 // blanco con borde fucsia
+];
+const PEONIAS = [
+  { a: ['#ec9dbb', '#f9d3e2'], b: ['#e07aa2', '#f4b5cd'], c: ['#cf4f82', '#ea8db1'] },   // rosa
+  { a: ['#f5a08e', '#fbd0c4'], b: ['#ee7c68', '#f7b4a6'], c: ['#dc5a48', '#f09080'] },   // coral
+  { a: ['#efdde0', '#fff7f7'], b: ['#e8c9ce', '#faeef0'], c: ['#dfb0ba', '#f4dadd'] },   // blanco rosado
+  { a: ['#d9508f', '#f08cb8'], b: ['#c02f74', '#e46aa0'], c: ['#9c1858', '#d24a86'] },   // magenta
+  { a: ['#f6d98a', '#fdf0c6'], b: ['#f0c65c', '#f9e2a0'], c: ['#e3a92f', '#f2cf72'] },   // amarillo crema
+  { a: ['#b98ae0', '#e0cdf5'], b: ['#9c66cf', '#cdb0ee'], c: ['#7a44ad', '#b78ae0'] },   // lila
+];
+const NARCISOS = [
+  { p: '#ffe066', pb: '#e6b800', copa: '#f4a300', dentro: '#c97a00' },
+  { p: '#f8f4e6', pb: '#e4dcbc', copa: '#f4a300', dentro: '#d4620a' },
+  { p: '#f8f4e6', pb: '#e4dcbc', copa: '#ffe066', dentro: '#e0a400' },
+  { p: '#ffd24d', pb: '#dea800', copa: '#ff9a1f', dentro: '#c25a00' },
+];
+const JACINTOS = ['#7f5fc4', '#5079d6', '#c862ac', '#e7e0f5', '#a678d8', '#4d5fb8'];
+const MARGARITAS = [
+  { p: '#ffffff', c: '#f6c21c' }, { p: '#f7c4d9', c: '#f4b400' }, { p: '#ffe680', c: '#c97c10' }, { p: '#e6d4f6', c: '#f0b800' },
+];
+const LAVANDAS = ['#8a6cc4', '#6f7fd6', '#b58ad6', '#d8c8ee'];
 
 // ---------- flores ----------
-function svgTulipan([c, oscuro]) {
+function svgTulipan(spec) {
+  const [luz, base, osc] = spec.c;
   const g = 'g' + (++gid);
   const h = 'h' + gid;
+  const t = 't' + gid;
+  const b = 'b' + gid;
+  const borde = spec.borde
+    ? `<linearGradient id="${b}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${spec.borde}" stop-opacity="0"/><stop offset=".55" stop-color="${spec.borde}" stop-opacity=".15"/><stop offset="1" stop-color="${spec.borde}" stop-opacity=".9"/></linearGradient>`
+    : '';
+  const frente = 'M14 30 C15 48 21 60 25 60 C29 60 35 48 36 30 C32 35 28 26 25 20 C22 26 18 35 14 30Z';
   return `<svg viewBox="0 0 50 120" aria-hidden="true">
   <defs>
-    <linearGradient id="${g}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${mezclar(c, '#ffffff', 0.32)}"/><stop offset=".55" stop-color="${c}"/><stop offset="1" stop-color="${oscuro}"/></linearGradient>
-    ${DEF_HOJA(h)}
+    <linearGradient id="${g}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${luz}"/><stop offset=".5" stop-color="${base}"/><stop offset="1" stop-color="${osc}"/></linearGradient>
+    <linearGradient id="${g}s" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="${osc}"/><stop offset=".5" stop-color="${base}"/><stop offset="1" stop-color="${osc}"/></linearGradient>
+    ${DEF_HOJA(h)}${DEF_TALLO(t)}${borde}
   </defs>
-  <path d="M25 118 C24 92 26 72 25 54" fill="none" stroke="#3a7d3a" stroke-width="3" stroke-linecap="round"/>
-  <path d="M25 112 C9 100 6 78 12 64 C21 78 24 96 25 112Z" fill="url(#${h})"/>
-  <path d="M25 104 C40 94 44 76 39 62 C31 74 27 90 25 104Z" fill="url(#${h})"/>
-  <path d="M25 108 C16 96 13 82 13 70" fill="none" stroke="rgba(255,255,255,.25)" stroke-width=".8"/>
-  <path d="M11 28 C9 46 17 60 25 60 C33 60 41 46 39 28 C35 33 30 22 25 17 C20 22 15 33 11 28Z" fill="${oscuro}"/>
-  <path d="M14 30 C15 48 21 60 25 60 C29 60 35 48 36 30 C32 35 28 26 25 20 C22 26 18 35 14 30Z" fill="url(#${g})"/>
-  <path d="M25 22 C24 34 24 48 25 58" fill="none" stroke="rgba(0,0,0,.12)" stroke-width=".8"/>
+  <path d="M25 118 C24 92 26 72 25 54" fill="none" stroke="url(#${t})" stroke-width="3.2" stroke-linecap="round"/>
+  <path d="M25 112 C8 100 5 77 11 62 C21 77 24 96 25 112Z" fill="url(#${h})"/>
+  <path d="M25 112 C14 98 12 80 12 66" fill="none" stroke="rgba(255,255,255,.35)" stroke-width=".7"/>
+  <path d="M25 104 C41 94 45 75 40 60 C31 73 27 90 25 104Z" fill="url(#${h})"/>
+  <path d="M25 104 C36 92 39 76 39 63" fill="none" stroke="rgba(255,255,255,.35)" stroke-width=".7"/>
+  <path d="M25 58 C23 64 24 70 25 76" fill="none" stroke="#3a7d3a" stroke-width="4.2" stroke-linecap="round" opacity=".55"/>
+  <path d="M11 28 C9 46 17 60 25 60 C33 60 41 46 39 28 C35 33 30 22 25 17 C20 22 15 33 11 28Z" fill="url(#${g}s)"/>
+  <path d="M25 17 C27 30 30 44 25 60 C33 60 41 46 39 28 C35 33 30 22 25 17Z" fill="${osc}" opacity=".28"/>
+  <path d="${frente}" fill="url(#${g})"/>
+  ${spec.borde ? `<path d="${frente}" fill="url(#${b})"/>` : ''}
+  <path d="M25 21 C24 34 24 48 25 59 M19 32 C20 44 23 54 25 59 M31 32 C30 44 27 54 25 59" fill="none" stroke="rgba(0,0,0,.13)" stroke-width=".7"/>
+  <path d="M19 30 C18 40 20 48 22 54" fill="none" stroke="rgba(255,255,255,.55)" stroke-width="1.1" stroke-linecap="round"/>
+  <ellipse cx="25" cy="19.5" rx="4.5" ry="1.6" fill="${osc}" opacity=".55"/>
 </svg>`;
 }
 
-function svgPeonia() {
+function svgPeonia(pal) {
   const cx = 45;
   const cy = 42;
   const id = 'p' + (++gid);
   const h = 'h' + gid;
+  const t = 't' + gid;
   let p = '';
-  const capa = (n, r, rx, ry, cIn, cOut, rot) => {
+  const capa = (n, r, rx, ry, k, rot, jit) => {
     for (let i = 0; i < n; i++) {
-      p += `<ellipse cx="${cx}" cy="${cy - r}" rx="${rx}" ry="${ry}" fill="url(#${id}${cIn})" stroke="rgba(120,30,70,.18)" stroke-width=".7" transform="rotate(${(360 / n) * i + rot} ${cx} ${cy})"/>`;
+      const a = (360 / n) * i + rot + (Math.random() - 0.5) * jit;
+      const rr = r + (Math.random() - 0.5) * 2.2;
+      p += `<g transform="rotate(${a.toFixed(1)} ${cx} ${cy})"><ellipse cx="${cx}" cy="${(cy - rr).toFixed(1)}" rx="${rx}" ry="${ry}" fill="url(#${id}${k})" stroke="rgba(110,25,60,.2)" stroke-width=".7"/><path d="M${cx} ${cy - rr + ry * 0.75} C${cx - 3} ${cy - rr} ${cx - 2} ${cy - rr - ry * 0.5} ${cx} ${cy - rr - ry * 0.85} M${cx + 4} ${cy - rr + ry * 0.5} C${cx + 5} ${cy - rr} ${cx + 4} ${cy - rr - ry * 0.4} ${cx + 3} ${cy - rr - ry * 0.7}" fill="none" stroke="rgba(120,30,70,.14)" stroke-width=".6"/></g>`;
     }
   };
-  capa(8, 20, 15, 19, 'a', 0, 0);
-  capa(7, 13, 12, 15, 'b', 0, 20);
-  capa(5, 6, 9, 11, 'c', 0, 10);
-  const grad = (n, dentro, fuera) => `<radialGradient id="${id}${n}" cx="50%" cy="80%" r="80%"><stop offset="0" stop-color="${dentro}"/><stop offset="1" stop-color="${fuera}"/></radialGradient>`;
+  capa(9, 21, 15, 19, 'a', 0, 10);
+  capa(8, 15, 13, 16, 'b', 18, 12);
+  capa(7, 9.5, 11, 13, 'c', 8, 14);
+  capa(5, 4.5, 8, 9.5, 'c', 30, 18);
+  const grad = (k, [dentro, fuera]) => `<radialGradient id="${id}${k}" cx="50%" cy="85%" r="85%"><stop offset="0" stop-color="${dentro}"/><stop offset="1" stop-color="${fuera}"/></radialGradient>`;
+  let est = '';
+  for (let i = 0; i < 16; i++) {
+    const a = (i / 16) * Math.PI * 2;
+    est += `<path d="M${cx} ${cy} L${(cx + Math.cos(a) * 7).toFixed(1)} ${(cy + Math.sin(a) * 7).toFixed(1)}" stroke="#d9a520" stroke-width=".8"/><circle cx="${(cx + Math.cos(a) * 7.4).toFixed(1)}" cy="${(cy + Math.sin(a) * 7.4).toFixed(1)}" r="1" fill="#f3c93e"/>`;
+  }
   return `<svg viewBox="0 0 90 130" aria-hidden="true">
-  <defs>${grad('a', '#ec9dbb', '#f9d3e2')}${grad('b', '#e07aa2', '#f4b5cd')}${grad('c', '#cf4f82', '#ea8db1')}${DEF_HOJA(h)}</defs>
-  <path d="M45 128 C44 106 46 84 45 66" fill="none" stroke="#3a7d3a" stroke-width="3.5" stroke-linecap="round"/>
-  <path d="M45 118 C24 108 16 90 22 76 C34 88 42 102 45 118Z" fill="url(#${h})"/>
-  <path d="M45 108 C66 100 74 82 68 70 C56 80 48 94 45 108Z" fill="url(#${h})"/>
+  <defs>${grad('a', pal.a)}${grad('b', pal.b)}${grad('c', pal.c)}${DEF_HOJA(h)}${DEF_TALLO(t)}</defs>
+  <path d="M45 128 C44 106 46 84 45 66" fill="none" stroke="url(#${t})" stroke-width="3.6" stroke-linecap="round"/>
+  <path d="M45 118 C22 108 14 90 21 75 C34 87 42 102 45 118Z" fill="url(#${h})"/>
+  <path d="M45 118 C31 106 25 92 24 80" fill="none" stroke="rgba(255,255,255,.3)" stroke-width=".8"/>
+  <path d="M45 108 C68 100 76 82 69 69 C56 79 48 94 45 108Z" fill="url(#${h})"/>
+  <path d="M45 108 C57 98 64 86 66 74" fill="none" stroke="rgba(255,255,255,.3)" stroke-width=".8"/>
+  <ellipse cx="${cx}" cy="${cy + 26}" rx="13" ry="4" fill="rgba(0,0,0,.12)"/>
   ${p}
-  <circle cx="${cx}" cy="${cy}" r="5.5" fill="#e8b93a"/>
-  <g fill="#b5820f"><circle cx="43" cy="40" r="1"/><circle cx="47" cy="41" r="1"/><circle cx="45" cy="45" r="1"/></g>
+  <circle cx="${cx}" cy="${cy}" r="5.5" fill="#e6b229"/>
+  ${est}
 </svg>`;
 }
 
-function svgNarciso() {
+function svgNarciso(v) {
   const h = 'h' + (++gid);
+  const t = 't' + gid;
+  const k = 'n' + gid;
   let p = '';
   for (let i = 0; i < 6; i++) {
-    p += `<ellipse cx="30" cy="16" rx="8" ry="15" fill="#f8f1cf" stroke="#e6d89a" stroke-width=".8" transform="rotate(${i * 60} 30 32)"/>`;
+    p += `<g transform="rotate(${i * 60} 30 32)"><ellipse cx="30" cy="16" rx="8.4" ry="15.5" fill="url(#${k})" stroke="${v.pb}" stroke-width=".7"/><path d="M30 30 C28.5 22 28.5 14 30 5 M27 28 C25.5 21 26 15 27.5 9 M33 28 C34.5 21 34 15 32.5 9" fill="none" stroke="rgba(0,0,0,.09)" stroke-width=".6"/></g>`;
   }
   return `<svg viewBox="0 0 60 110" aria-hidden="true">
-  <defs>${DEF_HOJA(h)}</defs>
-  <path d="M30 108 C29 84 31 60 30 40" fill="none" stroke="#3a7d3a" stroke-width="3" stroke-linecap="round"/>
-  <path d="M30 104 C14 92 10 70 16 56 C24 70 28 88 30 104Z" fill="url(#${h})"/>
+  <defs>${DEF_HOJA(h)}${DEF_TALLO(t)}<radialGradient id="${k}" cx="50%" cy="90%" r="90%"><stop offset="0" stop-color="${mezclar(v.p, '#000000', 0.12)}"/><stop offset="1" stop-color="${v.p}"/></radialGradient>
+  <linearGradient id="${k}c" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${mezclar(v.copa, '#ffffff', 0.25)}"/><stop offset="1" stop-color="${v.copa}"/></linearGradient></defs>
+  <path d="M30 108 C29 84 31 60 30 40" fill="none" stroke="url(#${t})" stroke-width="3.2" stroke-linecap="round"/>
+  <path d="M30 104 C13 92 9 69 15 55 C24 70 28 88 30 104Z" fill="url(#${h})"/>
+  <path d="M30 100 C42 90 46 74 43 62 C36 73 32 88 30 100Z" fill="url(#${h})"/>
   ${p}
-  <ellipse cx="30" cy="32" rx="8" ry="6" fill="#e8a300"/>
-  <ellipse cx="30" cy="30" rx="5.5" ry="3.6" fill="#c97a00"/>
+  <ellipse cx="30" cy="32" rx="9" ry="6.6" fill="url(#${k}c)"/>
+  <path d="M21.5 31 C22 28 24 28.5 25 27.5 C26 29 27.5 27 28.5 27.6 C29.5 28.8 31 27 32 27.6 C33 28.4 34.5 27.2 35.5 27.8 C36.5 28.6 38 28.6 38.5 31" fill="none" stroke="${v.dentro}" stroke-width="1"/>
+  <ellipse cx="30" cy="31" rx="6" ry="3.8" fill="${v.dentro}"/>
+  <g fill="#f3d36a"><circle cx="28" cy="30.6" r=".9"/><circle cx="32" cy="30.4" r=".9"/><circle cx="30" cy="32" r=".9"/></g>
 </svg>`;
 }
 
-function svgJacinto(color = '#7f5fc4') {
+function svgJacinto(color) {
   const h = 'h' + (++gid);
+  const t = 't' + gid;
   let f = '';
-  for (let i = 0; i < 15; i++) {
-    const y = 58 - i * 3.4;
-    const w = 11 - i * 0.55;
-    f += `<circle cx="${25 - w * 0.45}" cy="${y}" r="${4.6 - i * .15}" fill="${mezclar(color, '#ffffff', (i % 3) * 0.1)}"/><circle cx="${25 + w * 0.45}" cy="${y - 1.6}" r="${4.6 - i * .15}" fill="${mezclar(color, '#000000', (i % 2) * 0.1)}"/>`;
+  for (let i = 0; i < 22; i++) {
+    const y = 60 - i * 2.4;
+    const w = 11 - i * 0.38;
+    const r = 3.9 - i * 0.1;
+    [[-1, 0], [1, -1.6], [0, -0.8]].forEach(([lado, dy], j) => {
+      const x = 25 + lado * w * 0.5;
+      const col = mezclar(color, j === 0 ? '#ffffff' : '#000000', j === 0 ? 0.18 : j === 1 ? 0.12 : 0.02);
+      f += `<circle cx="${x.toFixed(1)}" cy="${(y + dy).toFixed(1)}" r="${r.toFixed(1)}" fill="${col}"/><circle cx="${(x - r * 0.25).toFixed(1)}" cy="${(y + dy - r * 0.3).toFixed(1)}" r="${(r * 0.32).toFixed(1)}" fill="rgba(255,255,255,.45)"/>`;
+    });
   }
   return `<svg viewBox="0 0 50 120" aria-hidden="true">
-  <defs>${DEF_HOJA(h)}</defs>
-  <path d="M25 118 C24 96 26 80 25 56" fill="none" stroke="#3a7d3a" stroke-width="3" stroke-linecap="round"/>
-  <path d="M25 116 C8 104 6 84 12 70 C20 84 24 100 25 116Z" fill="url(#${h})"/>
-  <path d="M25 116 C42 104 44 84 38 70 C30 84 26 100 25 116Z" fill="url(#${h})"/>
+  <defs>${DEF_HOJA(h)}${DEF_TALLO(t)}</defs>
+  <path d="M25 118 C24 96 26 80 25 56" fill="none" stroke="url(#${t})" stroke-width="3.2" stroke-linecap="round"/>
+  <path d="M25 116 C7 104 5 84 11 69 C20 84 24 100 25 116Z" fill="url(#${h})"/>
+  <path d="M25 116 C43 104 45 84 39 69 C30 84 26 100 25 116Z" fill="url(#${h})"/>
   ${f}
+</svg>`;
+}
+
+function svgMargarita(v) {
+  const h = 'h' + (++gid);
+  const t = 't' + gid;
+  let p = '';
+  for (let i = 0; i < 16; i++) {
+    p += `<g transform="rotate(${i * 22.5} 30 30)"><ellipse cx="30" cy="15" rx="3.4" ry="12" fill="${v.p}" stroke="rgba(0,0,0,.14)" stroke-width=".5"/><path d="M30 24 L30 6" stroke="rgba(0,0,0,.08)" stroke-width=".5"/></g>`;
+  }
+  return `<svg viewBox="0 0 60 100" aria-hidden="true">
+  <defs>${DEF_HOJA(h)}${DEF_TALLO(t)}<radialGradient id="c${gid}" cx="40%" cy="35%" r="70%"><stop offset="0" stop-color="${mezclar(v.c, '#ffffff', .35)}"/><stop offset="1" stop-color="${mezclar(v.c, '#000000', .25)}"/></radialGradient></defs>
+  <path d="M30 98 C29 76 31 58 30 42" fill="none" stroke="url(#${t})" stroke-width="2.6" stroke-linecap="round"/>
+  <path d="M30 88 C18 82 13 70 15 62 C23 68 28 78 30 88Z" fill="url(#${h})"/>
+  <path d="M30 80 C42 74 46 63 44 56 C37 61 32 70 30 80Z" fill="url(#${h})"/>
+  ${p}
+  <circle cx="30" cy="30" r="6.4" fill="url(#c${gid})" stroke="rgba(0,0,0,.15)" stroke-width=".5"/>
+  <g fill="rgba(0,0,0,.22)"><circle cx="28" cy="28" r=".6"/><circle cx="32" cy="29" r=".6"/><circle cx="30" cy="32" r=".6"/><circle cx="27" cy="31" r=".6"/><circle cx="33" cy="32" r=".6"/></g>
+</svg>`;
+}
+
+function svgLavanda(color) {
+  const h = 'h' + (++gid);
+  let s = '';
+  const tallos = [[-16, 0.86], [-7, 1], [3, 0.94], [12, 0.82], [20, 0.7]];
+  tallos.forEach(([dx, esc]) => {
+    const x0 = 30;
+    const yTop = 104 - 66 * esc;
+    s += `<path d="M${x0} 106 C${x0 + dx * 0.2} 88 ${x0 + dx * 0.7} 70 ${x0 + dx} ${yTop}" fill="none" stroke="#5f8f5a" stroke-width="1.4" stroke-linecap="round"/>`;
+    for (let i = 0; i < 13; i++) {
+      const tt = i / 12;
+      const x = x0 + dx * (0.55 + 0.45 * tt) + (i % 2 ? 1.6 : -1.6);
+      const y = yTop + 22 * (1 - tt) - 4 + (i % 3);
+      s += `<ellipse cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" rx="2.1" ry="3.1" fill="${mezclar(color, i % 2 ? '#ffffff' : '#000000', 0.12)}" transform="rotate(${(dx / 3).toFixed(0)} ${x.toFixed(1)} ${y.toFixed(1)})"/>`;
+    }
+  });
+  return `<svg viewBox="0 0 60 110" aria-hidden="true">
+  <defs>${DEF_HOJA(h)}</defs>
+  <path d="M30 108 C14 100 8 86 10 76 M30 108 C46 100 52 86 50 76 M30 108 C24 96 22 84 24 74" fill="none" stroke="#7fa38a" stroke-width="2.4" stroke-linecap="round"/>
+  ${s}
 </svg>`;
 }
 
 function svgBulbo() {
   const h = 'h' + (++gid);
+  const t = 't' + gid;
+  const flor = elige(['#e98aa8', '#f2c94c', '#8a6cc4', '#f4f1ea']);
   return `<svg viewBox="0 0 50 64" aria-hidden="true">
-  <defs>${DEF_HOJA(h)}</defs>
-  <path d="M25 44 C22 30 23 20 25 12" fill="none" stroke="#3a7d3a" stroke-width="2.6" stroke-linecap="round"/>
-  <path d="M25 40 C13 36 9 26 12 18 C19 24 23 32 25 40Z" fill="url(#${h})"/>
-  <path d="M25 36 C37 32 41 22 38 14 C31 20 27 28 25 36Z" fill="url(#${h})"/>
-  <ellipse cx="25" cy="9" rx="4.5" ry="6" fill="#e98aa8"/>
-  <path d="M25 62 C13 62 9 52 14 46 C18 42 22 42 25 40 C28 42 32 42 36 46 C41 52 37 62 25 62Z" fill="#c9a06a"/>
-  <path d="M25 40 C21 48 21 56 25 62 M25 40 C29 48 29 56 25 62" fill="none" stroke="#9c7443" stroke-width="1"/>
-  <path d="M21 62 l-3 3 M25 62 v4 M29 62 l3 3" stroke="#8c6a3c" stroke-width="1.2" stroke-linecap="round"/>
+  <defs>${DEF_HOJA(h)}${DEF_TALLO(t)}<radialGradient id="bu${gid}" cx="40%" cy="30%" r="80%"><stop offset="0" stop-color="#e2c08a"/><stop offset="1" stop-color="#a97e46"/></radialGradient></defs>
+  <path d="M25 44 C22 30 23 20 25 12" fill="none" stroke="url(#${t})" stroke-width="2.6" stroke-linecap="round"/>
+  <path d="M25 40 C12 36 8 25 11 17 C19 23 23 32 25 40Z" fill="url(#${h})"/>
+  <path d="M25 36 C38 32 42 21 39 13 C31 19 27 28 25 36Z" fill="url(#${h})"/>
+  <path d="M25 12 C20 10 20 4 25 1 C30 4 30 10 25 12Z" fill="${flor}" stroke="rgba(0,0,0,.15)" stroke-width=".5"/>
+  <path d="M25 62 C13 62 9 52 14 46 C18 42 22 42 25 40 C28 42 32 42 36 46 C41 52 37 62 25 62Z" fill="url(#bu${gid})"/>
+  <path d="M25 40 C21 48 21 56 25 62 M25 40 C29 48 29 56 25 62 M25 42 C18 47 17 55 20 60 M25 42 C32 47 33 55 30 60" fill="none" stroke="#8c6a3c" stroke-width=".8" opacity=".8"/>
+  <path d="M21 62 l-3 3 M23 62 l-1 4 M25 62 v4 M27 62 l1 4 M29 62 l3 3" stroke="#8c6a3c" stroke-width="1" stroke-linecap="round"/>
 </svg>`;
 }
 
 function svgBugambilia() {
-  const cols = ['#c2185b', '#e0527d', '#7b2a94', '#e8623a', '#d81b7a'];
+  const paletas = [['#c2185b', '#e0527d', '#a3164e'], ['#7b2a94', '#a54fbf', '#5b1f70'], ['#e8623a', '#f28a5a', '#c04a26'], ['#d81b7a', '#f05aa0', '#a8135c'], ['#f4f1ea', '#e6ddd0', '#c8bba8']];
   const h = 'h' + (++gid);
   let s = '';
   const pts = [];
-  for (let i = 0; i < 12; i++) {
-    const t = i / 11;
-    pts.push([10 + t * 120, 64 - Math.sin(t * Math.PI) * 36 + (i % 2 ? 5 : -5)]);
+  for (let i = 0; i < 16; i++) {
+    const t = i / 15;
+    pts.push([8 + t * 124, 64 - Math.sin(t * Math.PI) * 36 + (i % 2 ? 6 : -6) + Math.random() * 4]);
   }
   pts.forEach(([x, y], i) => {
-    s += `<ellipse cx="${x + 3}" cy="${y + 8}" rx="4.5" ry="9" fill="url(#${h})" transform="rotate(${(i % 2 ? 30 : -30)} ${x + 3} ${y + 8})"/>`;
+    s += `<path d="M${x} ${y} C${x + 6} ${y + 2} ${x + 9} ${y + 8} ${x + 5} ${y + 12} C${x} ${y + 10} ${x - 3} ${y + 5} ${x} ${y}Z" fill="url(#${h})" stroke="rgba(0,0,0,.15)" stroke-width=".4" transform="rotate(${i % 2 ? 24 : -20} ${x} ${y})"/>`;
   });
   pts.forEach(([x, y], i) => {
-    const col = cols[i % cols.length];
+    const pal = paletas[Math.floor(i / 4) % 3 === 0 ? (i % 2 ? 0 : 3) : Math.floor(i / 4) % 3 === 1 ? 0 : 2];
     for (let k = 0; k < 3; k++) {
-      s += `<ellipse cx="${x}" cy="${y - 6}" rx="5.4" ry="7.4" fill="${col}" stroke="rgba(255,255,255,.22)" stroke-width=".6" transform="rotate(${k * 120 + (i * 23) % 60} ${x} ${y})"/>`;
+      const a = k * 120 + (i * 23) % 60;
+      s += `<g transform="rotate(${a} ${x} ${y})"><ellipse cx="${x}" cy="${y - 6}" rx="5.4" ry="7.4" fill="${pal[k % 2]}" stroke="${pal[2]}" stroke-width=".5"/><path d="M${x} ${y - 1} L${x} ${y - 11} M${x - 2} ${y - 3} L${x - 3} ${y - 9} M${x + 2} ${y - 3} L${x + 3} ${y - 9}" stroke="rgba(0,0,0,.14)" stroke-width=".4"/></g>`;
     }
-    s += `<circle cx="${x}" cy="${y}" r="1.7" fill="#f6efd0"/>`;
+    s += `<circle cx="${x}" cy="${y}" r="1.7" fill="#f6efd0"/><circle cx="${x}" cy="${y}" r=".7" fill="#e0c87a"/>`;
   });
   return `<svg viewBox="0 0 140 100" aria-hidden="true">
   <defs>${DEF_HOJA(h)}</defs>
-  <path d="M4 72 Q40 6 72 42 T138 48" fill="none" stroke="#6b4a2b" stroke-width="3.4" stroke-linecap="round"/>
+  <path d="M4 72 Q40 6 72 42 T138 48" fill="none" stroke="#5f4126" stroke-width="3.6" stroke-linecap="round"/>
+  <path d="M30 30 Q34 20 44 16 M92 34 Q100 24 112 24" fill="none" stroke="#6b4a2b" stroke-width="1.8" stroke-linecap="round"/>
   ${s}
 </svg>`;
+}
+
+function svgHierba() {
+  const tonos = ['#3f7d34', '#4f9040', '#62a44c', '#356f2f', '#78b45a'];
+  let b = '';
+  const n = 6 + Math.floor(Math.random() * 5);
+  for (let i = 0; i < n; i++) {
+    const x = 6 + i * (28 / n) + Math.random() * 3;
+    const alto = 16 + Math.random() * 20;
+    const curva = (Math.random() - 0.5) * 16;
+    b += `<path d="M${x} 40 C${x + curva * 0.3} ${40 - alto * 0.5} ${x + curva} ${40 - alto * 0.85} ${x + curva * 1.3} ${40 - alto} C${x + curva * 0.9} ${40 - alto * 0.7} ${x + curva * 0.5} ${40 - alto * 0.4} ${x + 2.4} 40Z" fill="${elige(tonos)}"/>`;
+  }
+  return `<svg viewBox="0 0 40 40" aria-hidden="true">${b}</svg>`;
 }
 
 // ---------- árboles y hamaca ----------
 function svgArbol() {
   const id = 'a' + (++gid);
   const rnd = (a, b) => a + Math.random() * (b - a);
+  let masa = '';
   let hojas = '';
-  const pasada = (n, color, yMin, yMax) => {
+  // masa de sombra para dar volumen
+  for (let i = 0; i < 16; i++) {
+    const ang = rnd(0, Math.PI * 2);
+    const rr = Math.sqrt(Math.random());
+    masa += `<circle cx="${(100 + Math.cos(ang) * rr * 66).toFixed(1)}" cy="${(88 + Math.sin(ang) * rr * 48).toFixed(1)}" r="${rnd(20, 28).toFixed(1)}" fill="#1f5230"/>`;
+  }
+  const pasada = (n, color, yMin, yMax, rMin, rMax) => {
     for (let i = 0; i < n; i++) {
       const ang = rnd(0, Math.PI * 2);
       const rr = Math.sqrt(Math.random());
-      const x = 100 + Math.cos(ang) * rr * 74;
-      const y = 84 + Math.sin(ang) * rr * 56;
+      const x = 100 + Math.cos(ang) * rr * 78;
+      const y = 86 + Math.sin(ang) * rr * 58;
       if (y < yMin || y > yMax) { i--; continue; }
-      hojas += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${rnd(15, 27).toFixed(1)}" fill="${color}"/>`;
+      hojas += `<ellipse cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" rx="${rnd(rMin, rMax).toFixed(1)}" ry="${(rnd(rMin, rMax) * 0.55).toFixed(1)}" fill="${color}" transform="rotate(${rnd(0, 180).toFixed(0)} ${x.toFixed(1)} ${y.toFixed(1)})"/>`;
     }
   };
-  pasada(14, '#255c33', 20, 150);
-  pasada(16, '#33793f', 20, 130);
-  pasada(14, '#469950', 18, 110);
-  pasada(10, '#67b466', 14, 86);
-  pasada(6, '#86ca78', 14, 68);
+  pasada(70, '#24593a', 26, 150, 7, 12);
+  pasada(90, '#2f7340', 22, 132, 6, 11);
+  pasada(100, '#3d8a48', 18, 118, 6, 10);
+  pasada(90, '#54a457', 16, 100, 5, 9);
+  pasada(70, '#72bb68', 14, 84, 4.5, 8);
+  pasada(40, '#93d07c', 12, 66, 4, 7);
+  let corteza = '';
+  for (let i = 0; i < 14; i++) {
+    const x = 90 + i * 1.7 + rnd(-1, 1);
+    const y0 = 250 - rnd(0, 40);
+    corteza += `<path d="M${x.toFixed(1)} ${y0.toFixed(1)} C${(x + rnd(-2, 2)).toFixed(1)} ${(y0 - 30).toFixed(1)} ${(x + rnd(-2, 2)).toFixed(1)} ${(y0 - 60).toFixed(1)} ${(x + rnd(-1.5, 1.5)).toFixed(1)} ${(y0 - rnd(70, 110)).toFixed(1)}" fill="none" stroke="rgba(${i % 2 ? '25,15,8' : '160,120,80'},${i % 2 ? .35 : .18})" stroke-width="${rnd(.6, 1.3).toFixed(1)}"/>`;
+  }
   return `<svg viewBox="0 0 200 262" aria-hidden="true">
   <defs>
-    <linearGradient id="${id}t" x1="0" x2="1"><stop offset="0" stop-color="#3f2a1a"/><stop offset=".45" stop-color="#7a5636"/><stop offset="1" stop-color="#3a2616"/></linearGradient>
+    <linearGradient id="${id}t" x1="0" x2="1"><stop offset="0" stop-color="#34210f"/><stop offset=".4" stop-color="#7d5a38"/><stop offset=".7" stop-color="#5d4128"/><stop offset="1" stop-color="#2e1c0e"/></linearGradient>
   </defs>
-  <ellipse cx="100" cy="258" rx="70" ry="6" fill="rgba(0,0,0,.22)"/>
-  <path d="M84 260 C90 236 91 200 92 156 C93 134 90 120 84 104 L116 104 C110 120 107 134 108 156 C109 200 110 236 118 260 Z" fill="url(#${id}t)"/>
-  <path d="M96 250 C97 210 96 170 97 130 M104 245 C103 205 104 165 103 125" fill="none" stroke="rgba(0,0,0,.28)" stroke-width="1.2"/>
-  <path d="M96 120 C80 108 66 100 56 88 M104 118 C120 106 136 98 146 86" fill="none" stroke="#5b3f27" stroke-width="7" stroke-linecap="round"/>
+  <ellipse cx="100" cy="258" rx="74" ry="6" fill="rgba(0,0,0,.24)"/>
+  <path d="M78 261 C86 250 90 238 91 222 C92 190 91 160 92 140 C93 128 90 118 82 104 L118 104 C110 118 107 128 108 140 C109 160 108 190 109 222 C110 238 114 250 124 261 C112 258 100 258 90 259 Z" fill="url(#${id}t)"/>
+  ${corteza}
+  <ellipse cx="102" cy="200" rx="2.6" ry="4.4" fill="rgba(20,10,4,.55)"/>
+  <path d="M93 236 C96 230 97 224 96 216" fill="none" stroke="rgba(90,130,60,.55)" stroke-width="3" stroke-linecap="round"/>
+  <path d="M94 122 C78 110 64 102 52 88 M106 120 C122 108 138 100 150 86 M100 112 C100 98 98 90 96 80" fill="none" stroke="#4d3520" stroke-width="7" stroke-linecap="round"/>
+  ${masa}
   ${hojas}
 </svg>`;
 }
@@ -2129,15 +2274,24 @@ function svgArbol() {
 function svgHamaca(ancho, caida) {
   const id = 'm' + (++gid);
   const A = ancho;
-  const alto = caida + 24;
+  const alto = caida + 30;
+  let flecos = '';
+  for (let i = 0; i < 9; i++) {
+    flecos += `<path d="M${6 + i * 1.6} 18 l${(Math.random() - 0.5) * 1.2} ${4 + Math.random() * 3} M${A - 6 - i * 1.6} 18 l${(Math.random() - 0.5) * 1.2} ${4 + Math.random() * 3}" stroke="#d9c9a4" stroke-width=".8"/>`;
+  }
   return `<svg viewBox="0 0 ${A} ${alto}" width="${A}" height="${alto}" aria-hidden="true">
   <defs>
-    <pattern id="${id}" width="14" height="14" patternUnits="userSpaceOnUse" patternTransform="rotate(90)"><rect width="14" height="7" fill="#e9dcc0"/><rect y="7" width="14" height="7" fill="#b9673f"/></pattern>
+    <pattern id="${id}" width="14" height="14" patternUnits="userSpaceOnUse" patternTransform="rotate(90)"><rect width="14" height="7" fill="#ecdfc4"/><rect y="7" width="14" height="7" fill="#b5653d"/><path d="M0 3.5 H14 M0 10.5 H14" stroke="rgba(0,0,0,.12)" stroke-width=".6"/></pattern>
+    <pattern id="${id}w" width="2.2" height="2.2" patternUnits="userSpaceOnUse"><path d="M0 0 L2.2 2.2 M2.2 0 L0 2.2" stroke="rgba(0,0,0,.1)" stroke-width=".4"/></pattern>
   </defs>
-  <path d="M4 8 Q${A / 2} ${caida + 8} ${A - 4} 8 L${A - 4} 15 Q${A / 2} ${caida + 20} 4 15 Z" fill="url(#${id})" stroke="#7a4a2c" stroke-width="1"/>
-  <path d="M4 8 Q${A / 2} ${caida + 8} ${A - 4} 8" fill="none" stroke="#6b3f24" stroke-width="2"/>
-  <circle cx="4" cy="9" r="3.4" fill="none" stroke="#5a5a62" stroke-width="1.6"/>
-  <circle cx="${A - 4}" cy="9" r="3.4" fill="none" stroke="#5a5a62" stroke-width="1.6"/>
+  <path d="M4 8 Q${A / 2} ${caida + 8} ${A - 4} 8 L${A - 4} 16 Q${A / 2} ${caida + 22} 4 16 Z" fill="url(#${id})" stroke="#75482a" stroke-width="1"/>
+  <path d="M4 8 Q${A / 2} ${caida + 8} ${A - 4} 8 L${A - 4} 16 Q${A / 2} ${caida + 22} 4 16 Z" fill="url(#${id}w)"/>
+  <path d="M4 8 Q${A / 2} ${caida + 8} ${A - 4} 8" fill="none" stroke="#5f3820" stroke-width="2.2"/>
+  <path d="M4 16 Q${A / 2} ${caida + 22} ${A - 4} 16" fill="none" stroke="#7a4a2c" stroke-width="1.4"/>
+  ${flecos}
+  <path d="M0 9 L4 9 M${A} 9 L${A - 4} 9" stroke="#c9b48a" stroke-width="2.4" stroke-dasharray="1.6 1.2"/>
+  <circle cx="4" cy="9" r="3.6" fill="none" stroke="#54545c" stroke-width="1.7"/>
+  <circle cx="${A - 4}" cy="9" r="3.6" fill="none" stroke="#54545c" stroke-width="1.7"/>
 </svg>`;
 }
 
@@ -2190,7 +2344,6 @@ function construirArboles(W, H) {
     void ham.offsetWidth;
     ham.classList.add('toque');
     setTimeout(() => ham.classList.remove('toque'), 2200);
-    // llama a Mavis a descansar
     if (mvEnJardin && !mavis.classList.contains('en-hamaca')) irAHamaca = true;
   });
   capaArboles.append(ham);
@@ -2207,13 +2360,15 @@ function plantar(x, y, tipo, animar) {
   const { H } = tamanoJardin();
   const prof = limitar((y - H * 0.6) / (H * 0.4), 0, 1);
   const esc = 0.7 + prof * 0.6;
-  const elegido = tipo || ['tulipan', 'tulipan', 'tulipan', 'peonia', 'narciso', 'jacinto', 'bulbo'][Math.floor(Math.random() * 7)];
-  const base = { tulipan: 44, peonia: 84, narciso: 54, jacinto: 44, bulbo: 40 }[elegido];
+  const elegido = tipo || elige(['tulipan', 'tulipan', 'tulipan', 'peonia', 'peonia', 'narciso', 'jacinto', 'margarita', 'margarita', 'lavanda', 'bulbo']);
+  const base = { tulipan: 44, peonia: 84, narciso: 54, jacinto: 44, bulbo: 40, margarita: 46, lavanda: 52 }[elegido];
   const svg = {
-    tulipan: () => svgTulipan(TULIPANES[Math.floor(Math.random() * TULIPANES.length)]),
-    peonia: svgPeonia,
-    narciso: svgNarciso,
-    jacinto: () => svgJacinto(['#7f5fc4', '#5079d6', '#c862ac'][Math.floor(Math.random() * 3)]),
+    tulipan: () => svgTulipan(elige(TULIPANES)),
+    peonia: () => svgPeonia(elige(PEONIAS)),
+    narciso: () => svgNarciso(elige(NARCISOS)),
+    jacinto: () => svgJacinto(elige(JACINTOS)),
+    margarita: () => svgMargarita(elige(MARGARITAS)),
+    lavanda: () => svgLavanda(elige(LAVANDAS)),
     bulbo: svgBulbo,
   }[elegido]();
   const w = base * esc;
@@ -2229,36 +2384,65 @@ function plantar(x, y, tipo, animar) {
   f.append(dentro);
   capaFlores.append(f);
   flores.push({ el: f, frio: 0, roce: 0, x, y });
-  if (flores.length > 44) {
-    const vieja = flores.shift();
-    vieja.el.classList.add('se-va');
-    setTimeout(() => vieja.el.remove(), 700);
-  }
+  if (flores.length > 46) quitarFlor(flores[0].el, true);
   return f;
 }
 
-function svgMariposa([a, b]) {
-  return `<svg viewBox="0 0 40 34" aria-hidden="true">
+function quitarFlor(f, silencioso) {
+  const i = flores.findIndex((o) => o.el === f);
+  if (i < 0) return;
+  const o = flores[i];
+  flores.splice(i, 1);
+  f.classList.add('se-va');
+  if (!silencioso) {
+    petalos(o.x, o.y - f.offsetHeight * 0.7, 9);
+    if (navigator.vibrate) navigator.vibrate([25, 40, 25]);
+  }
+  setTimeout(() => f.remove(), 700);
+}
+
+// ---------- monarcas y libélulas ----------
+function svgMonarca() {
+  const id = 'mo' + (++gid);
+  const mitad = `
+    <path d="M30 20 C34 8 47 1 56 4 C60 9 59 17 54 23 C48 28 38 27 30 22Z" fill="#14100a"/>
+    <path d="M31 20 C35 10 46 5 53 7.5 C56 11 55 17 51 21.5 C46 25 38 24.5 31 21Z" fill="url(#${id})"/>
+    <path d="M30 22 C39 24 47 28 50 34 C51 40 43 43 37 39.5 C33 36 30 29 30 22Z" fill="#14100a"/>
+    <path d="M31 23 C39 25 46 29 48 34 C48.5 38 43 40 38.5 37.5 C34 34.5 31 28.5 31 23Z" fill="url(#${id})"/>
+    <path d="M30.5 20.5 L52 10 M30.5 20.8 L54 15.5 M30.5 21.5 L52 21 M31 22 L47 27 M31 22.6 L44 33 M31 23 L38 37" stroke="#17110a" stroke-width=".9" fill="none"/>
+    <path d="M40 15 C44 12 48 10 51 9" stroke="#17110a" stroke-width=".6" fill="none"/>
+    <g fill="#ffffff"><circle cx="56.2" cy="8" r="1"/><circle cx="57.8" cy="11.5" r=".9"/><circle cx="57.6" cy="15" r=".9"/><circle cx="55.4" cy="18.6" r=".85"/><circle cx="52.4" cy="21.6" r=".8"/><circle cx="52" cy="4.2" r=".8"/><circle cx="48" cy="2.8" r=".7"/><circle cx="49.6" cy="36.4" r=".8"/><circle cx="47.6" cy="39.4" r=".7"/><circle cx="43" cy="40.6" r=".7"/><circle cx="50.6" cy="33" r=".7"/></g>`;
+  return `<svg viewBox="0 0 60 44" aria-hidden="true">
+  <defs><radialGradient id="${id}" cx="30%" cy="60%" r="90%"><stop offset="0" stop-color="#f6a53a"/><stop offset=".6" stop-color="#e8721a"/><stop offset="1" stop-color="#c94f0c"/></radialGradient></defs>
   <g class="alas">
-    <path d="M20 17 C8 1 0 6 3 16 C5 23 12 24 20 17Z" fill="${a}"/>
-    <path d="M20 18 C10 22 6 30 12 31 C17 32 20 25 20 18Z" fill="${b}"/>
-    <path d="M20 17 C32 1 40 6 37 16 C35 23 28 24 20 17Z" fill="${a}"/>
-    <path d="M20 18 C30 22 34 30 28 31 C23 32 20 25 20 18Z" fill="${b}"/>
-    <path d="M20 17 C11 8 5 8 4 14 M20 17 C29 8 35 8 36 14" fill="none" stroke="rgba(0,0,0,.25)" stroke-width=".6"/>
+    <g>${mitad}</g>
+    <g transform="translate(60 0) scale(-1 1)">${mitad}</g>
   </g>
-  <ellipse cx="20" cy="18" rx="1.6" ry="8" fill="#33261f"/>
-  <path d="M19 10 C17 6 15 4 13 4 M21 10 C23 6 25 4 27 4" fill="none" stroke="#33261f" stroke-width=".9" stroke-linecap="round"/>
+  <ellipse cx="30" cy="24" rx="1.9" ry="9.5" fill="#15110d"/>
+  <circle cx="30" cy="13.6" r="2.2" fill="#15110d"/>
+  <g fill="#ffffff" opacity=".85"><circle cx="29.2" cy="18" r=".5"/><circle cx="30.8" cy="20" r=".5"/><circle cx="29.2" cy="22.5" r=".5"/><circle cx="30.8" cy="25" r=".5"/><circle cx="29.4" cy="27.5" r=".5"/></g>
+  <path d="M29.4 12 C27.5 7 25 4.6 22.6 4 M30.6 12 C32.5 7 35 4.6 37.4 4" fill="none" stroke="#15110d" stroke-width=".8" stroke-linecap="round"/>
+  <circle cx="22.4" cy="3.9" r="1" fill="#15110d"/><circle cx="37.6" cy="3.9" r="1" fill="#15110d"/>
 </svg>`;
 }
 
 function svgLibelulaJ() {
+  let segmentos = '';
+  for (let i = 0; i < 9; i++) {
+    const t = i / 8;
+    const x = 40 - t * 34;
+    const y = 30 + t * 14;
+    segmentos += `<ellipse cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" rx="4.6" ry="2.2" fill="${i % 2 ? '#1f7f92' : '#2fa0b4'}" transform="rotate(${(24 + t * 14).toFixed(0)} ${x.toFixed(1)} ${y.toFixed(1)})"/>`;
+  }
+  const ala = (cx, cy, rx, ry, rot, cls) => `<g class="${cls}"><ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="#e3f1f8" fill-opacity=".55" stroke="#7fa7bd" stroke-width=".7" transform="rotate(${rot} ${cx} ${cy})"/><g transform="rotate(${rot} ${cx} ${cy})" stroke="#7fa7bd" stroke-width=".4" fill="none"><path d="M${cx - rx} ${cy} L${cx + rx} ${cy} M${cx - rx * 0.6} ${cy - ry * 0.5} L${cx + rx * 0.7} ${cy - ry * 0.3} M${cx - rx * 0.6} ${cy + ry * 0.5} L${cx + rx * 0.7} ${cy + ry * 0.3}"/><path d="M${cx - rx * 0.3} ${cy - ry} L${cx - rx * 0.3} ${cy + ry} M${cx + rx * 0.2} ${cy - ry * 0.9} L${cx + rx * 0.2} ${cy + ry * 0.9}"/></g><ellipse cx="${cx + rx * 0.8}" cy="${cy - ry * 0.2}" rx="1.6" ry=".7" fill="#4a5a68" transform="rotate(${rot} ${cx} ${cy})"/></g>`;
   return `<svg viewBox="0 0 90 60" aria-hidden="true">
-  <g class="ala"><ellipse cx="34" cy="21" rx="24" ry="8" fill="#d6ecf7" fill-opacity=".6" stroke="#7fb0c8" stroke-width=".8" transform="rotate(-20 34 21)"/></g>
-  <g class="ala b"><ellipse cx="38" cy="38" rx="24" ry="7" fill="#d6ecf7" fill-opacity=".55" stroke="#7fb0c8" stroke-width=".8" transform="rotate(18 38 38)"/></g>
-  <path d="M42 30 Q14 32 4 44" fill="none" stroke="#2a8ea0" stroke-width="3.2" stroke-linecap="round"/>
-  <g fill="#1b6472"><circle cx="16" cy="38" r="1.6"/><circle cx="26" cy="34" r="1.6"/><circle cx="34" cy="32" r="1.6"/></g>
-  <ellipse cx="47" cy="30" rx="8" ry="5.5" fill="#2a8ea0"/>
-  <circle cx="56" cy="28" r="3.2" fill="#b8453f"/><circle cx="56" cy="34" r="3.2" fill="#b8453f"/>
+  ${ala(34, 21, 25, 8, -20, 'ala')}
+  ${ala(38, 38, 25, 7.4, 18, 'ala b')}
+  ${segmentos}
+  <ellipse cx="46" cy="30" rx="8.4" ry="5.6" fill="#1f8ea3"/>
+  <path d="M40 27 Q46 24 52 27" stroke="rgba(255,255,255,.35)" stroke-width="1" fill="none"/>
+  <circle cx="56" cy="27.4" r="3.8" fill="#2a7fb8"/><circle cx="56" cy="34" r="3.8" fill="#2a7fb8"/>
+  <circle cx="55" cy="26.4" r="1.1" fill="rgba(255,255,255,.7)"/><circle cx="55" cy="33" r="1.1" fill="rgba(255,255,255,.7)"/>
 </svg>`;
 }
 
@@ -2274,7 +2458,7 @@ function petalos(x, y, n) {
     p.style.top = y + 'px';
     p.style.setProperty('--dx', azarEntre(-30, 30) + 'px');
     p.style.setProperty('--dy', azarEntre(40, 90) + 'px');
-    p.style.background = ['#f2b6cf', '#f6efe8', '#f8d3e1', '#f0d060'][Math.floor(Math.random() * 4)];
+    p.style.background = elige(['#f2b6cf', '#f6efe8', '#f8d3e1', '#f0d060', '#e0a8ee', '#f4a48c']);
     capaAire.append(p);
     setTimeout(() => p.remove(), 2400);
   }
@@ -2295,6 +2479,7 @@ function construirJardin() {
   voladores.length = 0;
   hamaca = null;
   irAHamaca = false;
+  cancelarMantener();
 
   construirArboles(W, H);
 
@@ -2305,13 +2490,28 @@ function construirJardin() {
     capaArboles.append(b);
   });
 
+  // matas de pasto repartidas (dan profundidad y textura)
+  const matas = Math.round(W / 16);
+  for (let i = 0; i < matas; i++) {
+    const y = azarEntre(H * 0.64, H * 0.99);
+    const prof = limitar((y - H * 0.6) / (H * 0.4), 0, 1);
+    const w = (18 + Math.random() * 18) * (0.6 + prof * 0.9);
+    const m = el('div', 'mata');
+    m.style.width = w + 'px';
+    m.style.left = azarEntre(-6, W - 10) + 'px';
+    m.style.bottom = Math.max(0, H - y - 2) + 'px';
+    m.style.zIndex = String(Math.round(y) - 1);
+    m.innerHTML = svgHierba();
+    capaArboles.append(m);
+  }
+
   // flores iniciales repartidas por el pasto
-  const n = Math.max(8, Math.min(18, Math.round(W / 62)));
+  const n = Math.max(9, Math.min(20, Math.round(W / 58)));
   for (let i = 0; i < n; i++) {
     plantar(azarEntre(W * 0.03, W * 0.97), azarEntre(H * 0.68, H * 0.97), null, false);
   }
 
-  // mariposas y libélulas (pocas y tranquilas)
+  // monarcas y libélulas (pocas y tranquilas)
   for (let i = 0; i < 4; i++) crearVolador('mariposa', W, H);
   crearVolador('libelula', W, H);
   jardinListo = true;
@@ -2321,14 +2521,14 @@ function construirJardin() {
 
 function crearVolador(tipo, W, H) {
   const nodo = el('div', 'volador ' + tipo);
-  nodo.innerHTML = tipo === 'mariposa' ? svgMariposa(ALAS[Math.floor(Math.random() * ALAS.length)]) : svgLibelulaJ();
+  nodo.innerHTML = tipo === 'mariposa' ? svgMonarca() : svgLibelulaJ();
   const v = {
     el: nodo, tipo, x: azarEntre(0, W), y: azarEntre(H * 0.1, H * 0.5), tx: 0, ty: 0, dir: 1,
-    vel: tipo === 'mariposa' ? azarEntre(22, 40) : azarEntre(55, 85), fase: azarEntre(0, 6.28),
+    vel: tipo === 'mariposa' ? azarEntre(22, 38) : azarEntre(55, 85), fase: azarEntre(0, 6.28),
     estado: 'vuela', hasta: 0, turbo: 0, atr: 0,
   };
   nuevoDestino(v, W, H);
-  nodo.style.width = (tipo === 'mariposa' ? azarEntre(22, 30) : azarEntre(46, 56)) + 'px';
+  nodo.style.width = (tipo === 'mariposa' ? azarEntre(30, 42) : azarEntre(48, 58)) + 'px';
   nodo.addEventListener('pointerdown', (e) => {
     e.stopPropagation();
     const { W: w2, H: h2 } = tamanoJardin();
@@ -2342,7 +2542,7 @@ function crearVolador(tipo, W, H) {
   voladores.push(v);
 }
 
-// ---------- movimiento de mariposas y libélulas ----------
+// ---------- movimiento de monarcas y libélulas ----------
 function moverVolador(v, dt, ts, r) {
   const W = r.width;
   const H = r.height;
@@ -2367,7 +2567,7 @@ function moverVolador(v, dt, ts, r) {
   if (d < 12) {
     const suerte = Math.random();
     if (v.tipo === 'mariposa' && suerte < 0.32 && flores.length) {
-      const f = flores[Math.floor(Math.random() * flores.length)];
+      const f = elige(flores);
       const fr = f.el.getBoundingClientRect();
       v.x = fr.left - r.left + fr.width / 2 - v.el.offsetWidth / 2;
       v.y = fr.top - r.top - v.el.offsetHeight * 0.4;
@@ -2386,7 +2586,7 @@ function moverVolador(v, dt, ts, r) {
   v.x += (dx / d) * vel * dt;
   v.y += (dy / d) * vel * dt;
   if (Math.abs(dx) > 6) v.dir = dx >= 0 ? 1 : -1;
-  const bob = Math.sin(ts * (v.tipo === 'libelula' ? 8 : 5) + v.fase) * (v.tipo === 'libelula' ? 1.5 : 4);
+  const bob = Math.sin(ts * (v.tipo === 'libelula' ? 8 : 4) + v.fase) * (v.tipo === 'libelula' ? 1.5 : 6);
   v.el.style.transform = `translate(${v.x}px, ${v.y + bob}px) scaleX(${v.dir})`;
 }
 
@@ -2424,6 +2624,7 @@ function mavisAlJardin() {
 
 function salirDelJardin() {
   if (!mvEnJardin) return;
+  cancelarMantener();
   if (mavis.classList.contains('en-hamaca')) bajarDeHamaca(true);
   mvEnJardin = false;
   irAHamaca = false;
@@ -2476,7 +2677,6 @@ function mavisEnJardin(r) {
     return;
   }
 
-  // ¿toca la siesta?
   if (!irAHamaca && hamaca && ahora > proximaSiesta) irAHamaca = true;
   if (irAHamaca && hamaca) {
     const cx = mvX - jardinLeft + anchoMavisJardin() / 2;
@@ -2498,8 +2698,7 @@ function mavisEnJardin(r) {
   const pieY = mvY;
   if (mvModo === 'camina') {
     for (const f of flores) {
-      const fcx = f.x;
-      const cerca = Math.abs(fcx - cx) < 34 && Math.abs(f.y - pieY) < 26;
+      const cerca = Math.abs(f.x - cx) < 34 && Math.abs(f.y - pieY) < 26;
       if (!cerca) continue;
       if (ahora > f.frio && mvModo === 'camina') {
         f.frio = ahora + 14000;
@@ -2512,7 +2711,6 @@ function mavisEnJardin(r) {
         return;
       }
       if (ahora > f.roce) {
-        // al pasar rozando, la flor se mueve un poco
         f.roce = ahora + 3000;
         f.el.classList.add('rozada');
         setTimeout(() => f.el.classList.remove('rozada'), 900);
@@ -2562,6 +2760,35 @@ function jardinBucle(t) {
   }
 }
 
+// ---------- mantener presionada una flor 5 segundos para quitarla ----------
+function iniciarMantener(f, x, y) {
+  cancelarMantener();
+  const ring = el('div', 'j-hold');
+  ring.style.left = x + 'px';
+  ring.style.top = y + 'px';
+  ring.innerHTML = '<svg viewBox="0 0 44 44"><circle class="pista" cx="22" cy="22" r="18"/><circle class="avance" cx="22" cy="22" r="18"/></svg>';
+  capaAire.append(ring);
+  const timer = setTimeout(() => {
+    quitarFlor(f, false);
+    cancelarMantener();
+  }, 5000);
+  mantener = { f, timer, ring, x, y };
+}
+
+function cancelarMantener() {
+  if (!mantener) return;
+  clearTimeout(mantener.timer);
+  mantener.ring.remove();
+  mantener = null;
+}
+
+['pointerup', 'pointercancel', 'pointerleave'].forEach((ev) => jardin.addEventListener(ev, cancelarMantener));
+jardin.addEventListener('pointermove', (e) => {
+  if (!mantener) return;
+  const r = jardin.getBoundingClientRect();
+  if (Math.hypot(e.clientX - r.left - mantener.x, e.clientY - r.top - mantener.y) > 16) cancelarMantener();
+}, { passive: true });
+
 // ---------- interacción ----------
 jardin.addEventListener('pointerdown', (e) => {
   $('j-pista').classList.add('oculto');
@@ -2577,6 +2804,7 @@ jardin.addEventListener('pointerdown', (e) => {
     setTimeout(() => flor.classList.remove('olfateada'), 1500);
     petalos(x, y, 3);
     if (navigator.vibrate) navigator.vibrate(15);
+    iniciarMantener(flor, x, y);
     return;
   }
   if (y > H * 0.66) {
@@ -2592,6 +2820,7 @@ function entrarAlJardin() {
   const { W } = tamanoJardin();
   if (!jardinListo || Math.abs(W - jardinAncho0) > 80) construirJardin();
   mavisAlJardin();
+  $('j-pista').classList.remove('oculto');
   setTimeout(() => $('j-pista').classList.add('oculto'), 9000);
 }
 
@@ -2603,7 +2832,7 @@ setInterval(() => {
   const p = el('span', 'petalo-caida');
   p.style.left = azarEntre(0, W) + 'px';
   p.style.setProperty('--dx', azarEntre(-50, 50) + 'px');
-  p.style.background = ['#f2b6cf', '#f6efe8', '#f8d3e1', '#f0d060'][Math.floor(Math.random() * 4)];
+  p.style.background = elige(['#f2b6cf', '#f6efe8', '#f8d3e1', '#f0d060', '#e0a8ee']);
   capaAire.append(p);
   setTimeout(() => p.remove(), 12000);
 }, 5000);
