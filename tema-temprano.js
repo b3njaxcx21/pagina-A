@@ -4,6 +4,5 @@ try {
   var t = localStorage.getItem('tema');
   if (t) d.dataset.tema = t;
   var a = localStorage.getItem('anim');
-  var reducir = a === null ? window.matchMedia('(prefers-reduced-motion: reduce)').matches : a === '1';
-  if (reducir) d.classList.add('sin-anim');
+  if (a === '1') d.classList.add('sin-anim'); // solo si la persona lo eligió en Perfil
 } catch (e) { /* sin almacenamiento */ }

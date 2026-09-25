@@ -596,3 +596,10 @@ html[data-tema="coraline"] .cumple-dias, html[data-tema="aurora"] .cumple-dias {
 html.sin-anim *, html.sin-anim *::before, html.sin-anim *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; animation-delay: 0s !important; transition-duration: .001ms !important; scroll-behavior: auto !important; }
 html.sin-anim .prop-coraline, html.sin-anim .particula, html.sin-anim .lluvia, html.sin-anim .boton-flota, html.sin-anim .estrella4, html.sin-anim .corazones-fondo { display: none !important; }
 html.sin-anim .revela { opacity: 1; translate: 0 0; }
+
+/* Enlaces legales: pequeños y discretos, al final de la página */
+.legal-links.pie { font-size: 11px; gap: 2px 10px; margin: 26px 0 6px; opacity: .95; }
+.legal-links.pie a, .legal-links.pie .link-chico { font-size: 11px; text-decoration: none; }
+.pantalla.centro > .legal-links.pie { position: fixed; left: 0; right: 0; bottom: 8px; margin: 0; padding: 0 12px; }
+#auth-terminos-fila { font-size: 12px; margin: 4px 0 10px; }
+#auth-terminos-fila input { width: 18px; height: 18px; }
