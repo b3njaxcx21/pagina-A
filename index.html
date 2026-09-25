@@ -32,7 +32,7 @@
     <div class="tarjeta">
       <div class="logo">💞</div>
       <h1>Nosotros</h1>
-      <p class="sub">Escribe el código para entrar</p>
+      <p class="sub" id="codigo-sub">Escribe el código para entrar</p>
       <form id="form-codigo">
         <input aria-label="Código de acceso" id="input-acceso" type="password" inputmode="numeric" placeholder="Código de acceso" autocomplete="off" required>
         <button type="submit" class="btn">Continuar</button>
@@ -244,10 +244,11 @@
           <div class="perfil-foto-fila">
             <div class="avatar enorme" id="perfil-avatar" data-uid=""></div>
             <label class="btn btn-chico btn-sec">
-              Cambiar foto
+              <span id="perfil-foto-txt">Cambiar foto</span>
               <input id="perfil-foto" type="file" accept="image/*" class="sr-solo" aria-label="Elegir foto de perfil">
             </label>
-            <span id="perfil-foto-estado" class="estado"></span>
+            <button type="button" class="btn btn-chico btn-sec oculto" id="btn-quitar-foto">Quitar foto</button>
+            <span id="perfil-foto-estado" class="estado" role="status"></span>
           </div>
           <label for="perfil-nombre">Tu nombre</label>
           <div class="fila">

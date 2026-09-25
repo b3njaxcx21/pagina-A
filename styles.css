@@ -444,19 +444,6 @@ html[data-tema="coraline"] .mavis-svg .mv-ojo-feliz { stroke: #8fd3ff; }
 .prop-coraline .ala.b { animation-delay: -.045s; }
 @keyframes aletea { from { transform: scaleY(1); } to { transform: scaleY(.35); } }
 
-/* Coraline (la niña) */
-.muneca { position: fixed; width: 108px; z-index: 35; transition: transform .7s cubic-bezier(.3,1.5,.5,1); cursor: pointer; touch-action: manipulation; }
-.muneca.izq { left: 0; transform: translateX(-105%) rotate(-10deg); transform-origin: 0 100%; }
-.muneca.izq.asoma { transform: translateX(-16%) rotate(6deg); }
-.muneca.der { right: 0; transform: translateX(105%) rotate(10deg); transform-origin: 100% 100%; }
-.muneca.der.asoma { transform: translateX(16%) rotate(-6deg); }
-.muneca svg { display: block; width: 100%; height: auto; filter: drop-shadow(0 6px 10px rgba(0,0,0,.55)); overflow: visible; }
-.muneca svg * { transform-box: fill-box; }
-.muneca .brazo-saluda { transform-origin: 100% 100%; }
-.muneca.asoma .brazo-saluda { animation: saluda .6s ease-in-out infinite alternate; }
-.muneca svg.risa { animation: muneca-risa .7s ease-in-out; }
-@keyframes saluda { from { transform: rotate(-16deg); } to { transform: rotate(18deg); } }
-@keyframes muneca-risa { 0%,100% { transform: rotate(0) scale(1); } 25% { transform: rotate(-12deg) scale(1.08); } 55% { transform: rotate(10deg) scale(1.08); } 80% { transform: rotate(-5deg); } }
 
 .estrella { position: absolute; border-radius: 50%; background: #fff; animation: titilar ease-in-out infinite; }
 @keyframes titilar { 0%,100% { opacity: .15; transform: scale(.8); } 50% { opacity: 1; transform: scale(1.2); } }
@@ -607,5 +594,5 @@ html[data-tema="coraline"] .cumple-dias, html[data-tema="aurora"] .cumple-dias {
 
 /* Menos movimiento: preferencia del sistema o elegida en Perfil */
 html.sin-anim *, html.sin-anim *::before, html.sin-anim *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; animation-delay: 0s !important; transition-duration: .001ms !important; scroll-behavior: auto !important; }
-html.sin-anim .muneca, html.sin-anim .prop-coraline, html.sin-anim .particula, html.sin-anim .lluvia, html.sin-anim .boton-flota, html.sin-anim .estrella4, html.sin-anim .corazones-fondo { display: none !important; }
+html.sin-anim .prop-coraline, html.sin-anim .particula, html.sin-anim .lluvia, html.sin-anim .boton-flota, html.sin-anim .estrella4, html.sin-anim .corazones-fondo { display: none !important; }
 html.sin-anim .revela { opacity: 1; translate: 0 0; }

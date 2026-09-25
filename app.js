@@ -174,6 +174,7 @@ const USUARIOS = {
 };
 let desbloqueado = false;
 let esAdmin = false;
+let ultimaActividad = Date.now();
 
 $('form-codigo').addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -183,8 +184,15 @@ $('form-codigo').addEventListener('submit', async (e) => {
     return;
   }
   desbloqueado = true;
+  ultimaActividad = Date.now();
   $('input-acceso').value = '';
   $('codigo-msg').textContent = '';
+  $('codigo-sub').textContent = 'Escribe el código para entrar';
+  // Si la app ya estaba cargada (solo se había bloqueado), se vuelve directo sin recargar nada
+  if (usuario && pareja) {
+    mostrar('app');
+    return;
+  }
   const { data } = await sb.auth.getSession();
   iniciar(data.session);
 });
@@ -370,6 +378,9 @@ async function cargarPerfiles() {
   $('hero-nombre-yo').textContent = yo;
   $('hero-nombre-otro').textContent = otro ? perfiles[otro] : 'Esperando…';
   refrescarAvatares();
+  const tieneFoto = !!(perfil && perfil.avatar_path);
+  $('btn-quitar-foto').classList.toggle('oculto', !tieneFoto);
+  $('perfil-foto-txt').textContent = tieneFoto ? 'Cambiar foto' : 'Subir foto';
   pintarAnimos();
   $('btn-corazon').querySelector('span').textContent = (colorDe(usuario.id) || {}).corazon || '❤️';
 }
@@ -541,6 +552,23 @@ $('perfil-foto').addEventListener('change', async (e) => {
     estado.textContent = '';
     alert('No se pudo cambiar la foto: ' + traducir(err));
   }
+});
+
+$('btn-quitar-foto').addEventListener('click', async () => {
+  const ruta = perfil && perfil.avatar_path;
+  if (!ruta || !confirm('¿Quitar tu foto de perfil?')) return;
+  const estado = $('perfil-foto-estado');
+  estado.textContent = 'Quitando…';
+  const { error } = await sb.from('perfiles').update({ avatar_path: null }).eq('id', usuario.id);
+  if (error) {
+    estado.textContent = '';
+    alert('No se pudo quitar la foto: ' + traducir(error));
+    return;
+  }
+  await sb.storage.from(BUCKET).remove([ruta]);
+  await cargarPerfiles();
+  estado.textContent = '✓ Foto quitada';
+  setTimeout(() => (estado.textContent = ''), 2500);
 });
 
 // ---------- Navegación ----------
@@ -1327,6 +1355,7 @@ function lluviaCorazones(cantidad = 24, propios) {
 
 let avisoTimer = null;
 function aviso(texto) {
+  if (usuario && !desbloqueado) return; // con la pantalla bloqueada no se muestra nada
   const t = $('toast');
   t.textContent = texto;
   t.classList.remove('oculto');
@@ -1521,7 +1550,7 @@ function limpiarTema() {
   temaTimers.forEach(clearTimeout);
   temaTimers = [];
   fondoTema.replaceChildren();
-  document.querySelectorAll('.muneca, .prop-coraline').forEach((n) => n.remove());
+  document.querySelectorAll('.prop-coraline').forEach((n) => n.remove());
 }
 
 function crearEstrellas(cuantas, tenues) {
@@ -1532,121 +1561,6 @@ function crearEstrellas(cuantas, tenues) {
       `animation-duration:${azar(2, 5)}s;animation-delay:${azar(0, 4)}s;` + (tenues ? 'opacity:.5;' : '');
     fondoTema.append(s);
   }
-}
-
-const SVG_MUNECA = `
-<svg viewBox="0 0 100 210" aria-hidden="true">
-  <defs>
-    <pattern id="mv-rayas" width="9" height="8" patternUnits="userSpaceOnUse"><rect width="9" height="4" fill="#9a9aa6"/><rect y="4" width="9" height="4" fill="#5b2636"/></pattern>
-    <radialGradient id="mv-piel" cx="42%" cy="38%" r="70%"><stop offset="0" stop-color="#fce9d8"/><stop offset=".7" stop-color="#f0cfb0"/><stop offset="1" stop-color="#dcae88"/></radialGradient>
-    <linearGradient id="mv-pelo" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3a4dc8"/><stop offset="1" stop-color="#121a63"/></linearGradient>
-    <linearGradient id="mv-abrigo" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fce052"/><stop offset=".55" stop-color="#f2c21b"/><stop offset="1" stop-color="#d59a06"/></linearGradient>
-    <linearGradient id="mv-bota" x1="0" x2="1"><stop offset="0" stop-color="#f7d43a"/><stop offset="1" stop-color="#d9a30c"/></linearGradient>
-  </defs>
-  <!-- botas -->
-  <rect x="35" y="176" width="13" height="24" rx="3" fill="url(#mv-bota)"/>
-  <rect x="29" y="195" width="22" height="11" rx="5.5" fill="url(#mv-bota)"/>
-  <rect x="29" y="203" width="22" height="3.5" rx="1.7" fill="#2f2f38"/>
-  <rect x="52" y="176" width="13" height="24" rx="3" fill="url(#mv-bota)"/>
-  <rect x="49" y="195" width="22" height="11" rx="5.5" fill="url(#mv-bota)"/>
-  <rect x="49" y="203" width="22" height="3.5" rx="1.7" fill="#2f2f38"/>
-  <path d="M36 180 v14 M62 180 v14" stroke="#fff" stroke-width="1.6" stroke-linecap="round" opacity=".35"/>
-  <!-- medias de rayas -->
-  <rect x="37" y="138" width="10" height="40" rx="3" fill="url(#mv-rayas)"/>
-  <rect x="53" y="138" width="10" height="40" rx="3" fill="url(#mv-rayas)"/>
-  <!-- falda tejida -->
-  <path d="M28 120 L72 120 L77 142 Q50 148 23 142 Z" fill="#8a2a3a"/>
-  <path d="M30 128 h40 M28 135 h44" stroke="#b04a62" stroke-width="1" stroke-dasharray="1.5 2.5"/>
-  <!-- bolsa -->
-  <rect x="67" y="104" width="20" height="25" rx="3" fill="#7a1f3a"/>
-  <path d="M67 107 Q77 116 87 107 L87 104 L67 104 Z" fill="#561230"/>
-  <path d="M69 118 h16" stroke="#9c3556" stroke-width="1" stroke-dasharray="2 2"/>
-  <!-- impermeable -->
-  <path d="M30 62 Q34 56 45 58 L55 58 Q66 56 70 62 L76 124 Q50 131 24 124 Z" fill="url(#mv-abrigo)"/>
-  <path d="M58 60 Q66 58 70 64 L76 124 Q68 127 60 128 Z" fill="#b98005" opacity=".35"/>
-  <path d="M34 78 Q38 96 34 122 M66 84 Q62 100 66 124 M42 100 Q44 112 40 124" fill="none" stroke="#c48a05" stroke-width="1.2" stroke-linecap="round" opacity=".5"/>
-  <path d="M50 66 L50 126" stroke="#a87806" stroke-width="1.3"/>
-  <path d="M38 56 Q50 68 62 56 Q67 63 60 68 L40 68 Q33 63 38 56 Z" fill="#e8b310"/>
-  <path d="M40 60 Q50 68 60 60" fill="none" stroke="#fce052" stroke-width="1.2" opacity=".6"/>
-  <circle cx="46" cy="66" r="1.5" fill="#8a6205"/><circle cx="54" cy="66" r="1.5" fill="#8a6205"/>
-  <path d="M46 67 q-1 7 1 10 M54 67 q1 7 -1 10" stroke="#8a6205" stroke-width=".9" fill="none"/>
-  <!-- correa -->
-  <path d="M37 60 L74 110" stroke="#7a1f3a" stroke-width="4" stroke-linecap="round"/>
-  <path d="M38 59 L75 109" stroke="#a03052" stroke-width="1" stroke-linecap="round" opacity=".6"/>
-  <!-- brazo en la cadera -->
-  <path d="M68 66 Q88 78 77 104" fill="none" stroke="url(#mv-abrigo)" stroke-width="12" stroke-linecap="round"/>
-  <path d="M74 70 Q86 82 79 100" fill="none" stroke="#b98005" stroke-width="2.4" stroke-linecap="round" opacity=".4"/>
-  <circle cx="76" cy="107" r="4.6" fill="url(#mv-piel)"/>
-  <!-- brazo que saluda -->
-  <g class="brazo-saluda">
-    <path d="M33 68 Q17 62 14 44" fill="none" stroke="url(#mv-abrigo)" stroke-width="12" stroke-linecap="round"/>
-    <path d="M22 60 Q17 54 16 48" fill="none" stroke="#b98005" stroke-width="2.4" stroke-linecap="round" opacity=".4"/>
-    <circle cx="13.5" cy="39.5" r="4.8" fill="url(#mv-piel)"/>
-    <path d="M11 36 v-3 M13.5 35 v-3.5 M16 36 v-3" stroke="#dcae88" stroke-width="1.4" stroke-linecap="round"/>
-  </g>
-  <!-- cuello -->
-  <rect x="45" y="53" width="10" height="9" rx="3" fill="#e2b892"/>
-  <!-- pelo atrás -->
-  <path d="M27 40 Q23 10 50 9 Q77 10 73 40 L73 61 Q64 66 60 58 L40 58 Q36 66 27 61 Z" fill="url(#mv-pelo)"/>
-  <!-- orejas -->
-  <ellipse cx="33" cy="41" rx="3.4" ry="4.6" fill="#e8bd98"/>
-  <ellipse cx="67" cy="41" rx="3.4" ry="4.6" fill="#e8bd98"/>
-  <!-- cara de muñeca de porcelana -->
-  <ellipse cx="50" cy="38" rx="17.5" ry="19.5" fill="url(#mv-piel)"/>
-  <circle cx="39" cy="46" r="4.2" fill="#f0a89a" opacity=".3"/>
-  <circle cx="61" cy="46" r="4.2" fill="#f0a89a" opacity=".3"/>
-  <!-- ojos -->
-  <ellipse cx="43" cy="38" rx="4.5" ry="5" fill="#fff"/>
-  <ellipse cx="58" cy="38" rx="4.5" ry="5" fill="#fff"/>
-  <circle cx="43.6" cy="38.7" r="3.3" fill="#8a4a35"/>
-  <circle cx="58.6" cy="38.7" r="3.3" fill="#8a4a35"/>
-  <circle cx="43.6" cy="38.7" r="2" fill="#4a2417"/>
-  <circle cx="58.6" cy="38.7" r="2" fill="#4a2417"/>
-  <circle cx="43.8" cy="38.9" r="1.1" fill="#0f0806"/>
-  <circle cx="58.8" cy="38.9" r="1.1" fill="#0f0806"/>
-  <circle cx="42.4" cy="36.8" r="1.1" fill="#fff"/>
-  <circle cx="57.4" cy="36.8" r="1.1" fill="#fff"/>
-  <path d="M38 33 Q43 30 48 32.5 M53 32.5 Q58 30 63 33" fill="none" stroke="#5a3a2a" stroke-width="1.5" stroke-linecap="round"/>
-  <!-- nariz, boca, pecas -->
-  <path d="M50 40 Q48.5 45.5 51 46.5" fill="none" stroke="#c99878" stroke-width="1.2" stroke-linecap="round"/>
-  <path d="M45 50.5 Q50.5 55 57 49.5 Q51 52 45 50.5 Z" fill="#c4566a" stroke="#a63f52" stroke-width=".8" stroke-linejoin="round"/>
-  <g fill="#c99570"><circle cx="40" cy="43" r=".75"/><circle cx="43" cy="44.6" r=".75"/><circle cx="37.6" cy="45" r=".7"/><circle cx="60" cy="43" r=".75"/><circle cx="57" cy="44.6" r=".75"/><circle cx="62.4" cy="45" r=".7"/></g>
-  <!-- flequillo -->
-  <path d="M31 36 Q28 12 52 10 Q72 11 69 36 Q63 21 47 24 Q36 26 31 36 Z" fill="url(#mv-pelo)"/>
-  <path d="M35 20 Q46 13 62 16 M33 27 Q40 20 50 20" fill="none" stroke="#6b7df0" stroke-width="1.4" stroke-linecap="round" opacity=".65"/>
-  <path d="M30 38 Q27 50 33 61 Q27 59 26 52 Z M70 38 Q73 50 67 61 Q73 59 74 52 Z" fill="#141c69"/>
-  <path d="M31 40 Q29 52 32 58 M69 40 Q71 52 68 58" fill="none" stroke="#5062d8" stroke-width="1" opacity=".55"/>
-  <!-- broche de libélula -->
-  <g transform="translate(31 27) rotate(-30)">
-    <ellipse cx="-3" cy="-2.6" rx="3.6" ry="1.6" fill="#f4a9c8" stroke="#c9a24d" stroke-width=".5"/>
-    <ellipse cx="3" cy="-2.6" rx="3.6" ry="1.6" fill="#f4a9c8" stroke="#c9a24d" stroke-width=".5"/>
-    <ellipse cx="-2.6" cy="1.8" rx="3.2" ry="1.4" fill="#f4a9c8" stroke="#c9a24d" stroke-width=".5"/>
-    <ellipse cx="2.6" cy="1.8" rx="3.2" ry="1.4" fill="#f4a9c8" stroke="#c9a24d" stroke-width=".5"/>
-    <circle r="1.6" fill="#2ec1e0"/>
-  </g>
-</svg>
-`;
-
-function asomarMuneca() {
-  if (document.hidden || !$('pantalla-app').classList.contains('activa')) {
-    tTimeout(asomarMuneca, 8000);
-    return;
-  }
-  const m = el('div', 'muneca ' + (Math.random() < 0.5 ? 'izq' : 'der'));
-  m.innerHTML = SVG_MUNECA;
-  m.style.top = azar(6, 36) + 'vh';
-  m.addEventListener('pointerdown', () => {
-    const svg = m.querySelector('svg');
-    svg.classList.remove('risa');
-    void svg.getBoundingClientRect();
-    svg.classList.add('risa');
-    if (navigator.vibrate) navigator.vibrate(30);
-  });
-  document.body.append(m);
-  tTimeout(() => m.classList.add('asoma'), 60);
-  tTimeout(() => m.classList.remove('asoma'), 4600);
-  tTimeout(() => m.remove(), 5600);
-  tTimeout(asomarMuneca, azar(22000, 45000));
 }
 
 const SVG_LLAVE = `
@@ -1754,7 +1668,6 @@ function aplicarTema(tema) {
 
   if (tema === 'coraline') {
     cieloCoraline();
-    tTimeout(asomarMuneca, 4000);
     tTimeout(eventoCoraline, 9000);
   } else if (tema === 'aurora') {
     fondoTema.append(el('div', 'aurora-banda b1'), el('div', 'aurora-banda b2'), el('div', 'aurora-banda b3'));
@@ -1976,3 +1889,31 @@ $('btn-descargar').addEventListener('click', async () => {
     msg.textContent = 'No se pudo preparar la descarga: ' + traducir(err);
   }
 });
+
+// =============================================
+//  BLOQUEO POR INACTIVIDAD: a los 15 minutos vuelve a pedir el código.
+//  La sesión NO se cierra: solo se oculta la app hasta escribir el código.
+// =============================================
+const INACTIVIDAD_MS = 15 * 60 * 1000;
+
+['pointerdown', 'keydown', 'touchstart', 'wheel', 'scroll'].forEach((ev) => {
+  document.addEventListener(ev, () => { ultimaActividad = Date.now(); }, { passive: true, capture: true });
+});
+
+function bloquearPorInactividad() {
+  if (!desbloqueado || !usuario) return;
+  desbloqueado = false;
+  $('musica-panel').classList.remove('abierta');
+  $('visor').classList.add('oculto');
+  $('codigo-sub').textContent = 'Sesión bloqueada por inactividad. Escribe el código para continuar.';
+  mostrar('codigo');
+}
+
+function revisarInactividad() {
+  if (desbloqueado && usuario && Date.now() - ultimaActividad > INACTIVIDAD_MS) bloquearPorInactividad();
+}
+
+setInterval(revisarInactividad, 20000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) revisarInactividad(); });
+window.addEventListener('focus', revisarInactividad);
+window.addEventListener('pageshow', revisarInactividad);
