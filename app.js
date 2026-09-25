@@ -580,6 +580,7 @@ function cambiarVista(vista) {
   document.querySelectorAll('.nav-btn').forEach((b) => b.classList.toggle('activa', b.dataset.vista === vista));
   document.querySelectorAll('.vista').forEach((v) => v.classList.toggle('activa', v.id === 'vista-' + vista));
   if (vista === 'jardin') requestAnimationFrame(() => entrarAlJardin());
+  else salirDelJardin();
 }
 
 // =============================================
@@ -1375,6 +1376,9 @@ let mvHasta = 0;            // hora en que termina el modo actual
 let mvUltimo = 0;
 let mvPresion = null;
 let mvTimerEstado = null;
+let mvEnJardin = false;      // dentro del jardín camina entre las plantas
+let mvY = 0;                 // (jardín) posición de los pies desde arriba
+let mvYObj = 0;
 
 function mvCambiarModo(modo, ms) {
   mvModo = modo;
@@ -1383,8 +1387,10 @@ function mvCambiarModo(modo, ms) {
 }
 
 function mvPonerX() {
-  mavis.style.left = mvX + 'px';
   mavis.classList.toggle('izquierda', mvDir < 0);
+  if (mavis.classList.contains('en-hamaca')) return;
+  if (mvEnJardin) { posicionarMavisJardin(); return; }
+  mavis.style.left = mvX + 'px';
 }
 
 function mvBucle(t) {
@@ -1400,10 +1406,17 @@ function mvBucle(t) {
   }
   mavis.classList.toggle('camina', mvModo === 'camina');
 
+  if (mvEnJardin && mvModo !== 'descanso') {
+    // camina entre las plantas y va cambiando de profundidad
+    mvY += (mvYObj - mvY) * Math.min(1, dt * 0.9);
+    if (Math.abs(mvYObj - mvY) < 6 && Math.random() < dt * 0.15) mvYObj = azar(jardinH * 0.7, jardinH * 0.96);
+  }
   if (mvModo === 'camina') {
-    mvX += mvDir * 42 * dt;
-    const max = window.innerWidth - mvAncho;
-    if (mvX <= 0) { mvX = 0; mvDir = 1; }
+    mvX += mvDir * (mvEnJardin ? 30 : 42) * dt;
+    const ancho = mvEnJardin ? jardinW : window.innerWidth;
+    const izqMin = mvEnJardin ? jardinLeft : 0;
+    const max = izqMin + ancho - (mvEnJardin ? anchoMavisJardin() : mvAncho);
+    if (mvX <= izqMin) { mvX = izqMin; mvDir = 1; }
     if (mvX >= max) { mvX = max; mvDir = -1; }
     mvPonerX();
     if (t > mvHasta) {
@@ -1417,6 +1430,7 @@ function mvBucle(t) {
   } else if (mvModo === 'interaccion' && t > mvHasta) {
     mvCambiarModo('camina', 3000 + Math.random() * 3000);
   }
+  if (mvEnJardin && mvModo !== 'camina') mvPonerX();
 }
 
 function mvEstado(clase, ms) {
@@ -1919,105 +1933,144 @@ window.addEventListener('focus', revisarInactividad);
 window.addEventListener('pageshow', revisarInactividad);
 
 // =============================================
-//  JARDÍN: flores, mariposas, libélulas y Mavis
+//  JARDÍN: flores, árboles, hamaca, mariposas, libélulas y Mavis
 // =============================================
 const jardin = $('jardin');
+const capaArboles = $('j-arboles');
 const capaFlores = $('j-capa');
 const capaAire = $('j-aire');
 let jardinListo = false;
 let jardinAncho0 = 0;
-const flores = [];        // { el, frio }
+let jardinW = 0;
+let jardinH = 0;
+let jardinLeft = 0;
+const flores = [];        // { el, frio, x, y }
 const voladores = [];     // mariposas y libélulas
 let atraer = null;        // { x, y, hasta, id }
 let atraerId = 0;
 let jardinUlt = 0;
 let jardinSniff = 0;
 let saltoFrio = 0;
+let gid = 0;
+let hamaca = null;        // { el, bal, slot, cx, pieY }
+let irAHamaca = false;
+let proximaSiesta = 0;
+let descansoHasta = 0;
+
+const azarEntre = (a, b) => a + Math.random() * (b - a);
+const limitar = (v, a, b) => Math.min(b, Math.max(a, v));
 
 const TULIPANES = [
-  ['#e63946', '#b5202d'], ['#ffd166', '#e0a800'], ['#ff8fab', '#e0587c'], ['#9b5de5', '#6d38b5'],
-  ['#ff9f1c', '#d97706'], ['#ffffff', '#d3d3e6'], ['#f15bb5', '#c2298a'],
+  ['#d62839', '#8f1523'], ['#f4c542', '#c79512'], ['#ef7fa1', '#c14a72'], ['#8a4fc4', '#5a2d8e'],
+  ['#f28c1e', '#b85f08'], ['#f6f1e7', '#c9c2b0'], ['#d94a9a', '#96235f'],
 ];
-const ALAS = [['#ff9f1c', '#ffd166'], ['#4cc9f0', '#a0e7ff'], ['#f15bb5', '#ffb3d9'], ['#ffd60a', '#fff3a0'], ['#9b5de5', '#d4b8ff'], ['#ffffff', '#cfe8ff']];
+const ALAS = [['#e8891c', '#f5c96a'], ['#5aa9d6', '#b7dcf0'], ['#d67aa5', '#f0c1d6'], ['#e8c62c', '#f6e8a0'], ['#8a6cc4', '#cfc0ec'], ['#f4f1ea', '#d6dde6']];
 
-const HOJA = '#4fa64a';
-const TALLO = '#3f8f3f';
+// ---------- color ----------
+function mezclar(hex, con, f) {
+  const a = hex.replace('#', '');
+  const b = con.replace('#', '');
+  const c = (i) => Math.round(parseInt(a.substr(i, 2), 16) * (1 - f) + parseInt(b.substr(i, 2), 16) * f);
+  return '#' + [0, 2, 4].map((i) => c(i).toString(16).padStart(2, '0')).join('');
+}
 
+const DEF_HOJA = (id) => `<linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6db66a"/><stop offset="1" stop-color="#2f7a38"/></linearGradient>`;
+
+// ---------- flores ----------
 function svgTulipan([c, oscuro]) {
+  const g = 'g' + (++gid);
+  const h = 'h' + gid;
   return `<svg viewBox="0 0 50 120" aria-hidden="true">
-  <path d="M25 118 C24 92 26 72 25 54" fill="none" stroke="${TALLO}" stroke-width="3" stroke-linecap="round"/>
-  <path d="M25 112 C9 100 6 78 12 64 C21 78 24 96 25 112Z" fill="${HOJA}"/>
-  <path d="M25 104 C40 94 44 76 39 62 C31 74 27 90 25 104Z" fill="#5cb85c"/>
+  <defs>
+    <linearGradient id="${g}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${mezclar(c, '#ffffff', 0.32)}"/><stop offset=".55" stop-color="${c}"/><stop offset="1" stop-color="${oscuro}"/></linearGradient>
+    ${DEF_HOJA(h)}
+  </defs>
+  <path d="M25 118 C24 92 26 72 25 54" fill="none" stroke="#3a7d3a" stroke-width="3" stroke-linecap="round"/>
+  <path d="M25 112 C9 100 6 78 12 64 C21 78 24 96 25 112Z" fill="url(#${h})"/>
+  <path d="M25 104 C40 94 44 76 39 62 C31 74 27 90 25 104Z" fill="url(#${h})"/>
+  <path d="M25 108 C16 96 13 82 13 70" fill="none" stroke="rgba(255,255,255,.25)" stroke-width=".8"/>
   <path d="M11 28 C9 46 17 60 25 60 C33 60 41 46 39 28 C35 33 30 22 25 17 C20 22 15 33 11 28Z" fill="${oscuro}"/>
-  <path d="M14 30 C15 48 21 60 25 60 C29 60 35 48 36 30 C32 35 28 26 25 20 C22 26 18 35 14 30Z" fill="${c}"/>
-  <ellipse cx="20" cy="38" rx="2.4" ry="8" fill="#fff" opacity=".28" transform="rotate(8 20 38)"/>
+  <path d="M14 30 C15 48 21 60 25 60 C29 60 35 48 36 30 C32 35 28 26 25 20 C22 26 18 35 14 30Z" fill="url(#${g})"/>
+  <path d="M25 22 C24 34 24 48 25 58" fill="none" stroke="rgba(0,0,0,.12)" stroke-width=".8"/>
 </svg>`;
 }
 
 function svgPeonia() {
-  const cx = 45, cy = 42;
+  const cx = 45;
+  const cy = 42;
+  const id = 'p' + (++gid);
+  const h = 'h' + gid;
   let p = '';
-  const capa = (n, r, rx, ry, color, rot) => {
+  const capa = (n, r, rx, ry, cIn, cOut, rot) => {
     for (let i = 0; i < n; i++) {
-      p += `<ellipse cx="${cx}" cy="${cy - r}" rx="${rx}" ry="${ry}" fill="${color}" stroke="rgba(255,255,255,.35)" stroke-width=".8" transform="rotate(${(360 / n) * i + rot} ${cx} ${cy})"/>`;
+      p += `<ellipse cx="${cx}" cy="${cy - r}" rx="${rx}" ry="${ry}" fill="url(#${id}${cIn})" stroke="rgba(120,30,70,.18)" stroke-width=".7" transform="rotate(${(360 / n) * i + rot} ${cx} ${cy})"/>`;
     }
   };
-  capa(8, 20, 15, 19, '#f8b4cf', 0);
-  capa(7, 13, 12, 15, '#f18cb4', 20);
-  capa(5, 6, 9, 11, '#e86a9d', 10);
+  capa(8, 20, 15, 19, 'a', 0, 0);
+  capa(7, 13, 12, 15, 'b', 0, 20);
+  capa(5, 6, 9, 11, 'c', 0, 10);
+  const grad = (n, dentro, fuera) => `<radialGradient id="${id}${n}" cx="50%" cy="80%" r="80%"><stop offset="0" stop-color="${dentro}"/><stop offset="1" stop-color="${fuera}"/></radialGradient>`;
   return `<svg viewBox="0 0 90 130" aria-hidden="true">
-  <path d="M45 128 C44 106 46 84 45 66" fill="none" stroke="${TALLO}" stroke-width="3.5" stroke-linecap="round"/>
-  <path d="M45 118 C24 108 16 90 22 76 C34 88 42 102 45 118Z" fill="${HOJA}"/>
-  <path d="M45 108 C66 100 74 82 68 70 C56 80 48 94 45 108Z" fill="#5cb85c"/>
+  <defs>${grad('a', '#ec9dbb', '#f9d3e2')}${grad('b', '#e07aa2', '#f4b5cd')}${grad('c', '#cf4f82', '#ea8db1')}${DEF_HOJA(h)}</defs>
+  <path d="M45 128 C44 106 46 84 45 66" fill="none" stroke="#3a7d3a" stroke-width="3.5" stroke-linecap="round"/>
+  <path d="M45 118 C24 108 16 90 22 76 C34 88 42 102 45 118Z" fill="url(#${h})"/>
+  <path d="M45 108 C66 100 74 82 68 70 C56 80 48 94 45 108Z" fill="url(#${h})"/>
   ${p}
-  <circle cx="${cx}" cy="${cy}" r="5.5" fill="#ffd166"/>
-  <g fill="#e09f00"><circle cx="43" cy="40" r="1"/><circle cx="47" cy="41" r="1"/><circle cx="45" cy="45" r="1"/></g>
+  <circle cx="${cx}" cy="${cy}" r="5.5" fill="#e8b93a"/>
+  <g fill="#b5820f"><circle cx="43" cy="40" r="1"/><circle cx="47" cy="41" r="1"/><circle cx="45" cy="45" r="1"/></g>
 </svg>`;
 }
 
 function svgNarciso() {
+  const h = 'h' + (++gid);
   let p = '';
   for (let i = 0; i < 6; i++) {
-    p += `<ellipse cx="30" cy="16" rx="8" ry="15" fill="#fff7c2" stroke="#f3e08a" stroke-width=".8" transform="rotate(${i * 60} 30 32)"/>`;
+    p += `<ellipse cx="30" cy="16" rx="8" ry="15" fill="#f8f1cf" stroke="#e6d89a" stroke-width=".8" transform="rotate(${i * 60} 30 32)"/>`;
   }
   return `<svg viewBox="0 0 60 110" aria-hidden="true">
-  <path d="M30 108 C29 84 31 60 30 40" fill="none" stroke="${TALLO}" stroke-width="3" stroke-linecap="round"/>
-  <path d="M30 104 C14 92 10 70 16 56 C24 70 28 88 30 104Z" fill="${HOJA}"/>
+  <defs>${DEF_HOJA(h)}</defs>
+  <path d="M30 108 C29 84 31 60 30 40" fill="none" stroke="#3a7d3a" stroke-width="3" stroke-linecap="round"/>
+  <path d="M30 104 C14 92 10 70 16 56 C24 70 28 88 30 104Z" fill="url(#${h})"/>
   ${p}
-  <ellipse cx="30" cy="32" rx="8" ry="6" fill="#ffb703"/>
-  <ellipse cx="30" cy="30" rx="5.5" ry="3.6" fill="#e07a00"/>
+  <ellipse cx="30" cy="32" rx="8" ry="6" fill="#e8a300"/>
+  <ellipse cx="30" cy="30" rx="5.5" ry="3.6" fill="#c97a00"/>
 </svg>`;
 }
 
-function svgJacinto(color = '#8e6bd8') {
+function svgJacinto(color = '#7f5fc4') {
+  const h = 'h' + (++gid);
   let f = '';
   for (let i = 0; i < 15; i++) {
     const y = 58 - i * 3.4;
     const w = 11 - i * 0.55;
-    f += `<circle cx="${25 - w * 0.45}" cy="${y}" r="${4.6 - i * .15}" fill="${color}"/><circle cx="${25 + w * 0.45}" cy="${y - 1.6}" r="${4.6 - i * .15}" fill="${color}"/>`;
+    f += `<circle cx="${25 - w * 0.45}" cy="${y}" r="${4.6 - i * .15}" fill="${mezclar(color, '#ffffff', (i % 3) * 0.1)}"/><circle cx="${25 + w * 0.45}" cy="${y - 1.6}" r="${4.6 - i * .15}" fill="${mezclar(color, '#000000', (i % 2) * 0.1)}"/>`;
   }
   return `<svg viewBox="0 0 50 120" aria-hidden="true">
-  <path d="M25 118 C24 96 26 80 25 56" fill="none" stroke="${TALLO}" stroke-width="3" stroke-linecap="round"/>
-  <path d="M25 116 C8 104 6 84 12 70 C20 84 24 100 25 116Z" fill="${HOJA}"/>
-  <path d="M25 116 C42 104 44 84 38 70 C30 84 26 100 25 116Z" fill="#5cb85c"/>
+  <defs>${DEF_HOJA(h)}</defs>
+  <path d="M25 118 C24 96 26 80 25 56" fill="none" stroke="#3a7d3a" stroke-width="3" stroke-linecap="round"/>
+  <path d="M25 116 C8 104 6 84 12 70 C20 84 24 100 25 116Z" fill="url(#${h})"/>
+  <path d="M25 116 C42 104 44 84 38 70 C30 84 26 100 25 116Z" fill="url(#${h})"/>
   ${f}
 </svg>`;
 }
 
 function svgBulbo() {
+  const h = 'h' + (++gid);
   return `<svg viewBox="0 0 50 64" aria-hidden="true">
-  <path d="M25 44 C22 30 23 20 25 12" fill="none" stroke="${TALLO}" stroke-width="2.6" stroke-linecap="round"/>
-  <path d="M25 40 C13 36 9 26 12 18 C19 24 23 32 25 40Z" fill="${HOJA}"/>
-  <path d="M25 36 C37 32 41 22 38 14 C31 20 27 28 25 36Z" fill="#5cb85c"/>
-  <ellipse cx="25" cy="9" rx="4.5" ry="6" fill="#ff8fab"/>
-  <path d="M25 62 C13 62 9 52 14 46 C18 42 22 42 25 40 C28 42 32 42 36 46 C41 52 37 62 25 62Z" fill="#d9b382"/>
-  <path d="M25 40 C21 48 21 56 25 62 M25 40 C29 48 29 56 25 62" fill="none" stroke="#b98d5c" stroke-width="1"/>
-  <path d="M21 62 l-3 3 M25 62 v4 M29 62 l3 3" stroke="#a37845" stroke-width="1.2" stroke-linecap="round"/>
+  <defs>${DEF_HOJA(h)}</defs>
+  <path d="M25 44 C22 30 23 20 25 12" fill="none" stroke="#3a7d3a" stroke-width="2.6" stroke-linecap="round"/>
+  <path d="M25 40 C13 36 9 26 12 18 C19 24 23 32 25 40Z" fill="url(#${h})"/>
+  <path d="M25 36 C37 32 41 22 38 14 C31 20 27 28 25 36Z" fill="url(#${h})"/>
+  <ellipse cx="25" cy="9" rx="4.5" ry="6" fill="#e98aa8"/>
+  <path d="M25 62 C13 62 9 52 14 46 C18 42 22 42 25 40 C28 42 32 42 36 46 C41 52 37 62 25 62Z" fill="#c9a06a"/>
+  <path d="M25 40 C21 48 21 56 25 62 M25 40 C29 48 29 56 25 62" fill="none" stroke="#9c7443" stroke-width="1"/>
+  <path d="M21 62 l-3 3 M25 62 v4 M29 62 l3 3" stroke="#8c6a3c" stroke-width="1.2" stroke-linecap="round"/>
 </svg>`;
 }
 
 function svgBugambilia() {
-  const cols = ['#d81b60', '#ff5c8a', '#8e24aa', '#ff7043', '#e91e8c'];
+  const cols = ['#c2185b', '#e0527d', '#7b2a94', '#e8623a', '#d81b7a'];
+  const h = 'h' + (++gid);
   let s = '';
   const pts = [];
   for (let i = 0; i < 12; i++) {
@@ -2025,44 +2078,123 @@ function svgBugambilia() {
     pts.push([10 + t * 120, 64 - Math.sin(t * Math.PI) * 36 + (i % 2 ? 5 : -5)]);
   }
   pts.forEach(([x, y], i) => {
-    s += `<ellipse cx="${x + 3}" cy="${y + 8}" rx="4.5" ry="9" fill="${HOJA}" transform="rotate(${(i % 2 ? 30 : -30)} ${x + 3} ${y + 8})"/>`;
+    s += `<ellipse cx="${x + 3}" cy="${y + 8}" rx="4.5" ry="9" fill="url(#${h})" transform="rotate(${(i % 2 ? 30 : -30)} ${x + 3} ${y + 8})"/>`;
   });
   pts.forEach(([x, y], i) => {
     const col = cols[i % cols.length];
     for (let k = 0; k < 3; k++) {
-      s += `<ellipse cx="${x}" cy="${y - 6}" rx="5.4" ry="7.4" fill="${col}" stroke="rgba(255,255,255,.3)" stroke-width=".6" transform="rotate(${k * 120 + (i * 23) % 60} ${x} ${y})"/>`;
+      s += `<ellipse cx="${x}" cy="${y - 6}" rx="5.4" ry="7.4" fill="${col}" stroke="rgba(255,255,255,.22)" stroke-width=".6" transform="rotate(${k * 120 + (i * 23) % 60} ${x} ${y})"/>`;
     }
-    s += `<circle cx="${x}" cy="${y}" r="1.7" fill="#fff8dc"/>`;
+    s += `<circle cx="${x}" cy="${y}" r="1.7" fill="#f6efd0"/>`;
   });
   return `<svg viewBox="0 0 140 100" aria-hidden="true">
-  <path d="M4 72 Q40 6 72 42 T138 48" fill="none" stroke="#7a5230" stroke-width="3.4" stroke-linecap="round"/>
+  <defs>${DEF_HOJA(h)}</defs>
+  <path d="M4 72 Q40 6 72 42 T138 48" fill="none" stroke="#6b4a2b" stroke-width="3.4" stroke-linecap="round"/>
   ${s}
 </svg>`;
 }
 
-function svgMariposa([a, b]) {
-  return `<svg viewBox="0 0 40 34" aria-hidden="true">
-  <g class="alas">
-    <path d="M20 17 C8 1 0 6 3 16 C5 23 12 24 20 17Z" fill="${a}"/>
-    <path d="M20 18 C10 22 6 30 12 31 C17 32 20 25 20 18Z" fill="${b}"/>
-    <path d="M20 17 C32 1 40 6 37 16 C35 23 28 24 20 17Z" fill="${a}"/>
-    <path d="M20 18 C30 22 34 30 28 31 C23 32 20 25 20 18Z" fill="${b}"/>
-    <circle cx="9" cy="13" r="2" fill="#fff" opacity=".7"/><circle cx="31" cy="13" r="2" fill="#fff" opacity=".7"/>
-  </g>
-  <ellipse cx="20" cy="18" rx="1.7" ry="8" fill="#3a2a2a"/>
-  <path d="M19 10 C17 6 15 4 13 4 M21 10 C23 6 25 4 27 4" fill="none" stroke="#3a2a2a" stroke-width=".9" stroke-linecap="round"/>
+// ---------- árboles y hamaca ----------
+function svgArbol() {
+  const id = 'a' + (++gid);
+  const rnd = (a, b) => a + Math.random() * (b - a);
+  let hojas = '';
+  const pasada = (n, color, yMin, yMax) => {
+    for (let i = 0; i < n; i++) {
+      const ang = rnd(0, Math.PI * 2);
+      const rr = Math.sqrt(Math.random());
+      const x = 100 + Math.cos(ang) * rr * 74;
+      const y = 84 + Math.sin(ang) * rr * 56;
+      if (y < yMin || y > yMax) { i--; continue; }
+      hojas += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${rnd(15, 27).toFixed(1)}" fill="${color}"/>`;
+    }
+  };
+  pasada(14, '#255c33', 20, 150);
+  pasada(16, '#33793f', 20, 130);
+  pasada(14, '#469950', 18, 110);
+  pasada(10, '#67b466', 14, 86);
+  pasada(6, '#86ca78', 14, 68);
+  return `<svg viewBox="0 0 200 262" aria-hidden="true">
+  <defs>
+    <linearGradient id="${id}t" x1="0" x2="1"><stop offset="0" stop-color="#3f2a1a"/><stop offset=".45" stop-color="#7a5636"/><stop offset="1" stop-color="#3a2616"/></linearGradient>
+  </defs>
+  <ellipse cx="100" cy="258" rx="70" ry="6" fill="rgba(0,0,0,.22)"/>
+  <path d="M84 260 C90 236 91 200 92 156 C93 134 90 120 84 104 L116 104 C110 120 107 134 108 156 C109 200 110 236 118 260 Z" fill="url(#${id}t)"/>
+  <path d="M96 250 C97 210 96 170 97 130 M104 245 C103 205 104 165 103 125" fill="none" stroke="rgba(0,0,0,.28)" stroke-width="1.2"/>
+  <path d="M96 120 C80 108 66 100 56 88 M104 118 C120 106 136 98 146 86" fill="none" stroke="#5b3f27" stroke-width="7" stroke-linecap="round"/>
+  ${hojas}
 </svg>`;
 }
 
-function svgLibelulaJ() {
-  return `<svg viewBox="0 0 90 60" aria-hidden="true">
-  <g class="ala"><ellipse cx="34" cy="21" rx="24" ry="8" fill="#bfe9ff" fill-opacity=".7" stroke="#6bb6d6" stroke-width="1" transform="rotate(-20 34 21)"/></g>
-  <g class="ala b"><ellipse cx="38" cy="38" rx="24" ry="7" fill="#bfe9ff" fill-opacity=".65" stroke="#6bb6d6" stroke-width="1" transform="rotate(18 38 38)"/></g>
-  <path d="M42 30 Q14 32 4 44" fill="none" stroke="#1fa6b8" stroke-width="3.2" stroke-linecap="round"/>
-  <g fill="#0e7c8c"><circle cx="16" cy="38" r="1.8"/><circle cx="26" cy="34" r="1.8"/><circle cx="34" cy="32" r="1.8"/></g>
-  <ellipse cx="47" cy="30" rx="8" ry="5.5" fill="#1fa6b8"/>
-  <circle cx="56" cy="28" r="3.2" fill="#ff6b6b"/><circle cx="56" cy="34" r="3.2" fill="#ff6b6b"/>
+function svgHamaca(ancho, caida) {
+  const id = 'm' + (++gid);
+  const A = ancho;
+  const alto = caida + 24;
+  return `<svg viewBox="0 0 ${A} ${alto}" width="${A}" height="${alto}" aria-hidden="true">
+  <defs>
+    <pattern id="${id}" width="14" height="14" patternUnits="userSpaceOnUse" patternTransform="rotate(90)"><rect width="14" height="7" fill="#e9dcc0"/><rect y="7" width="14" height="7" fill="#b9673f"/></pattern>
+  </defs>
+  <path d="M4 8 Q${A / 2} ${caida + 8} ${A - 4} 8 L${A - 4} 15 Q${A / 2} ${caida + 20} 4 15 Z" fill="url(#${id})" stroke="#7a4a2c" stroke-width="1"/>
+  <path d="M4 8 Q${A / 2} ${caida + 8} ${A - 4} 8" fill="none" stroke="#6b3f24" stroke-width="2"/>
+  <circle cx="4" cy="9" r="3.4" fill="none" stroke="#5a5a62" stroke-width="1.6"/>
+  <circle cx="${A - 4}" cy="9" r="3.4" fill="none" stroke="#5a5a62" stroke-width="1.6"/>
 </svg>`;
+}
+
+function construirArboles(W, H) {
+  capaArboles.replaceChildren();
+  const baseY = H * 0.7;
+  const wA = limitar(W * 0.4, 150, 280);
+  const wB = wA * 0.78;
+  const hA = wA * 1.31;
+  const hB = wB * 1.31;
+  const span = limitar(W * 0.3, 110, 230);
+  const xa = W * 0.5 - span / 2;
+  const xb = xa + span;
+
+  const crear = (cx, w, h) => {
+    const t = el('div', 'arbol');
+    t.style.width = w + 'px';
+    t.style.left = cx - w / 2 + 'px';
+    t.style.top = baseY - h + 'px';
+    t.style.zIndex = String(Math.round(baseY));
+    t.innerHTML = svgArbol();
+    capaArboles.append(t);
+  };
+  crear(xa, wA, hA);
+  crear(xb, wB, hB);
+
+  // hamaca entre los dos troncos
+  const troncoA = wA * 0.08;
+  const troncoB = wB * 0.08;
+  const izq = xa + troncoA;
+  const anchoH = xb - troncoB - izq;
+  const caida = limitar(anchoH * 0.16, 18, 40);
+  const anclaY = baseY - hB * 0.2;
+  const ham = el('div', 'hamaca');
+  ham.style.left = izq + 'px';
+  ham.style.top = anclaY - 8 + 'px';
+  ham.style.width = anchoH + 'px';
+  ham.style.zIndex = String(Math.round(baseY) + 1);
+  const bal = el('div', 'hamaca-bal');
+  bal.innerHTML = svgHamaca(anchoH, caida);
+  const hueco = el('div', 'hamaca-hueco');
+  hueco.style.left = anchoH / 2 + 'px';
+  hueco.style.top = caida * 0.62 + 6 + 'px';
+  bal.append(hueco);
+  ham.append(bal);
+  ham.addEventListener('pointerdown', (e) => {
+    e.stopPropagation();
+    $('j-pista').classList.add('oculto');
+    ham.classList.remove('toque');
+    void ham.offsetWidth;
+    ham.classList.add('toque');
+    setTimeout(() => ham.classList.remove('toque'), 2200);
+    // llama a Mavis a descansar
+    if (mvEnJardin && !mavis.classList.contains('en-hamaca')) irAHamaca = true;
+  });
+  capaArboles.append(ham);
+  hamaca = { el: ham, bal, slot: hueco, cx: izq + anchoH / 2, pieY: baseY + 14 };
 }
 
 // ---------- construir el jardín ----------
@@ -2072,8 +2204,8 @@ function tamanoJardin() {
 }
 
 function plantar(x, y, tipo, animar) {
-  const { W, H } = tamanoJardin();
-  const prof = Math.min(1, Math.max(0, (y - H * 0.6) / (H * 0.4)));   // 0 = lejos, 1 = cerca
+  const { H } = tamanoJardin();
+  const prof = limitar((y - H * 0.6) / (H * 0.4), 0, 1);
   const esc = 0.7 + prof * 0.6;
   const elegido = tipo || ['tulipan', 'tulipan', 'tulipan', 'peonia', 'narciso', 'jacinto', 'bulbo'][Math.floor(Math.random() * 7)];
   const base = { tulipan: 44, peonia: 84, narciso: 54, jacinto: 44, bulbo: 40 }[elegido];
@@ -2081,7 +2213,7 @@ function plantar(x, y, tipo, animar) {
     tulipan: () => svgTulipan(TULIPANES[Math.floor(Math.random() * TULIPANES.length)]),
     peonia: svgPeonia,
     narciso: svgNarciso,
-    jacinto: () => svgJacinto(['#8e6bd8', '#5b8def', '#e070c0'][Math.floor(Math.random() * 3)]),
+    jacinto: () => svgJacinto(['#7f5fc4', '#5079d6', '#c862ac'][Math.floor(Math.random() * 3)]),
     bulbo: svgBulbo,
   }[elegido]();
   const w = base * esc;
@@ -2090,13 +2222,13 @@ function plantar(x, y, tipo, animar) {
   f.style.left = x - w / 2 + 'px';
   f.style.bottom = Math.max(0, H - y) + 'px';
   f.style.zIndex = String(Math.round(y));
-  f.style.setProperty('--dur', azar(3, 5.5) + 's');
-  f.style.setProperty('--del', -azar(0, 4) + 's');
+  f.style.setProperty('--dur', azarEntre(6, 10) + 's');
+  f.style.setProperty('--del', -azarEntre(0, 6) + 's');
   const dentro = el('div', 'flor-i');
   dentro.innerHTML = svg;
   f.append(dentro);
   capaFlores.append(f);
-  flores.push({ el: f, frio: 0 });
+  flores.push({ el: f, frio: 0, roce: 0, x, y });
   if (flores.length > 44) {
     const vieja = flores.shift();
     vieja.el.classList.add('se-va');
@@ -2105,50 +2237,85 @@ function plantar(x, y, tipo, animar) {
   return f;
 }
 
+function svgMariposa([a, b]) {
+  return `<svg viewBox="0 0 40 34" aria-hidden="true">
+  <g class="alas">
+    <path d="M20 17 C8 1 0 6 3 16 C5 23 12 24 20 17Z" fill="${a}"/>
+    <path d="M20 18 C10 22 6 30 12 31 C17 32 20 25 20 18Z" fill="${b}"/>
+    <path d="M20 17 C32 1 40 6 37 16 C35 23 28 24 20 17Z" fill="${a}"/>
+    <path d="M20 18 C30 22 34 30 28 31 C23 32 20 25 20 18Z" fill="${b}"/>
+    <path d="M20 17 C11 8 5 8 4 14 M20 17 C29 8 35 8 36 14" fill="none" stroke="rgba(0,0,0,.25)" stroke-width=".6"/>
+  </g>
+  <ellipse cx="20" cy="18" rx="1.6" ry="8" fill="#33261f"/>
+  <path d="M19 10 C17 6 15 4 13 4 M21 10 C23 6 25 4 27 4" fill="none" stroke="#33261f" stroke-width=".9" stroke-linecap="round"/>
+</svg>`;
+}
+
+function svgLibelulaJ() {
+  return `<svg viewBox="0 0 90 60" aria-hidden="true">
+  <g class="ala"><ellipse cx="34" cy="21" rx="24" ry="8" fill="#d6ecf7" fill-opacity=".6" stroke="#7fb0c8" stroke-width=".8" transform="rotate(-20 34 21)"/></g>
+  <g class="ala b"><ellipse cx="38" cy="38" rx="24" ry="7" fill="#d6ecf7" fill-opacity=".55" stroke="#7fb0c8" stroke-width=".8" transform="rotate(18 38 38)"/></g>
+  <path d="M42 30 Q14 32 4 44" fill="none" stroke="#2a8ea0" stroke-width="3.2" stroke-linecap="round"/>
+  <g fill="#1b6472"><circle cx="16" cy="38" r="1.6"/><circle cx="26" cy="34" r="1.6"/><circle cx="34" cy="32" r="1.6"/></g>
+  <ellipse cx="47" cy="30" rx="8" ry="5.5" fill="#2a8ea0"/>
+  <circle cx="56" cy="28" r="3.2" fill="#b8453f"/><circle cx="56" cy="34" r="3.2" fill="#b8453f"/>
+</svg>`;
+}
+
 function nuevoDestino(v, W, H) {
-  v.tx = azar(W * 0.06, W * 0.94);
-  v.ty = azar(H * 0.08, v.tipo === 'libelula' ? H * 0.5 : H * 0.62);
+  v.tx = azarEntre(W * 0.06, W * 0.94);
+  v.ty = azarEntre(H * 0.08, v.tipo === 'libelula' ? H * 0.5 : H * 0.62);
 }
 
 function petalos(x, y, n) {
   for (let i = 0; i < n; i++) {
     const p = el('span', 'petalo-j');
-    p.style.left = x + azar(-14, 14) + 'px';
+    p.style.left = x + azarEntre(-14, 14) + 'px';
     p.style.top = y + 'px';
-    p.style.setProperty('--dx', azar(-40, 40) + 'px');
-    p.style.setProperty('--dy', azar(50, 110) + 'px');
-    p.style.background = ['#ffb3d9', '#ffffff', '#ffd6e8', '#ffe066'][Math.floor(Math.random() * 4)];
+    p.style.setProperty('--dx', azarEntre(-30, 30) + 'px');
+    p.style.setProperty('--dy', azarEntre(40, 90) + 'px');
+    p.style.background = ['#f2b6cf', '#f6efe8', '#f8d3e1', '#f0d060'][Math.floor(Math.random() * 4)];
     capaAire.append(p);
     setTimeout(() => p.remove(), 2400);
   }
 }
 
 function construirJardin() {
-  const { W, H } = tamanoJardin();
+  const estabaDentro = mvEnJardin;
+  if (estabaDentro) salirDelJardin();
+  const { r, W, H } = tamanoJardin();
   if (W < 50 || H < 50) return false;
   jardinAncho0 = W;
+  jardinW = W;
+  jardinH = H;
+  jardinLeft = r.left;
   capaFlores.replaceChildren();
   capaAire.replaceChildren();
   flores.length = 0;
   voladores.length = 0;
+  hamaca = null;
+  irAHamaca = false;
+
+  construirArboles(W, H);
 
   // arbustos de bugambilia sobre las colinas
-  [['izq', 0.0], ['der', 1.0]].forEach(([lado]) => {
+  ['izq', 'der'].forEach((lado) => {
     const b = el('div', 'bugambilia ' + lado);
     b.innerHTML = svgBugambilia();
-    capaFlores.append(b);
+    capaArboles.append(b);
   });
 
   // flores iniciales repartidas por el pasto
-  const n = Math.max(9, Math.min(22, Math.round(W / 55)));
+  const n = Math.max(8, Math.min(18, Math.round(W / 62)));
   for (let i = 0; i < n; i++) {
-    plantar(azar(W * 0.03, W * 0.97), azar(H * 0.66, H * 0.97), null, false);
+    plantar(azarEntre(W * 0.03, W * 0.97), azarEntre(H * 0.68, H * 0.97), null, false);
   }
 
-  // mariposas y libélulas
-  for (let i = 0; i < 6; i++) crearVolador('mariposa', W, H);
-  for (let i = 0; i < 2; i++) crearVolador('libelula', W, H);
+  // mariposas y libélulas (pocas y tranquilas)
+  for (let i = 0; i < 4; i++) crearVolador('mariposa', W, H);
+  crearVolador('libelula', W, H);
   jardinListo = true;
+  if (estabaDentro) mavisAlJardin();
   return true;
 }
 
@@ -2156,26 +2323,26 @@ function crearVolador(tipo, W, H) {
   const nodo = el('div', 'volador ' + tipo);
   nodo.innerHTML = tipo === 'mariposa' ? svgMariposa(ALAS[Math.floor(Math.random() * ALAS.length)]) : svgLibelulaJ();
   const v = {
-    el: nodo, tipo, x: azar(0, W), y: azar(H * 0.1, H * 0.5), tx: 0, ty: 0, dir: 1,
-    vel: tipo === 'mariposa' ? azar(38, 62) : azar(90, 130), fase: azar(0, 6.28),
+    el: nodo, tipo, x: azarEntre(0, W), y: azarEntre(H * 0.1, H * 0.5), tx: 0, ty: 0, dir: 1,
+    vel: tipo === 'mariposa' ? azarEntre(22, 40) : azarEntre(55, 85), fase: azarEntre(0, 6.28),
     estado: 'vuela', hasta: 0, turbo: 0, atr: 0,
   };
   nuevoDestino(v, W, H);
-  nodo.style.width = (tipo === 'mariposa' ? azar(26, 36) : azar(54, 66)) + 'px';
+  nodo.style.width = (tipo === 'mariposa' ? azarEntre(22, 30) : azarEntre(46, 56)) + 'px';
   nodo.addEventListener('pointerdown', (e) => {
     e.stopPropagation();
     const { W: w2, H: h2 } = tamanoJardin();
     v.estado = 'vuela';
     nodo.classList.remove('posada');
     v.turbo = performance.now() / 1000 + 2;
-    v.tx = v.x < w2 / 2 ? azar(w2 * 0.6, w2 * 0.95) : azar(w2 * 0.05, w2 * 0.4);
-    v.ty = azar(h2 * 0.06, h2 * 0.4);
+    v.tx = v.x < w2 / 2 ? azarEntre(w2 * 0.6, w2 * 0.95) : azarEntre(w2 * 0.05, w2 * 0.4);
+    v.ty = azarEntre(h2 * 0.06, h2 * 0.4);
   });
   capaAire.append(nodo);
   voladores.push(v);
 }
 
-// ---------- movimiento ----------
+// ---------- movimiento de mariposas y libélulas ----------
 function moverVolador(v, dt, ts, r) {
   const W = r.width;
   const H = r.height;
@@ -2191,8 +2358,8 @@ function moverVolador(v, dt, ts, r) {
   }
   if (atraer && ts < atraer.hasta && v.atr !== atraer.id) {
     v.atr = atraer.id;
-    v.tx = atraer.x + azar(-50, 50);
-    v.ty = atraer.y + azar(-40, 30);
+    v.tx = atraer.x + azarEntre(-50, 50);
+    v.ty = atraer.y + azarEntre(-40, 30);
   }
   const dx = v.tx - v.x;
   const dy = v.ty - v.y;
@@ -2200,17 +2367,16 @@ function moverVolador(v, dt, ts, r) {
   if (d < 12) {
     const suerte = Math.random();
     if (v.tipo === 'mariposa' && suerte < 0.32 && flores.length) {
-      // se posa en una flor
       const f = flores[Math.floor(Math.random() * flores.length)];
       const fr = f.el.getBoundingClientRect();
       v.x = fr.left - r.left + fr.width / 2 - v.el.offsetWidth / 2;
       v.y = fr.top - r.top - v.el.offsetHeight * 0.4;
       v.estado = 'posada';
-      v.hasta = ts + azar(2.5, 5);
+      v.hasta = ts + azarEntre(3, 6);
       v.el.classList.add('posada');
     } else if (v.tipo === 'libelula' && suerte < 0.4) {
       v.estado = 'posada';
-      v.hasta = ts + azar(1, 2.2);
+      v.hasta = ts + azarEntre(1.5, 3);
     } else {
       nuevoDestino(v, W, H);
     }
@@ -2220,30 +2386,136 @@ function moverVolador(v, dt, ts, r) {
   v.x += (dx / d) * vel * dt;
   v.y += (dy / d) * vel * dt;
   if (Math.abs(dx) > 6) v.dir = dx >= 0 ? 1 : -1;
-  const bob = Math.sin(ts * (v.tipo === 'libelula' ? 9 : 6) + v.fase) * (v.tipo === 'libelula' ? 2 : 7);
+  const bob = Math.sin(ts * (v.tipo === 'libelula' ? 8 : 5) + v.fase) * (v.tipo === 'libelula' ? 1.5 : 4);
   v.el.style.transform = `translate(${v.x}px, ${v.y + bob}px) scaleX(${v.dir})`;
 }
 
-// Mavis olfatea las flores y persigue (y asusta) a las mariposas bajas
-function mavisEnJardin(r) {
-  if (mavis.classList.contains('oculta')) return;
-  const ahora = performance.now();
-  const cx = mvX + mvAncho / 2;
+// ---------- Mavis dentro del jardín ----------
+function anchoMavisJardin() {
+  const prof = limitar((mvY - jardinH * 0.6) / (jardinH * 0.4), 0, 1);
+  return mvAncho * (0.7 + prof * 0.5);
+}
 
+function posicionarMavisJardin() {
+  if (mavis.classList.contains('en-hamaca')) return;
+  const w = anchoMavisJardin();
+  mavis.style.width = w + 'px';
+  mavis.style.left = mvX - jardinLeft + 'px';
+  mavis.style.top = mvY - w * 0.71 + 'px';
+  mavis.style.zIndex = String(Math.round(mvY));
+}
+
+function mavisAlJardin() {
+  if (mvEnJardin || !jardinListo) return;
+  const { r, W, H } = tamanoJardin();
+  jardinW = W;
+  jardinH = H;
+  jardinLeft = r.left;
+  mvEnJardin = true;
+  capaFlores.append(mavis);
+  mavis.classList.add('en-jardin');
+  mvX = limitar(mvX, r.left, r.left + W - mvAncho);
+  mvY = H * 0.9;
+  mvYObj = azarEntre(H * 0.72, H * 0.95);
+  proximaSiesta = performance.now() + azarEntre(25000, 50000);
+  mvCambiarModo('camina', 5000);
+  posicionarMavisJardin();
+}
+
+function salirDelJardin() {
+  if (!mvEnJardin) return;
+  if (mavis.classList.contains('en-hamaca')) bajarDeHamaca(true);
+  mvEnJardin = false;
+  irAHamaca = false;
+  mavis.classList.remove('en-jardin');
+  mavis.style.top = '';
+  mavis.style.zIndex = '';
+  mavis.style.width = mvAncho + 'px';
+  $('pantalla-app').append(mavis);
+  mvX = limitar(mvX, 0, window.innerWidth - mvAncho);
+  mvCambiarModo('camina', 4000);
+  mvPonerX();
+}
+
+function subirAHamaca() {
+  if (!hamaca || !mvEnJardin) return;
+  irAHamaca = false;
+  mvModo = 'descanso';
+  mavis.classList.remove('camina');
+  mavis.classList.add('en-hamaca');
+  ['left', 'top', 'zIndex', 'width'].forEach((k) => { mavis.style[k] = ''; });
+  hamaca.slot.append(mavis);
+  hamaca.el.classList.add('con-peso');
+  descansoHasta = performance.now() + azarEntre(20000, 35000);
+}
+
+function bajarDeHamaca(forzar) {
+  if (!hamaca || !mavis.classList.contains('en-hamaca')) return;
+  mavis.classList.remove('en-hamaca');
+  hamaca.el.classList.remove('con-peso');
+  capaFlores.append(mavis);
+  mvY = hamaca.pieY;
+  mvYObj = mvY;
+  mvX = jardinLeft + hamaca.cx - anchoMavisJardin() / 2;
+  proximaSiesta = performance.now() + azarEntre(60000, 120000);
+  if (!forzar) mvCambiarModo('camina', 4000);
+  posicionarMavisJardin();
+}
+
+mavis.addEventListener('pointerdown', () => {
+  if (mavis.classList.contains('en-hamaca')) bajarDeHamaca(false);
+});
+
+// Mavis olfatea y roza las flores, persigue mariposas y descansa en la hamaca
+function mavisEnJardin(r) {
+  if (!mvEnJardin || mavis.classList.contains('oculta')) return;
+  const ahora = performance.now();
+
+  if (mavis.classList.contains('en-hamaca')) {
+    if (ahora > descansoHasta) bajarDeHamaca(false);
+    return;
+  }
+
+  // ¿toca la siesta?
+  if (!irAHamaca && hamaca && ahora > proximaSiesta) irAHamaca = true;
+  if (irAHamaca && hamaca) {
+    const cx = mvX - jardinLeft + anchoMavisJardin() / 2;
+    const dx = hamaca.cx - cx;
+    mvYObj = hamaca.pieY;
+    if (mvModo !== 'descanso') {
+      if (mvModo === 'pausa') mvCambiarModo('camina', 4000);
+      if (mvModo === 'camina') mvDir = dx >= 0 ? 1 : -1;
+    }
+    if (Math.abs(dx) < 16 && Math.abs(mvY - hamaca.pieY) < 12 && mvModo !== 'interaccion') {
+      mvEstado('feliz', 700);
+      setTimeout(subirAHamaca, 550);
+      irAHamaca = false;
+    }
+    return;
+  }
+
+  const cx = mvX - jardinLeft + anchoMavisJardin() / 2;
+  const pieY = mvY;
   if (mvModo === 'camina') {
     for (const f of flores) {
-      if (ahora < f.frio) continue;
-      const fr = f.el.getBoundingClientRect();
-      const fcx = fr.left + fr.width / 2;
-      if (Math.abs(fcx - cx) < Math.max(28, fr.width * 0.4) && fr.bottom > r.top + r.height * 0.6) {
-        f.frio = ahora + 12000;
+      const fcx = f.x;
+      const cerca = Math.abs(fcx - cx) < 34 && Math.abs(f.y - pieY) < 26;
+      if (!cerca) continue;
+      if (ahora > f.frio && mvModo === 'camina') {
+        f.frio = ahora + 14000;
         mvCambiarModo('interaccion', 1500);
         mavis.classList.add('olfatea');
         setTimeout(() => mavis.classList.remove('olfatea'), 1400);
         f.el.classList.add('olfateada');
         setTimeout(() => f.el.classList.remove('olfateada'), 1500);
-        petalos(fcx - r.left, fr.top - r.top + 8, 4);
+        petalos(f.x, f.y - f.el.offsetHeight * 0.75, 3);
         return;
+      }
+      if (ahora > f.roce) {
+        // al pasar rozando, la flor se mueve un poco
+        f.roce = ahora + 3000;
+        f.el.classList.add('rozada');
+        setTimeout(() => f.el.classList.remove('rozada'), 900);
       }
     }
   }
@@ -2253,20 +2525,20 @@ function mavisEnJardin(r) {
   let dxc = 0;
   voladores.forEach((v) => {
     if (v.tipo !== 'mariposa' || v.y < r.height * 0.4) return;
-    const dx = v.x + r.left + v.el.offsetWidth / 2 - cx;
+    const dx = v.x + v.el.offsetWidth / 2 - cx;
     if (Math.abs(dx) < dmin) { dmin = Math.abs(dx); cerca = v; dxc = dx; }
   });
-  if (cerca && dmin < 260) {
+  if (cerca && dmin < 240) {
     if (mvModo === 'pausa') mvCambiarModo('camina', 3000);
     if (mvModo === 'camina') mvDir = dxc >= 0 ? 1 : -1;
-    if (dmin < 70 && ahora > saltoFrio) {
-      saltoFrio = ahora + 7000;
+    if (dmin < 60 && ahora > saltoFrio) {
+      saltoFrio = ahora + 8000;
       mvEstado('feliz', 800);
       cerca.turbo = ahora / 1000 + 1.6;
       cerca.estado = 'vuela';
       cerca.el.classList.remove('posada');
-      cerca.tx = cerca.x < r.width / 2 ? azar(r.width * 0.6, r.width * 0.95) : azar(r.width * 0.05, r.width * 0.4);
-      cerca.ty = azar(r.height * 0.06, r.height * 0.35);
+      cerca.tx = cerca.x < r.width / 2 ? azarEntre(r.width * 0.6, r.width * 0.95) : azarEntre(r.width * 0.05, r.width * 0.4);
+      cerca.ty = azarEntre(r.height * 0.06, r.height * 0.35);
     }
   }
 }
@@ -2280,6 +2552,9 @@ function jardinBucle(t) {
   const dt = Math.min(0.05, (t - (jardinUlt || t)) / 1000);
   jardinUlt = t;
   const r = jardin.getBoundingClientRect();
+  jardinW = r.width;
+  jardinH = r.height;
+  jardinLeft = r.left;
   voladores.forEach((v) => moverVolador(v, dt, t / 1000, r));
   if (t - jardinSniff > 350) {
     jardinSniff = t;
@@ -2290,6 +2565,7 @@ function jardinBucle(t) {
 // ---------- interacción ----------
 jardin.addEventListener('pointerdown', (e) => {
   $('j-pista').classList.add('oculto');
+  if (e.target.closest('.mavis')) return;
   const flor = e.target.closest('.flor');
   const { r, H } = tamanoJardin();
   const x = e.clientX - r.left;
@@ -2299,37 +2575,37 @@ jardin.addEventListener('pointerdown', (e) => {
     void flor.offsetWidth;
     flor.classList.add('olfateada');
     setTimeout(() => flor.classList.remove('olfateada'), 1500);
-    petalos(x, y, 5);
+    petalos(x, y, 3);
     if (navigator.vibrate) navigator.vibrate(15);
     return;
   }
-  if (y > H * 0.6) {
+  if (y > H * 0.66) {
     plantar(x, y, null, true);
-    petalos(x, y - 20, 4);
+    petalos(x, y - 20, 3);
     if (navigator.vibrate) navigator.vibrate(15);
   } else {
     atraer = { x, y, hasta: performance.now() / 1000 + 4, id: ++atraerId };
-    petalos(x, y, 3);
   }
 });
 
 function entrarAlJardin() {
   const { W } = tamanoJardin();
   if (!jardinListo || Math.abs(W - jardinAncho0) > 80) construirJardin();
+  mavisAlJardin();
   setTimeout(() => $('j-pista').classList.add('oculto'), 9000);
 }
 
-// pétalos que caen suavemente de vez en cuando
+// pétalos que caen muy de vez en cuando
 setInterval(() => {
   if (vistaActual !== 'jardin' || !jardinListo || document.hidden || document.documentElement.classList.contains('sin-anim')) return;
-  if (capaAire.querySelectorAll('.petalo-caida').length > 8) return;
+  if (capaAire.querySelectorAll('.petalo-caida').length > 3) return;
   const { W } = tamanoJardin();
   const p = el('span', 'petalo-caida');
-  p.style.left = azar(0, W) + 'px';
-  p.style.setProperty('--dx', azar(-60, 60) + 'px');
-  p.style.background = ['#ffb3d9', '#ffffff', '#ffd6e8', '#ffe066', '#e6b3ff'][Math.floor(Math.random() * 5)];
+  p.style.left = azarEntre(0, W) + 'px';
+  p.style.setProperty('--dx', azarEntre(-50, 50) + 'px');
+  p.style.background = ['#f2b6cf', '#f6efe8', '#f8d3e1', '#f0d060'][Math.floor(Math.random() * 4)];
   capaAire.append(p);
-  setTimeout(() => p.remove(), 9000);
-}, 2200);
+  setTimeout(() => p.remove(), 12000);
+}, 5000);
 
 requestAnimationFrame(jardinBucle);

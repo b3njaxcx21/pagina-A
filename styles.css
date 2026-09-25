@@ -699,3 +699,68 @@ html[data-tema="coraline"] .j-sol, html[data-tema="aurora"] .j-sol { background:
 html[data-tema="coraline"] .j-nube, html[data-tema="aurora"] .j-nube { background: rgba(190,200,255,.25); box-shadow: 22px -10px 0 4px rgba(190,200,255,.25), 48px 2px 0 0 rgba(190,200,255,.25); }
 html[data-tema="coraline"] .j-pista, html[data-tema="aurora"] .j-pista { color: #dfe6ff; text-shadow: 0 1px 2px rgba(0,0,0,.6); }
 html.sin-anim .j-nube, html.sin-anim .petalo-caida { display: none; }
+
+/* =============================================
+   JARDÍN (versión más realista y tranquila)
+   ============================================= */
+.jardin { background: linear-gradient(180deg, #86c4ee 0%, #bfe0f3 48%, #e6efdc 68%); }
+.j-sol { top: 5%; right: 10%; width: 60px; height: 60px; background: radial-gradient(circle, #fffbe6 18%, #fff0a8 50%, rgba(255,240,168,0) 72%); box-shadow: 0 0 70px 22px rgba(255,244,190,.5); animation: none; }
+.j-nube { background: rgba(255,255,255,.78); box-shadow: 22px -10px 0 4px rgba(255,255,255,.78), 48px 2px 0 0 rgba(255,255,255,.78); filter: blur(.6px); }
+.j-nube.n1 { animation-duration: 200s; }
+.j-nube.n2 { animation-duration: 260s; }
+.j-nube.n3 { animation-duration: 320s; }
+.j-colina.c1 { background: linear-gradient(180deg, #86b872, #74a862); }
+.j-colina.c2 { background: linear-gradient(180deg, #74a862, #639852); }
+.j-suelo { background: linear-gradient(180deg, #669e4e 0%, #57903f 55%, #488035 100%); }
+.j-suelo::before { background:
+  repeating-linear-gradient(87deg, rgba(20,60,15,.12) 0 1px, transparent 1px 4px),
+  repeating-linear-gradient(93deg, rgba(255,255,255,.07) 0 1px, transparent 1px 6px),
+  repeating-linear-gradient(90deg, rgba(0,0,0,.05) 0 2px, transparent 2px 13px); }
+.j-arboles { position: absolute; inset: 0; pointer-events: none; }
+.j-arboles > * { pointer-events: auto; }
+
+.arbol { position: absolute; }
+.arbol svg { display: block; width: 100%; height: auto; overflow: visible; filter: drop-shadow(0 6px 8px rgba(0,0,0,.18)); }
+.hamaca { position: absolute; cursor: pointer; }
+.hamaca-bal { position: relative; transform-origin: 50% 0; animation: hamaca-mece 8s ease-in-out infinite alternate; }
+.hamaca svg { display: block; overflow: visible; }
+.hamaca.con-peso .hamaca-bal { animation-duration: 6s; }
+.hamaca.toque .hamaca-bal { animation: hamaca-toque 2.2s ease-in-out; }
+.hamaca-hueco { position: absolute; width: 0; height: 0; }
+@keyframes hamaca-mece { from { transform: rotate(-.9deg); } to { transform: rotate(.9deg); } }
+@keyframes hamaca-toque { 0%,100% { transform: rotate(0); } 25% { transform: rotate(3deg); } 55% { transform: rotate(-2.4deg); } 80% { transform: rotate(1deg); } }
+
+/* flores: sombra en la base y movimiento muy suave */
+.flor-i { position: relative; }
+.flor-i::before { content: ''; position: absolute; left: 12%; right: 12%; bottom: -3px; height: 7px; background: radial-gradient(ellipse, rgba(0,0,0,.3), transparent 70%); z-index: -1; }
+.flor svg { animation: flor-mece2 var(--dur, 8s) ease-in-out var(--del, 0s) infinite alternate; }
+@keyframes flor-mece2 { from { transform: rotate(-1.1deg); } to { transform: rotate(1.1deg); } }
+.flor.nace .flor-i { animation: flor-nace2 1.1s ease-out both; }
+@keyframes flor-nace2 { from { transform: scaleY(.05); opacity: 0; } to { transform: scaleY(1); opacity: 1; } }
+.flor.olfateada svg { animation: flor-roza2 1s ease-in-out; }
+.flor.rozada svg { animation: flor-rozada .9s ease-in-out; }
+@keyframes flor-roza2 { 0%,100% { transform: rotate(0); } 30% { transform: rotate(-5deg); } 65% { transform: rotate(4deg); } }
+@keyframes flor-rozada { 0%,100% { transform: rotate(0); } 40% { transform: rotate(3deg); } 70% { transform: rotate(-2deg); } }
+.bugambilia svg { animation: flor-mece2 10s ease-in-out infinite alternate; }
+
+/* mariposas y libélulas: aleteo más natural */
+.mariposa .alas { animation-duration: .28s; }
+.volador { filter: drop-shadow(0 2px 2px rgba(0,0,0,.16)); }
+.petalo-j { animation-duration: 2.6s; }
+
+/* Mavis dentro del jardín */
+.mavis.en-jardin { position: absolute; bottom: auto; }
+.mavis.en-jardin .mavis-svg { filter: drop-shadow(0 3px 3px rgba(0,0,0,.28)); }
+.mavis.en-hamaca { position: absolute; left: 0; top: auto; bottom: -3px; width: 64px; transform: translateX(-50%); }
+.mavis.en-hamaca .mv-pata { display: none; }
+.mavis.en-hamaca .mv-ojo { display: none; }
+.mavis.en-hamaca .mv-ojo-feliz { display: block; }
+.mavis.en-hamaca .mv-cuerpo { transform: scaleY(.82); transform-origin: 50% 100%; }
+.mavis.en-hamaca .mv-cola { animation-duration: 7s; }
+.mavis.en-hamaca .mv-cabeza { animation: none; }
+
+html[data-tema="coraline"] .jardin { background: linear-gradient(180deg, #0a1030 0%, #1b2766 48%, #2a2c70 66%); }
+html[data-tema="aurora"] .jardin { background: linear-gradient(180deg, #03131a 0%, #0a3540 50%, #0e4a4d 68%); }
+html[data-tema="coraline"] .j-suelo, html[data-tema="aurora"] .j-suelo { background: linear-gradient(180deg, #2a6f45 0%, #1f6039 60%, #175030 100%); }
+html[data-tema="coraline"] .arbol svg, html[data-tema="aurora"] .arbol svg { filter: brightness(.62) saturate(.9) drop-shadow(0 6px 8px rgba(0,0,0,.4)); }
+html[data-tema="coraline"] .hamaca svg, html[data-tema="aurora"] .hamaca svg { filter: brightness(.75); }
